@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://c5hs5kjd08e5h"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_y32lf"]
+radius = 5.0
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_oladd"]
+animations = []
+
+[node name="player" type="CharacterBody2D" unique_id=219627335]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1586351821]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=327857989]
+shape = SubResource("CircleShape2D_y32lf")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=193904927]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_oladd")
+animation = &""
