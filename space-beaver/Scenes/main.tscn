@@ -1,3 +1,13 @@
 [gd_scene format=3 uid="uid://cchp7lkc7xij7"]
 
+[ext_resource type="Script" uid="uid://c7ecvjanc0yhn" path="res://scripts/GridManager.gd" id="1_bo1nx"]
+[ext_resource type="PackedScene" uid="uid://c5hs5kjd08e5h" path="res://Scenes/player.tscn" id="1_jjgbg"]
+[ext_resource type="PackedScene" uid="uid://cfuv1tj0whd8j" path="res://Scenes/map.tscn" id="3_8gbba"]
+
 [node name="main" type="Node2D" unique_id=49560634]
+script = ExtResource("1_bo1nx")
+
+[node name="player" parent="." unique_id=219627335 instance=ExtResource("1_jjgbg")]
+z_index = 1
+
+[node name="Node2D" parent="." unique_id=1293852038 instance=ExtResource("3_8gbba")]
