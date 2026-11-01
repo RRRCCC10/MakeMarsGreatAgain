@@ -1,39 +1,536 @@
 extends Node
 
+const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
+const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
+const MACHINE_INTERACTION_DISTANCE := 76.0
+
 @onready var camera: Camera2D = $"../Camera2D"
 
-var highlight_rect: ColorRect
+var pipe_shape := PipeSegment.ShapeType.STRAIGHT
+var pipe_vertical := false
+var pipe_preview: PipeSegment
+var power_preview: PowerDevice
+var demolition_root: Control
+var demolition_question: Label
+var pending_demolition: Dictionary = {}
+var machine_info_root: Control
+var machine_title: Label
+var machine_category: Label
+var machine_status: Label
+var machine_specs: Label
+var machine_principle: Label
+var inspected_machine: Node
+var nearby_machine_root: PanelContainer
+var nearby_machine_name: Label
+var nearby_machine_summary: Label
+var nearby_machine_connection: Label
+var nearby_machine_stock: Label
+var nearby_machine_prompt: Label
+var nearby_machine: Node
+
 
 func _ready() -> void:
-	# Crea un ColorRect che farà da highlight visivo
-	highlight_rect = ColorRect.new()
-	highlight_rect.size = Vector2(GridManager.TILE_SIZE, GridManager.TILE_SIZE)
-	# Imposta un colore semi-trasparente (es. verde chiaro con alpha a 0.4)
-	highlight_rect.color = Color(0.2, 0.8, 0.2, 0.4)
-	# Nascondilo finché il mouse non entra nell'area di gioco
-	highlight_rect.visible = false
-	# Disabilita le collisioni o l'input sul rettangolo per evitare interferenze
-	highlight_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Aggiunge il rettangolo alla scena
-	add_child(highlight_rect)
+	call_deferred("_create_pipe_preview")
+	call_deferred("_create_power_preview")
+	call_deferred("_create_demolition_ui")
+	call_deferred("_create_machine_info_ui")
+	call_deferred("_create_nearby_machine_ui")
+
+
+func _create_pipe_preview() -> void:
+	pipe_preview = PIPE_SCENE.instantiate() as PipeSegment
+	pipe_preview.is_preview = true
+	get_tree().current_scene.add_child(pipe_preview)
+	pipe_preview.modulate = Color(0.55, 1.0, 0.62, 0.72)
+	pipe_preview.visible = false
+
+
+func _create_power_preview() -> void:
+	power_preview = POWER_DEVICE_SCRIPT.new() as PowerDevice
+	power_preview.is_preview = true
+	get_tree().current_scene.add_child(power_preview)
+	power_preview.visible = false
+
 
 func _process(_delta: float) -> void:
-	# Calcola la posizione della tile corrente in base al mouse
-	var cell_pos = GridManager.get_mouse_grid_position(camera)
-	
-	# Converte le coordinate della griglia in coordinate globali pixel
-	var world_pos = Vector2(cell_pos.x * GridManager.TILE_SIZE, cell_pos.y * GridManager.TILE_SIZE)
-	
-	# Posiziona l'highlight sulla tile
-	highlight_rect.global_position = world_pos
-	highlight_rect.visible = true
+	if machine_info_root != null and machine_info_root.visible:
+		_refresh_machine_info()
+	_update_nearby_machine_ui()
+	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open
+	var selected_id := str(Inventory.get_selected_item().get("id", ""))
+	if pipe_preview != null:
+		var pipe_active: bool = not blocked and selected_id == "pipe_hammer"
+		pipe_preview.visible = pipe_active
+		if pipe_active:
+			var pipe_cell: Vector2i = PipeManager.get_mouse_cell(camera)
+			pipe_preview.setup(pipe_cell, pipe_shape, pipe_vertical)
+			pipe_preview.global_position = PipeManager.cell_to_world(pipe_cell)
+			pipe_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PipeManager.can_place_pipe(pipe_cell, pipe_shape, pipe_vertical) else Color(1.0, 0.28, 0.24, 0.68)
+	if power_preview != null:
+		var power_active: bool = not blocked and selected_id in ["solar_panel", "transformer", "battery", "ice_drill"]
+		power_preview.visible = power_active
+		if power_active:
+			var power_cell := PowerGrid.get_mouse_cell(camera)
+			power_preview.setup(selected_id, power_cell, true)
+			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell)
+			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell) else Color(1.0, 0.28, 0.24, 0.72)
+
 
 func _unhandled_input(event: InputEvent) -> void:
-	var cell_pos = GridManager.get_mouse_grid_position(camera)
-	
-	# Esempio di piazzamento con il clic sinistro usando l'highlight come riferimento
-	if event.is_action_pressed("click_left"):
-		if GridManager.is_cell_empty(cell_pos):
-			GridManager.place_item(cell_pos, "MacchinarioBase")
-			print("Piazzato in: ", cell_pos)
+	if BuildableRegistry.is_modal_open:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+			if machine_info_root != null and machine_info_root.visible:
+				_close_machine_info()
+			else:
+				_close_demolition_ui()
+			get_viewport().set_input_as_handled()
+		return
+		return
+	if Inventory.is_open or Shop.is_open:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and nearby_machine != null:
+		if event.keycode == KEY_V:
+			_toggle_nearby_network()
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_E and _nearby_has_stock():
+			nearby_machine.call("take_stock_item", 0)
+			_update_nearby_machine_ui()
+			get_viewport().set_input_as_handled()
+			return
+	var item := Inventory.get_selected_item()
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		_try_demolish_at_mouse(item)
+		get_viewport().set_input_as_handled()
+		return
+	if item.get("id", "") == "pipe_hammer" and event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_T:
+			pipe_shape = PipeSegment.ShapeType.CROSS if pipe_shape == PipeSegment.ShapeType.STRAIGHT else PipeSegment.ShapeType.STRAIGHT
+			get_viewport().set_input_as_handled()
+			return
+		if event.keycode == KEY_R and pipe_shape == PipeSegment.ShapeType.STRAIGHT:
+			pipe_vertical = not pipe_vertical
+			get_viewport().set_input_as_handled()
+			return
+	if not event.is_action_pressed("left_click"):
+		return
+	var clicked_entry := BuildableRegistry.find_at(camera.get_global_mouse_position())
+	if not clicked_entry.is_empty():
+		var clicked_node: Node = clicked_entry.get("node")
+		if is_instance_valid(clicked_node) and clicked_node.has_method("get_machine_specs"):
+			_show_machine_info(clicked_entry)
+			get_viewport().set_input_as_handled()
+			return
+	if item.is_empty():
+		return
+	match item.get("id", ""):
+		"water_bottle":
+			Hydration.drink_from_selected_bottle()
+		"food_ration":
+			Hunger.eat_selected_ration()
+		"pipe_hammer":
+			var cell := PipeManager.get_mouse_cell(camera)
+			PipeManager.place_pipe(get_tree().current_scene, cell, pipe_shape, pipe_vertical)
+		"solar_panel", "transformer", "battery", "ice_drill":
+			var cell := PowerGrid.get_mouse_cell(camera)
+			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell) != null:
+				Inventory.consume_selected_item()
+		_:
+			if item.get("placeable", false):
+				var cell := GridManager.get_mouse_grid_position(camera)
+				if GridManager.place_item(cell, item.get("id", "")):
+					Inventory.consume_selected_item()
+
+
+func get_build_help_text() -> String:
+	var selected_id := str(Inventory.get_selected_item().get("id", ""))
+	if selected_id == "solar_panel":
+		return "PANNELLO: Click posiziona  ·  richiede 1 cella libera a destra  ·  Dx riprende"
+	if selected_id == "transformer":
+		return "TRASFORMATORE UNICO: Click posiziona  ·  Dx riprende"
+	if selected_id == "battery":
+		return "BATTERIA: Click posiziona  ·  500 kWh  ·  Dx riprende"
+	if selected_id == "ice_drill":
+		return "TRIVELLA: Click posiziona  ·  60 kW  ·  uscita acqua a destra  ·  Dx rimuove"
+	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
+	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
+
+
+func get_pipe_help_text() -> String:
+	return get_build_help_text()
+
+
+func _try_demolish_at_mouse(item: Dictionary) -> void:
+	var entry := BuildableRegistry.find_at(camera.get_global_mouse_position())
+	if entry.is_empty():
+		return
+	if entry.get("kind", "") == "power_device":
+		BuildableRegistry.destroy(entry)
+		return
+	if item.get("id", "") == "pipe_hammer" and entry.get("kind", "") == "pipe":
+		BuildableRegistry.destroy(entry)
+		return
+	_show_demolition_ui(entry)
+
+
+func _create_demolition_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	get_tree().current_scene.add_child(layer)
+
+	demolition_root = Control.new()
+	demolition_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	demolition_root.visible = false
+	layer.add_child(demolition_root)
+
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.015, 0.02, 0.025, 0.72)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	demolition_root.add_child(shade)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -190.0
+	panel.offset_top = -92.0
+	panel.offset_right = 190.0
+	panel.offset_bottom = 92.0
+	panel.add_theme_stylebox_override("panel", _demolition_panel_style())
+	demolition_root.add_child(panel)
+
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 12)
+	panel.add_child(content)
+	var title := Label.new()
+	title.text = "!!  CONFERMA DEMOLIZIONE  !!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 17)
+	title.add_theme_color_override("font_color", Color("ffca67"))
+	content.add_child(title)
+
+	demolition_question = Label.new()
+	demolition_question.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	demolition_question.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	demolition_question.add_theme_font_size_override("font_size", 13)
+	demolition_question.add_theme_color_override("font_color", Color("e5eeee"))
+	content.add_child(demolition_question)
+
+	var warning := Label.new()
+	warning.text = "NESSUN RIMBORSO DEL BUDGET"
+	warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	warning.add_theme_font_size_override("font_size", 12)
+	warning.add_theme_color_override("font_color", Color("ff7d6b"))
+	content.add_child(warning)
+
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 18)
+	content.add_child(buttons)
+	var confirm_button := _make_demolition_button("[ DEMOLISCI ]", Color("a53a32"))
+	confirm_button.pressed.connect(_confirm_demolition)
+	buttons.add_child(confirm_button)
+	var cancel_button := _make_demolition_button("[ ANNULLA ]", Color("304c58"))
+	cancel_button.pressed.connect(_close_demolition_ui)
+	buttons.add_child(cancel_button)
+
+
+func _show_demolition_ui(entry: Dictionary) -> void:
+	pending_demolition = entry
+	demolition_question.text = "Vuoi rimuovere:  %s ?" % entry.get("display_name", "OGGETTO")
+	demolition_root.visible = true
+	BuildableRegistry.is_modal_open = true
+
+
+func _confirm_demolition() -> void:
+	var entry := pending_demolition
+	_close_demolition_ui()
+	if not entry.is_empty():
+		BuildableRegistry.destroy(entry)
+
+
+func _close_demolition_ui() -> void:
+	pending_demolition = {}
+	BuildableRegistry.is_modal_open = false
+	if demolition_root != null:
+		demolition_root.visible = false
+
+
+func _create_nearby_machine_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 70
+	get_tree().current_scene.add_child(layer)
+	nearby_machine_root = PanelContainer.new()
+	nearby_machine_root.anchor_left = 0.5
+	nearby_machine_root.anchor_right = 0.5
+	nearby_machine_root.offset_left = -245.0
+	nearby_machine_root.offset_top = 18.0
+	nearby_machine_root.offset_right = 245.0
+	nearby_machine_root.offset_bottom = 154.0
+	nearby_machine_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nearby_machine_root.add_theme_stylebox_override("panel", _nearby_machine_style())
+	nearby_machine_root.visible = false
+	layer.add_child(nearby_machine_root)
+
+	var rows := VBoxContainer.new()
+	rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_theme_constant_override("separation", 2)
+	nearby_machine_root.add_child(rows)
+	nearby_machine_name = Label.new()
+	nearby_machine_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nearby_machine_name.add_theme_font_size_override("font_size", 15)
+	nearby_machine_name.add_theme_color_override("font_color", Color("ffe38a"))
+	rows.add_child(nearby_machine_name)
+	nearby_machine_summary = Label.new()
+	nearby_machine_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nearby_machine_summary.add_theme_font_size_override("font_size", 11)
+	nearby_machine_summary.add_theme_color_override("font_color", Color("d7e3e3"))
+	rows.add_child(nearby_machine_summary)
+	nearby_machine_connection = Label.new()
+	nearby_machine_connection.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nearby_machine_connection.add_theme_font_size_override("font_size", 12)
+	rows.add_child(nearby_machine_connection)
+	nearby_machine_stock = Label.new()
+	nearby_machine_stock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nearby_machine_stock.add_theme_font_size_override("font_size", 10)
+	nearby_machine_stock.add_theme_color_override("font_color", Color("9fb7c2"))
+	rows.add_child(nearby_machine_stock)
+	nearby_machine_prompt = Label.new()
+	nearby_machine_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nearby_machine_prompt.add_theme_font_size_override("font_size", 12)
+	nearby_machine_prompt.add_theme_color_override("font_color", Color("7ed7ff"))
+	rows.add_child(nearby_machine_prompt)
+
+
+func _update_nearby_machine_ui() -> void:
+	if nearby_machine_root == null:
+		return
+	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
+		nearby_machine = null
+		nearby_machine_root.visible = false
+		return
+	var closest_entry := _find_nearest_electrical_device()
+	if closest_entry.is_empty():
+		nearby_machine = null
+		nearby_machine_root.visible = false
+		return
+	nearby_machine = closest_entry.get("node") as Node
+	if not is_instance_valid(nearby_machine):
+		nearby_machine_root.visible = false
+		return
+	nearby_machine_root.visible = true
+	nearby_machine_name.text = str(closest_entry.get("display_name", "MACCHINARIO"))
+	nearby_machine_summary.text = str(nearby_machine.call("get_interaction_summary"))
+	var connection_label := str(nearby_machine.call("get_connection_label"))
+	nearby_machine_connection.text = connection_label
+	var enabled := bool(nearby_machine.call("is_network_enabled"))
+	var connection_color := Color("72eda0") if connection_label == "COLLEGATO ALLA RETE" else (Color("ffb45d") if enabled else Color("ff776d"))
+	nearby_machine_connection.add_theme_color_override("font_color", connection_color)
+	var stock: Array = nearby_machine.call("get_stock_items")
+	if stock.is_empty():
+		nearby_machine_stock.text = "STOCK  ·  nessun output disponibile"
+	else:
+		var first: Dictionary = stock[0]
+		nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]
+	nearby_machine_prompt.text = "V  ·  DISCONNETTI DALLA RETE" if enabled else "V  ·  CONNETTI ALLA RETE"
+
+
+func _find_nearest_electrical_device() -> Dictionary:
+	var player := get_parent() as Node2D
+	if player == null:
+		return {}
+	var closest: Dictionary = {}
+	var best_distance := MACHINE_INTERACTION_DISTANCE
+	for entry in BuildableRegistry.get_entries():
+		if entry.get("kind", "") not in ["power_device", "machine"]:
+			continue
+		var node := entry.get("node") as Node2D
+		if node == null or not node.has_method("is_network_enabled"):
+			continue
+		var distance := player.global_position.distance_to(node.global_position)
+		if distance <= best_distance:
+			best_distance = distance
+			closest = entry
+	return closest
+
+
+func _toggle_nearby_network() -> void:
+	if not is_instance_valid(nearby_machine):
+		return
+	var enabled := bool(nearby_machine.call("is_network_enabled"))
+	nearby_machine.call("set_network_enabled", not enabled)
+	PowerGrid.rebuild_network()
+	_update_nearby_machine_ui()
+
+
+func _nearby_has_stock() -> bool:
+	return is_instance_valid(nearby_machine) and nearby_machine.has_method("get_stock_items") and not Array(nearby_machine.call("get_stock_items")).is_empty()
+
+
+func _nearby_machine_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.035, 0.065, 0.085, 0.96)
+	style.border_color = Color("4ea8c7")
+	style.set_border_width_all(3)
+	style.content_margin_left = 14
+	style.content_margin_right = 14
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	return style
+
+
+func _create_machine_info_ui() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 110
+	get_tree().current_scene.add_child(layer)
+	machine_info_root = Control.new()
+	machine_info_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	machine_info_root.visible = false
+	layer.add_child(machine_info_root)
+
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color(0.01, 0.018, 0.025, 0.82)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	machine_info_root.add_child(shade)
+
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -330.0
+	panel.offset_top = -230.0
+	panel.offset_right = 330.0
+	panel.offset_bottom = 230.0
+	panel.add_theme_stylebox_override("panel", _machine_panel_style())
+	machine_info_root.add_child(panel)
+
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 9)
+	panel.add_child(content)
+	var header := Label.new()
+	header.text = "// SCHEDA SCIENTIFICA E TECNICA //"
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 14)
+	header.add_theme_color_override("font_color", Color("7ed7ff"))
+	content.add_child(header)
+	machine_title = Label.new()
+	machine_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	machine_title.add_theme_font_size_override("font_size", 20)
+	machine_title.add_theme_color_override("font_color", Color("ffe38a"))
+	content.add_child(machine_title)
+	machine_category = Label.new()
+	machine_category.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	machine_category.add_theme_font_size_override("font_size", 12)
+	machine_category.add_theme_color_override("font_color", Color("9fb7c2"))
+	content.add_child(machine_category)
+	machine_status = Label.new()
+	machine_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	machine_status.add_theme_font_size_override("font_size", 16)
+	content.add_child(machine_status)
+
+	var divider := HSeparator.new()
+	content.add_child(divider)
+	var technical_title := Label.new()
+	technical_title.text = "DATI OPERATIVI"
+	technical_title.add_theme_font_size_override("font_size", 13)
+	technical_title.add_theme_color_override("font_color", Color("72eda0"))
+	content.add_child(technical_title)
+	machine_specs = Label.new()
+	machine_specs.custom_minimum_size = Vector2(610, 112)
+	machine_specs.add_theme_font_size_override("font_size", 12)
+	machine_specs.add_theme_color_override("font_color", Color("dce8e8"))
+	content.add_child(machine_specs)
+	var science_title := Label.new()
+	science_title.text = "PRINCIPIO SCIENTIFICO"
+	science_title.add_theme_font_size_override("font_size", 13)
+	science_title.add_theme_color_override("font_color", Color("7ed7ff"))
+	content.add_child(science_title)
+	machine_principle = Label.new()
+	machine_principle.custom_minimum_size = Vector2(610, 70)
+	machine_principle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	machine_principle.add_theme_font_size_override("font_size", 12)
+	machine_principle.add_theme_color_override("font_color", Color("c5d2d4"))
+	content.add_child(machine_principle)
+	var close_button := _make_demolition_button("[ CHIUDI · ESC ]", Color("304c58"))
+	close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	close_button.pressed.connect(_close_machine_info)
+	content.add_child(close_button)
+
+
+func _show_machine_info(entry: Dictionary) -> void:
+	inspected_machine = entry.get("node") as Node
+	if not is_instance_valid(inspected_machine) or not inspected_machine.has_method("get_machine_specs"):
+		return
+	machine_info_root.visible = true
+	BuildableRegistry.is_modal_open = true
+	_refresh_machine_info()
+
+
+func _refresh_machine_info() -> void:
+	if not is_instance_valid(inspected_machine):
+		_close_machine_info()
+		return
+	var data: Dictionary = inspected_machine.call("get_machine_specs")
+	machine_title.text = str(data.get("title", "MACCHINARIO"))
+	machine_category.text = str(data.get("category", "SISTEMA"))
+	machine_status.text = str(data.get("status", ""))
+	machine_status.add_theme_color_override("font_color", data.get("status_color", Color.WHITE))
+	var rendered_specs := PackedStringArray()
+	for specification in data.get("specs", []):
+		rendered_specs.append("▪  " + str(specification))
+	machine_specs.text = "\n".join(rendered_specs)
+	machine_principle.text = str(data.get("principle", ""))
+
+
+func _close_machine_info() -> void:
+	inspected_machine = null
+	BuildableRegistry.is_modal_open = false
+	if machine_info_root != null:
+		machine_info_root.visible = false
+
+
+func _machine_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("0e1921")
+	style.border_color = Color("4ea8c7")
+	style.set_border_width_all(4)
+	style.content_margin_left = 22
+	style.content_margin_right = 22
+	style.content_margin_top = 18
+	style.content_margin_bottom = 18
+	return style
+
+
+func _demolition_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("111b22")
+	style.border_color = Color("e6a74d")
+	style.set_border_width_all(4)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 14
+	style.content_margin_bottom = 14
+	return style
+
+
+func _make_demolition_button(text: String, color: Color) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(140, 32)
+	button.add_theme_font_size_override("font_size", 13)
+	button.add_theme_stylebox_override("normal", _button_style(color))
+	button.add_theme_stylebox_override("hover", _button_style(color.lightened(0.16)))
+	button.add_theme_stylebox_override("pressed", _button_style(color.darkened(0.18)))
+	return button
+
+
+func _button_style(color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.border_color = Color("d5e0de")
+	style.set_border_width_all(2)
+	return style

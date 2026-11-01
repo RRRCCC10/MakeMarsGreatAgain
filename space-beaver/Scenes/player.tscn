@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://b4uxjr037jbt5" path="res://Scenes/node.gd" id="2_cvnsp"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_y32lf"]
-radius = 36.0
+radius = 11.0
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_oladd"]
 animations = []
@@ -21,6 +21,7 @@ sprite_frames = SubResource("SpriteFrames_oladd")
 animation = &""
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1709338531]
+zoom = Vector2(2, 2)
 
 [node name="Node" type="Node" parent="." unique_id=1067384136]
 script = ExtResource("2_cvnsp")

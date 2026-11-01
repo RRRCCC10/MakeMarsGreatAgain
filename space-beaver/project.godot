@@ -17,6 +17,20 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 [autoload]
 
 GridManager="*uid://c7ecvjanc0yhn"
+Inventory="*res://scripts/Inventory.gd"
+Oxygen="*res://scripts/Oxygen.gd"
+SuitSystem="*res://scripts/SuitSystem.gd"
+Hunger="*res://scripts/Hunger.gd"
+Hydration="*res://scripts/Hydration.gd"
+Economy="*res://scripts/Economy.gd"
+BuildableRegistry="*res://scripts/BuildableRegistry.gd"
+WorldClock="*res://scripts/WorldClock.gd"
+Radiation="*res://scripts/Radiation.gd"
+PipeManager="*res://scripts/PipeManager.gd"
+PowerGrid="*res://scripts/PowerGrid.gd"
+DeliveryManager="*res://scripts/DeliveryManager.gd"
+Shop="*res://scripts/Shop.gd"
+GameState="*res://scripts/GameState.gd"
 
 [display]
 
@@ -61,4 +75,5 @@ left_click={
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
