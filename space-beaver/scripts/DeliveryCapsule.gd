@@ -3,9 +3,9 @@ extends StaticBody2D
 
 enum State { DESCENDING, LANDED }
 
-const LANDED_SOURCE := preload("res://sprites/delivery_capsule_landed.jpg")
-const BLINK_SOURCE := preload("res://sprites/delivery_capsule_blink.jpg")
-const PARACHUTE_SOURCE := preload("res://sprites/delivery_capsule_parachute.jpg")
+const LANDED_SOURCE := preload("res://sprites/delivery-capsule/delivery-capsule-landed.jpg")
+const BLINK_SOURCE := preload("res://sprites/delivery-capsule/delivery-capsule-blink.jpg")
+const PARACHUTE_SOURCE := preload("res://sprites/delivery-capsule/delivery-capsule-landing.jpg")
 const LANDED_FRAME_SIZE := Vector2i(32, 32)
 const PARACHUTE_FRAME_SIZE := Vector2i(32, 64)
 const DESCENT_SECONDS := 5.5

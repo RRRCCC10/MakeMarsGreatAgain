@@ -1,10 +1,10 @@
 extends CanvasLayer
 
-const SOLAR_TEXTURE := preload("res://sprites/pannello_solare_classico_32x16.png")
-const TRANSFORMER_SHEET := preload("res://sprites/trasformatore_spritesheet_con_cavi.png")
-const BATTERY_SHEET := preload("res://sprites/batteria_spritesheet_20_frame_con_cavi.png")
-const ICE_DRILL_SHEET := preload("res://sprites/trivella_ghiaccio_spritesheet.png")
-const PLAYER_SHEET := preload("res://sprites/astronauta spritesheet.png")
+const SOLAR_TEXTURE := preload("res://sprites/machines/solar-panel-spritesheet.png")
+const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
+const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
+const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 
 var overlay: ColorRect
 var message_label: Label

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://chsqmrkdrm6ja"
-path="res://.godot/imported/sand-spritesheet.png-81487dd67c7b1024b54b5295c7434382.ctex"
+uid="uid://baonqlwgi5vw7"
+path="res://.godot/imported/ice-drill-spritesheet.png-a6b6161ee940c5a0c6f1c988b34f5b14.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/sand-spritesheet.png"
-dest_files=["res://.godot/imported/sand-spritesheet.png-81487dd67c7b1024b54b5295c7434382.ctex"]
+source_file="res://sprites/machines/ice-drill-spritesheet.png"
+dest_files=["res://.godot/imported/ice-drill-spritesheet.png-a6b6161ee940c5a0c6f1c988b34f5b14.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dw2fuqhdsp80y"
-path="res://.godot/imported/cavo_spritesheet.png-f0cb5a68d1584324cfecd682902a78aa.ctex"
+uid="uid://dhgaeudh12dc"
+path="res://.godot/imported/transformer-spritesheet.png-e3a2d2831c8a80455a3885f20896ffcd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/cavo_spritesheet.png"
-dest_files=["res://.godot/imported/cavo_spritesheet.png-f0cb5a68d1584324cfecd682902a78aa.ctex"]
+source_file="res://sprites/machines/transformer-spritesheet.png"
+dest_files=["res://.godot/imported/transformer-spritesheet.png-e3a2d2831c8a80455a3885f20896ffcd.ctex"]
 
 [params]
 

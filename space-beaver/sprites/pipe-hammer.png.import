@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://5et218u2ikuq"
-path="res://.godot/imported/delivery_capsule_blink.jpg-45ae791d3b24f1774631d83e079f5640.ctex"
+uid="uid://cbd2dxhsb7tbl"
+path="res://.godot/imported/pipe-hammer.png-5b255550264a196d197c00eb2b84a53d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/delivery_capsule_blink.jpg"
-dest_files=["res://.godot/imported/delivery_capsule_blink.jpg-45ae791d3b24f1774631d83e079f5640.ctex"]
+source_file="res://sprites/pipe-hammer.png"
+dest_files=["res://.godot/imported/pipe-hammer.png-5b255550264a196d197c00eb2b84a53d.ctex"]
 
 [params]
 

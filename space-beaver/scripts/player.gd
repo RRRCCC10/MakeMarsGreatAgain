@@ -3,7 +3,7 @@ extends CharacterBody2D
 const SPEED := 190.0
 const PICKUP_DISTANCE := 70.0
 const FRAME_SIZE := Vector2i(32, 32)
-const PLAYER_SHEET := preload("res://sprites/astronauta spritesheet.png")
+const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 

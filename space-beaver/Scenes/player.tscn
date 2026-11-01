@@ -7,7 +7,12 @@
 radius = 11.0
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_oladd"]
-animations = []
+animations = [{
+"frames": [],
+"loop": 1,
+"name": &"new_animation",
+"speed": 5.0
+}]
 
 [node name="player" type="CharacterBody2D" unique_id=219627335]
 script = ExtResource("1_v0iea")
@@ -16,9 +21,10 @@ script = ExtResource("1_v0iea")
 shape = SubResource("CircleShape2D_y32lf")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=193904927]
+y_sort_enabled = true
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_oladd")
-animation = &""
+animation = &"new_animation"
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1709338531]
 zoom = Vector2(2, 2)

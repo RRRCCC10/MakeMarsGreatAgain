@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bol4rd042v77x"
-path="res://.godot/imported/pannello_solare_classico_32x16.png-6ca1f9c4ebf73c9ee51c1e42e7d28de5.ctex"
+uid="uid://crln480r1hl3a"
+path="res://.godot/imported/energy-pipe-spritesheet.png-c7aec7aacde42c09883c755b8e31115d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/pannello_solare_classico_32x16.png"
-dest_files=["res://.godot/imported/pannello_solare_classico_32x16.png-6ca1f9c4ebf73c9ee51c1e42e7d28de5.ctex"]
+source_file="res://sprites/machines/energy-pipe-spritesheet.png"
+dest_files=["res://.godot/imported/energy-pipe-spritesheet.png-c7aec7aacde42c09883c755b8e31115d.ctex"]
 
 [params]
 

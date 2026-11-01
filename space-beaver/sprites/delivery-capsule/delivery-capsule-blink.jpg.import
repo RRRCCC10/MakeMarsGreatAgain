@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://vw85jvjbsf4r"
-path="res://.godot/imported/delivery_capsule_landed.jpg-9bd2a1d3e4bc2d83871cdfbeaed0eb24.ctex"
+uid="uid://cgytildlo1f8t"
+path="res://.godot/imported/delivery-capsule-blink.jpg-c5ff6b60889e99cffc751ba36e2ebf34.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/delivery_capsule_landed.jpg"
-dest_files=["res://.godot/imported/delivery_capsule_landed.jpg-9bd2a1d3e4bc2d83871cdfbeaed0eb24.ctex"]
+source_file="res://sprites/delivery-capsule/delivery-capsule-blink.jpg"
+dest_files=["res://.godot/imported/delivery-capsule-blink.jpg-c5ff6b60889e99cffc751ba36e2ebf34.ctex"]
 
 [params]
 

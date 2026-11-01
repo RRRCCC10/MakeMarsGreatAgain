@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d4dhmeouag3pf"
-path="res://.godot/imported/batteria_spritesheet_20_frame_con_cavi.png-9032cd6f1d9165d78423201a5cefb278.ctex"
+uid="uid://bo7rut66kcknq"
+path="res://.godot/imported/battery-spritesheet.png-d037d07c879fad8084fa4977910d11ad.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/batteria_spritesheet_20_frame_con_cavi.png"
-dest_files=["res://.godot/imported/batteria_spritesheet_20_frame_con_cavi.png-9032cd6f1d9165d78423201a5cefb278.ctex"]
+source_file="res://sprites/machines/battery-spritesheet.png"
+dest_files=["res://.godot/imported/battery-spritesheet.png-d037d07c879fad8084fa4977910d11ad.ctex"]
 
 [params]
 

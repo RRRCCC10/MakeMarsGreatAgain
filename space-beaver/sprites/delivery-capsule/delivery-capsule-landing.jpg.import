@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c40vrmju11tlm"
-path="res://.godot/imported/astronauta spritesheet.png-96a9afdd21fbc3ba265cc9afae06aee7.ctex"
+uid="uid://btwr45ofs61iw"
+path="res://.godot/imported/delivery-capsule-landing.jpg-f4f35c3d1de8299ecb0a6024a18fb1ae.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/astronauta spritesheet.png"
-dest_files=["res://.godot/imported/astronauta spritesheet.png-96a9afdd21fbc3ba265cc9afae06aee7.ctex"]
+source_file="res://sprites/delivery-capsule/delivery-capsule-landing.jpg"
+dest_files=["res://.godot/imported/delivery-capsule-landing.jpg-f4f35c3d1de8299ecb0a6024a18fb1ae.ctex"]
 
 [params]
 

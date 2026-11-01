@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://pg8ydab5x1jg"
-path="res://.godot/imported/spritesheet pino.png-f08622f99aabe8cdd705cc0f1cb5b067.ctex"
+uid="uid://b767jhgashttw"
+path="res://.godot/imported/delivery-capsule-landed.jpg-4b83aa186b755a419b77ad761a44ce63.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/spritesheet pino.png"
-dest_files=["res://.godot/imported/spritesheet pino.png-f08622f99aabe8cdd705cc0f1cb5b067.ctex"]
+source_file="res://sprites/delivery-capsule/delivery-capsule-landed.jpg"
+dest_files=["res://.godot/imported/delivery-capsule-landed.jpg-4b83aa186b755a419b77ad761a44ce63.ctex"]
 
 [params]
 

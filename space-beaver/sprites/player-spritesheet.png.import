@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c6sdu7wx7jhyd"
-path="res://.godot/imported/trasformatore_spritesheet_con_cavi.png-2bbb94c74864508709fe165ae6374eed.ctex"
+uid="uid://cxgblw0674kgc"
+path="res://.godot/imported/player-spritesheet.png-19108b35677945e220e267fc2a9f6737.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/trasformatore_spritesheet_con_cavi.png"
-dest_files=["res://.godot/imported/trasformatore_spritesheet_con_cavi.png-2bbb94c74864508709fe165ae6374eed.ctex"]
+source_file="res://sprites/player-spritesheet.png"
+dest_files=["res://.godot/imported/player-spritesheet.png-19108b35677945e220e267fc2a9f6737.ctex"]
 
 [params]
 

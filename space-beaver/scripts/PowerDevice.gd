@@ -1,10 +1,10 @@
 class_name PowerDevice
 extends Node2D
 
-const SOLAR_TEXTURE := preload("res://sprites/pannello_solare_classico_32x16.png")
-const TRANSFORMER_SHEET := preload("res://sprites/trasformatore_spritesheet_con_cavi.png")
-const BATTERY_SHEET := preload("res://sprites/batteria_spritesheet_20_frame_con_cavi.png")
-const ICE_DRILL_SHEET := preload("res://sprites/trivella_ghiaccio_spritesheet.png")
+const SOLAR_TEXTURE := preload("res://sprites/machines/solar-panel-spritesheet.png")
+const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
+const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
+const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
 const TRANSFORMER_FRAME_SIZE := Vector2i(32, 32)
 const BATTERY_FRAME_SIZE := Vector2i(16, 16)
 const ICE_DRILL_FRAME_SIZE := Vector2i(32, 48)

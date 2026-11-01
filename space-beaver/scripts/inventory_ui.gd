@@ -1,14 +1,14 @@
 extends CanvasLayer
 
 const ROCK_ICON := preload("res://sprites/rock.png")
-const WATER_ICON := preload("res://sprites/water_bottle.jpg")
-const RATION_ICON := preload("res://sprites/food_ration.jpg")
-const HAMMER_ICON := preload("res://sprites/pipe_hammer.png")
-const SOLAR_ICON := preload("res://sprites/pannello_solare_classico_32x16.png")
-const TRANSFORMER_SHEET := preload("res://sprites/trasformatore_spritesheet_con_cavi.png")
-const BATTERY_SHEET := preload("res://sprites/batteria_spritesheet_20_frame_con_cavi.png")
-const ICE_DRILL_SHEET := preload("res://sprites/trivella_ghiaccio_spritesheet.png")
-const PLAYER_SHEET := preload("res://sprites/astronauta spritesheet.png")
+const WATER_ICON := preload("res://sprites/water-bottle.jpg")
+const RATION_ICON := preload("res://sprites/food-ration.jpg")
+const HAMMER_ICON := preload("res://sprites/pipe-hammer.png")
+const SOLAR_ICON := preload("res://sprites/machines/solar-panel-spritesheet.png")
+const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
+const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
+const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"
 
 var hotbar_buttons: Array[Button] = []

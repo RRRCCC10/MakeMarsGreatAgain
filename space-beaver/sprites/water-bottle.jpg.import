@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bqyxt86f5ss8b"
-path="res://.godot/imported/tubi spritesheet.png-9fb13663ca8aaa552ad6d59306261886.ctex"
+uid="uid://drk2q2lvgf3ob"
+path="res://.godot/imported/water-bottle.jpg-5856ca7be7c0f5a77766a5440e40da6e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/tubi spritesheet.png"
-dest_files=["res://.godot/imported/tubi spritesheet.png-9fb13663ca8aaa552ad6d59306261886.ctex"]
+source_file="res://sprites/water-bottle.jpg"
+dest_files=["res://.godot/imported/water-bottle.jpg-5856ca7be7c0f5a77766a5440e40da6e.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bhwxyumgbi1q8"
-path="res://.godot/imported/trivella_ghiaccio_spritesheet.png-35419d91a769c93513c38d8f2d4c21f0.ctex"
+uid="uid://2ed6t7jdauci"
+path="res://.godot/imported/pipe-spritesheet.png-f4f4888bd0e70b297375ef1c826d34df.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/trivella_ghiaccio_spritesheet.png"
-dest_files=["res://.godot/imported/trivella_ghiaccio_spritesheet.png-35419d91a769c93513c38d8f2d4c21f0.ctex"]
+source_file="res://sprites/machines/pipe-spritesheet.png"
+dest_files=["res://.godot/imported/pipe-spritesheet.png-f4f4888bd0e70b297375ef1c826d34df.ctex"]
 
 [params]
 

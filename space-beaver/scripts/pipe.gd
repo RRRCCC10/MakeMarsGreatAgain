@@ -4,7 +4,7 @@ extends Node2D
 enum ShapeType { STRAIGHT, CROSS }
 enum Category { GENERIC, OXYGEN, WATER, HYDROGEN }
 
-const PIPE_SHEET := preload("res://sprites/tubi spritesheet.png")
+const PIPE_SHEET := preload("res://sprites/machines/pipe-spritesheet.png")
 const FRAME_SIZE := Vector2i(16, 16)
 
 @onready var pipe_sprite: Sprite2D = $Sprite2D

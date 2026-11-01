@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bni6naxbnojsg"
-path="res://.godot/imported/water_bottle.jpg-4ade906e03235468c18b84839079e99e.ctex"
+uid="uid://dtn7awfvrr2p7"
+path="res://.godot/imported/solar-panel-spritesheet.png-0d268f2ab24eebedb289b61813370b2e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://sprites/water_bottle.jpg"
-dest_files=["res://.godot/imported/water_bottle.jpg-4ade906e03235468c18b84839079e99e.ctex"]
+source_file="res://sprites/machines/solar-panel-spritesheet.png"
+dest_files=["res://.godot/imported/solar-panel-spritesheet.png-0d268f2ab24eebedb289b61813370b2e.ctex"]
 
 [params]
 
