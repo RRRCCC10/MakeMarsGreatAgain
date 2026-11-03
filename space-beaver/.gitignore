@@ -3,4 +3,5 @@
 /android/
 
 # File temporanei creati da Godot durante il ricaricamento dell'estensione.
+addons/godot_vim/bin/~godot_vim.dll
 addons/godot_vim/bin/~godot_vim.dll~*.TMP

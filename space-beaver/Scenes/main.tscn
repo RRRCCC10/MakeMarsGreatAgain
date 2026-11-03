@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/delivery_ui.gd" id="10_delivery"]
 [ext_resource type="Script" path="res://scripts/death_ui.gd" id="11_death"]
 [ext_resource type="Script" path="res://scripts/radiation_ui.gd" id="12_radiation"]
+[ext_resource type="Script" path="res://scripts/MissionLandingSequence.gd" id="13_landing"]
 
 [node name="main" type="Node2D" unique_id=49560634]
 
@@ -42,6 +43,9 @@ script = ExtResource("11_death")
 
 [node name="RadiationUI" type="CanvasLayer" parent="."]
 script = ExtResource("12_radiation")
+
+[node name="LandingSequence" type="Node2D" parent="."]
+script = ExtResource("13_landing")
 
 [node name="Rock1" parent="." instance=ExtResource("4_rock")]
 position = Vector2(96, 32)

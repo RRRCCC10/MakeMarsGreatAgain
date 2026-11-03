@@ -164,6 +164,8 @@ func _try_demolish_at_mouse(item: Dictionary) -> void:
 	var entry := BuildableRegistry.find_at(camera.get_global_mouse_position())
 	if entry.is_empty():
 		return
+	if entry.get("kind", "") == "mission_structure":
+		return
 	if entry.get("kind", "") == "power_device":
 		BuildableRegistry.destroy(entry)
 		return
