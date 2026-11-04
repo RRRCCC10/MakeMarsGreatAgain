@@ -329,6 +329,12 @@ func contains_world_point(world_point: Vector2) -> bool:
 	return Rect2(global_position - Vector2(32.0, 32.0), Vector2(64.0, 64.0)).has_point(world_point)
 
 
+func get_thermal_shelter_bonus_c() -> float:
+	# Il modulo di atterraggio non e' ancora un habitat completo, ma offre
+	# pareti e schermature sufficienti a ridurre in parte la perdita di calore.
+	return 18.0
+
+
 func _deny_removal() -> bool:
 	return false
 

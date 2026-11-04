@@ -448,9 +448,10 @@ func _refresh_suit_slot() -> void:
 	suit_slot_icon.texture = _first_frame(PLAYER_SHEET, Vector2i(32, 32))
 	suit_slot_icon.modulate = definition.get("tint", Color.WHITE)
 	suit_slot_name.text = str(definition.get("short_name", "EVA"))
-	suit_stats_label.text = "SOL %d%%   COS %d%%\nO2 %.0f   VELOCITA' %d%%" % [
+	suit_stats_label.text = "SOL %d%%   COS %d%%   FREDDO %+.0f°C\nO2 %.0f   VELOCITA' %d%%" % [
 		roundi(float(definition.get("solar_protection", 0.0)) * 100.0),
 		roundi(float(definition.get("cosmic_protection", 0.0)) * 100.0),
+		float(definition.get("cold_tolerance_c", -68.0)),
 		float(definition.get("oxygen_capacity", 100.0)),
 		roundi(float(definition.get("movement_multiplier", 1.0)) * 100.0),
 	]

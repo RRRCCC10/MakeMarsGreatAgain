@@ -37,21 +37,21 @@ const CATALOG := {
 		"price": 650_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Schermatura solare 45%, cosmica 8% e serbatoio O2 da 130 unita'.",
+		"description": "Solare 45%, cosmica 8%, O₂ 130 e protezione termica fino a −82°C.",
 	},
 	"suit_explorer": {
 		"name": "Tuta EVA Explorer",
 		"price": 1_100_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Schermatura solare 60%, cosmica 12%, mobilita' piena e O2 da 160 unita'.",
+		"description": "Solare 60%, cosmica 12%, O₂ 160 e protezione termica fino a −96°C.",
 	},
 	"suit_storm": {
 		"name": "Tuta EVA Storm",
 		"price": 1_800_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Schermatura solare 75%, cosmica 18% e O2 da 200 unita'. Piu' pesante.",
+		"description": "Solare 75%, cosmica 18%, O₂ 200 e protezione termica fino a −110°C.",
 	},
 }
 

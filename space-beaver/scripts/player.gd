@@ -28,7 +28,7 @@ func _physics_process(_delta: float) -> void:
 		_update_animation(Vector2.ZERO)
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = direction * SPEED * SuitSystem.get_movement_multiplier() * Radiation.get_movement_multiplier()
+	velocity = direction * SPEED * SuitSystem.get_movement_multiplier() * Radiation.get_movement_multiplier() * Temperature.get_movement_multiplier()
 	move_and_slide()
 	_update_animation(direction)
 

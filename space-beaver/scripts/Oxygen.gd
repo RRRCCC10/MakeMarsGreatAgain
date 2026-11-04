@@ -21,7 +21,11 @@ func _process(delta: float) -> void:
 	if is_in_closed_environment:
 		_set_oxygen(oxygen + RECOVERY_PER_SECOND * delta)
 	else:
-		_set_oxygen(oxygen - LOSS_PER_SECOND * delta)
+		var thermal_multiplier := 1.0
+		var temperature := get_node_or_null("/root/Temperature")
+		if temperature != null and temperature.has_method("get_oxygen_consumption_multiplier"):
+			thermal_multiplier = float(temperature.call("get_oxygen_consumption_multiplier"))
+		_set_oxygen(oxygen - LOSS_PER_SECOND * thermal_multiplier * delta)
 
 
 func set_closed_environment(value: bool) -> void:

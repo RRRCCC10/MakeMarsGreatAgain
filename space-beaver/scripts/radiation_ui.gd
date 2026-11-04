@@ -82,10 +82,11 @@ func _refresh(data: Dictionary) -> void:
 
 
 func _on_suit_changed(_suit_id: String, definition: Dictionary) -> void:
-	suit_label.text = "%s  ·  SOL %d%%  COS %d%%" % [
+	suit_label.text = "%s  ·  SOL %d%%  COS %d%%  TERM %+.0f°C" % [
 		str(definition.get("short_name", "EVA")),
 		roundi(float(definition.get("solar_protection", 0.0)) * 100.0),
 		roundi(float(definition.get("cosmic_protection", 0.0)) * 100.0),
+		float(definition.get("cold_tolerance_c", -68.0)),
 	]
 
 

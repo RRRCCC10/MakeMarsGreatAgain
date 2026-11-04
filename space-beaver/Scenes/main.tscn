@@ -14,6 +14,7 @@
 [ext_resource type="PackedScene" path="res://Scenes/rock_fields.tscn" id="14_rocks"]
 [ext_resource type="Script" path="res://scripts/RockScatter.gd" id="15_scatter"]
 [ext_resource type="Script" path="res://scripts/WorldMapUI.gd" id="16_worldmap"]
+[ext_resource type="Script" path="res://scripts/temperature_ui.gd" id="17_temperature"]
 
 [node name="main" type="Node2D" unique_id=49560634]
 
@@ -50,6 +51,9 @@ script = ExtResource("11_death")
 
 [node name="RadiationUI" type="CanvasLayer" parent="."]
 script = ExtResource("12_radiation")
+
+[node name="TemperatureUI" type="CanvasLayer" parent="."]
+script = ExtResource("17_temperature")
 
 [node name="WorldMapUI" type="CanvasLayer" parent="."]
 script = ExtResource("16_worldmap")

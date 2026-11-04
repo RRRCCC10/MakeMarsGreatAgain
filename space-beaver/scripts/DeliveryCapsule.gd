@@ -155,6 +155,12 @@ func is_landed() -> bool:
 	return state == State.LANDED
 
 
+func get_map_marker_world_position() -> Vector2:
+	# Durante la discesa la carta mostra il punto previsto di atterraggio,
+	# non la posizione temporanea del paracadute fuori dallo schermo.
+	return target_position if state == State.DESCENDING else global_position
+
+
 func get_total_item_count() -> int:
 	var total := 0
 	for item in contents:

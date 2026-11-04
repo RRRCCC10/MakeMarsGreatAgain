@@ -18,6 +18,7 @@ func _run() -> void:
 	root.get_node("Oxygen").oxygen = 12.0
 	root.get_node("Hunger").hunger = 13.0
 	root.get_node("Hydration").thirst = 14.0
+	root.get_node("Temperature").core_temperature_c = 31.0
 	root.get_node("DeliveryManager").queue_item("solar_panel", {"name": "Pannello solare", "placeable": true}, 1)
 	root.get_node("GameState").restart_from_scratch()
 	await process_frame
@@ -30,6 +31,7 @@ func _run() -> void:
 	_expect(root.get_node("Oxygen").oxygen > 99.9, "L'ossigeno deve ripartire da 100")
 	_expect(root.get_node("Hunger").hunger > 99.9, "La fame deve ripartire da 100")
 	_expect(root.get_node("Hydration").thirst > 99.9, "La sete deve ripartire da 100")
+	_expect(root.get_node("Temperature").core_temperature_c > 36.9, "La temperatura corporea deve ripartire da 37°C")
 	_expect(root.get_node("DeliveryManager").pending_order.is_empty(), "Gli ordini devono essere cancellati")
 	var authored_rock_count := 0
 	for rock in current_scene.get_tree().get_nodes_in_group("collectible_rocks"):

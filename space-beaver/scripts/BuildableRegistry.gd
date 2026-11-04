@@ -3,25 +3,32 @@ extends Node
 ## Registro comune per tubi, strutture e macchinari demolibili.
 ## I macchinari futuri possono registrarsi specificando nome, tipo e funzione di rimozione.
 
+signal entries_changed
+
 var is_modal_open := false
 var _entries: Array[Dictionary] = []
 
 
 func register_buildable(node: Node2D, display_name: String, kind: String, destroy_action: Callable) -> void:
-	unregister_buildable(node)
+	unregister_buildable(node, false)
 	_entries.append({
 		"node": node,
 		"display_name": display_name,
 		"kind": kind,
 		"destroy_action": destroy_action,
 	})
+	entries_changed.emit()
 
 
-func unregister_buildable(node: Node) -> void:
+func unregister_buildable(node: Node, notify: bool = true) -> void:
+	var changed := false
 	for index in range(_entries.size() - 1, -1, -1):
 		var registered_node: Node = _entries[index].get("node")
 		if not is_instance_valid(registered_node) or registered_node == node:
 			_entries.remove_at(index)
+			changed = true
+	if changed and notify:
+		entries_changed.emit()
 
 
 func find_at(world_position: Vector2) -> Dictionary:
@@ -56,12 +63,19 @@ func get_entries() -> Array[Dictionary]:
 
 
 func _cleanup_invalid_entries() -> void:
+	var changed := false
 	for index in range(_entries.size() - 1, -1, -1):
 		var node: Node = _entries[index].get("node")
 		if not is_instance_valid(node):
 			_entries.remove_at(index)
+			changed = true
+	if changed:
+		entries_changed.emit()
 
 
 func reset_for_new_mission() -> void:
 	is_modal_open = false
+	var had_entries := not _entries.is_empty()
 	_entries.clear()
+	if had_entries:
+		entries_changed.emit()

@@ -121,6 +121,8 @@ func _dispatch_pending_order() -> void:
 
 func _choose_landing_position() -> Vector2:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
+	# Il riferimento non e' la base: ogni ordine viene consegnato accanto
+	# all'astronauta, anche quando sta esplorando un settore remoto.
 	var center := player.global_position if player != null else Vector2.ZERO
 	var candidates: Array[Vector2] = [
 		Vector2(112, -64), Vector2(-112, -64), Vector2(128, 64), Vector2(-128, 64),

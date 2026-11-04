@@ -16,6 +16,8 @@ func _process(_delta: float) -> void:
 		_fail_mission("food")
 	elif Radiation.is_lethal():
 		_fail_mission("radiation")
+	elif Temperature.is_lethal():
+		_fail_mission("cold")
 
 
 func restart_from_scratch() -> void:
@@ -29,6 +31,7 @@ func restart_from_scratch() -> void:
 	Hydration.reset_for_new_mission()
 	WorldClock.reset_for_new_mission()
 	Radiation.reset_for_new_mission()
+	Temperature.reset_for_new_mission()
 	Shop.reset_for_new_mission()
 	DeliveryManager.reset_for_new_mission()
 	PipeManager.reset_for_new_mission()
@@ -69,6 +72,14 @@ func _get_death_data(reason: String) -> Dictionary:
 				"message": "La dose assorbita ha superato la capacita' dell'organismo di riparare i tessuti danneggiati. Su Marte la radiazione non si vede, ma ogni esposizione lascia una traccia.",
 				"epilogue": "Una base stabile deve proteggere la vita anche dal cielo.",
 				"color": Color("e779ff"),
+			}
+		"cold":
+			return {
+				"code": "TERM // 28.0°C",
+				"title": "IPOTERMIA FATALE",
+				"message": "Il freddo ha sottratto piu' calore di quanto la tuta potesse trattenere. La temperatura corporea e' scesa sotto la soglia in cui cuore, muscoli e cervello riescono a funzionare in modo coordinato.",
+				"epilogue": "Su Marte, la notte non e' soltanto buia: e' un sistema da progettare e sopravvivere.",
+				"color": Color("70c9ea"),
 			}
 	return {
 		"code": "KCAL // 000",

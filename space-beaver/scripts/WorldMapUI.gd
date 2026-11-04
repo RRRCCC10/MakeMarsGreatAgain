@@ -34,6 +34,8 @@ var map_zoom := 1.0
 const MIN_MAP_ZOOM := 1.0
 const MAX_MAP_ZOOM := 8.0
 const MAP_ZOOM_FACTOR := 1.25
+const STRUCTURE_ICON_SIZE := 15.0
+const AIRDROP_ICON_SIZE := 14.0
 
 
 func _ready() -> void:
@@ -171,7 +173,7 @@ func _build_ui() -> void:
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(hint)
 	var legend := Label.new()
-	legend.text = "Le aree non esplorate restano oscurate · scansione a 10 tile"
+	legend.text = "Aree inesplorate oscurate · △ AirDrop lampeggiante · strutture con sprite"
 	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	legend.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	legend.offset_top = -33
@@ -213,11 +215,104 @@ func _draw_map(canvas: Control) -> void:
 		var block_size := Vector2.ONE * (pixels_per_tile * DRAW_BLOCK_TILES + 0.35)
 		var draw_block := Rect2(map_rect.position + relative, block_size).intersection(map_rect)
 		canvas.draw_rect(draw_block, color, true)
+	_draw_structure_markers(canvas, map_rect, visible_rect, pixels_per_tile)
+	_draw_airdrop_markers(canvas, map_rect, visible_rect, pixels_per_tile)
 	if player != null:
 		var marker_pos := map_rect.position + Vector2(player_cell - visible_rect.position) * pixels_per_tile
 		canvas.draw_circle(marker_pos, 3.5, Color("ffd56b"))
 		canvas.draw_arc(marker_pos, 5.0, 0.0, TAU, 12, Color("fff2bd"), 1.0)
 	canvas.draw_rect(map_rect, Color("6bd8ed"), false, 1.5)
+
+
+func _draw_structure_markers(canvas: Control, map_rect: Rect2, visible_rect: Rect2i, pixels_per_tile: float) -> void:
+	for marker in get_structure_map_markers():
+		var point := _marker_point(marker.get("world_position", Vector2.ZERO), map_rect, visible_rect, pixels_per_tile)
+		if point == Vector2.INF:
+			continue
+		var icon_size := clampf(STRUCTURE_ICON_SIZE + map_zoom * 1.5, 12.0, 26.0)
+		canvas.draw_circle(point, icon_size * 0.62, Color("06151adf"), true)
+		var icon := marker.get("texture") as Texture2D
+		if icon != null:
+			canvas.draw_texture_rect(icon, Rect2(point - Vector2.ONE * icon_size * 0.5, Vector2.ONE * icon_size), false)
+		else:
+			canvas.draw_rect(Rect2(point - Vector2.ONE * 3.0, Vector2.ONE * 6.0), Color("8ee7f2"), true)
+		canvas.draw_circle(point, icon_size * 0.62, Color("72d6e5"), false, 1.0)
+
+
+func _draw_airdrop_markers(canvas: Control, map_rect: Rect2, visible_rect: Rect2i, pixels_per_tile: float) -> void:
+	var pulse := 0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.010)
+	for marker in get_airdrop_map_markers():
+		var point := _marker_point(marker.get("world_position", Vector2.ZERO), map_rect, visible_rect, pixels_per_tile)
+		if point == Vector2.INF:
+			continue
+		var ring_size := AIRDROP_ICON_SIZE * (0.72 + pulse * 0.42)
+		canvas.draw_circle(point, ring_size, Color(1.0, 0.67, 0.20, 0.22 + pulse * 0.35), false, 1.8)
+		canvas.draw_circle(point, 5.0 + pulse * 1.8, Color("ffae3d"), true)
+		var icon := marker.get("texture") as Texture2D
+		if icon != null:
+			canvas.draw_texture_rect(icon, Rect2(point - Vector2.ONE * AIRDROP_ICON_SIZE * 0.5, Vector2.ONE * AIRDROP_ICON_SIZE), false)
+		canvas.draw_arc(point, ring_size + 3.0, 0.0, TAU, 12, Color("ffe4a4"), 1.0)
+
+
+func _marker_point(world_position: Vector2, map_rect: Rect2, visible_rect: Rect2i, pixels_per_tile: float) -> Vector2:
+	if map_provider == null:
+		return Vector2.INF
+	var cell: Vector2i = map_provider.call("world_to_cell", world_position)
+	if not visible_rect.has_point(cell):
+		return Vector2.INF
+	return map_rect.position + (Vector2(cell - visible_rect.position) + Vector2.ONE * 0.5) * pixels_per_tile
+
+
+func get_structure_map_markers() -> Array[Dictionary]:
+	var markers: Array[Dictionary] = []
+	for entry in BuildableRegistry.get_entries():
+		if str(entry.get("kind", "")) == "pipe":
+			continue
+		var structure := entry.get("node") as Node2D
+		if structure == null or not is_instance_valid(structure):
+			continue
+		markers.append({
+			"node": structure,
+			"world_position": structure.global_position,
+			"texture": _find_sprite_texture(structure),
+		})
+	return markers
+
+
+func get_airdrop_map_markers() -> Array[Dictionary]:
+	var markers: Array[Dictionary] = []
+	for capsule in get_tree().get_nodes_in_group("delivery_capsules"):
+		if not capsule is Node2D or not is_instance_valid(capsule):
+			continue
+		var world_position: Vector2 = capsule.global_position
+		if capsule.has_method("get_map_marker_world_position"):
+			world_position = capsule.call("get_map_marker_world_position")
+		markers.append({
+			"node": capsule,
+			"world_position": world_position,
+			"texture": _find_sprite_texture(capsule),
+		})
+	return markers
+
+
+func get_map_marker_counts() -> Dictionary:
+	return {
+		"structures": get_structure_map_markers().size(),
+		"airdrops": get_airdrop_map_markers().size(),
+	}
+
+
+func _find_sprite_texture(root: Node) -> Texture2D:
+	var pending: Array[Node] = [root]
+	while not pending.is_empty():
+		var current: Node = pending.pop_front()
+		if current is Sprite2D:
+			var sprite := current as Sprite2D
+			if sprite.texture != null:
+				return sprite.texture
+		for child in current.get_children():
+			pending.append(child)
+	return null
 
 
 func get_explored_block_count() -> int:
