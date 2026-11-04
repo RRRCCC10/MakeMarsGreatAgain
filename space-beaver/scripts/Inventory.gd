@@ -4,6 +4,7 @@ signal changed
 
 const HOTBAR_SIZE := 5
 const BACKPACK_SIZE := 20
+const RockResource = preload("res://scripts/rock.gd")
 
 var hotbar: Array[Dictionary] = []
 var backpack: Array[Dictionary] = []
@@ -33,18 +34,18 @@ func reset_for_new_mission() -> void:
 	changed.emit()
 
 
-func add_rock() -> bool:
-	for i in BACKPACK_SIZE:
-		if backpack[i].get("id", "") == "rock" and backpack[i].get("count", 0) < 99:
-			backpack[i]["count"] += 1
-			changed.emit()
-			return true
-	for i in BACKPACK_SIZE:
-		if backpack[i].is_empty():
-			backpack[i] = {"id": "rock", "name": "Pietra", "count": 1, "placeable": false}
-			changed.emit()
-			return true
-	return false
+func add_rock(rock_variant: String = "roccia_rossa") -> bool:
+	var definition: Dictionary = RockResource.definition_for(rock_variant)
+	return add_item(
+		str(definition.get("item_id", "rock_roccia_rossa")),
+		str(definition.get("name", "Pietra")),
+		1,
+		false,
+	)
+
+
+func is_rock_item(item_id: String) -> bool:
+	return item_id.begins_with("rock_") or item_id == "rock"
 
 
 func can_add_item(item_id: String) -> bool:

@@ -1,0 +1,390 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://Scenes/rock.tscn" id="1_rock"]
+
+[node name="RockFields" type="Node2D"]
+
+; Pianura di Ares — regolite rossa comune e pietra ferrica rara.
+[node name="AresCommon01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-3500, -2500)
+rock_variant = "roccia_rossa"
+[node name="AresCommon02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2200, -3600)
+rock_variant = "roccia_rossa"
+[node name="AresCommon03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-700, -2900)
+rock_variant = "roccia_rossa"
+[node name="AresCommon04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1200, -3500)
+rock_variant = "roccia_rossa"
+[node name="AresCommon05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(2900, -2700)
+rock_variant = "roccia_rossa"
+[node name="AresCommon06" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4200, -1600)
+rock_variant = "roccia_rossa"
+[node name="AresCommon07" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4200, -1000)
+rock_variant = "roccia_rossa"
+[node name="AresCommon08" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2600, -500)
+rock_variant = "roccia_rossa"
+[node name="AresCommon09" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-1700, 800)
+rock_variant = "roccia_rossa"
+[node name="AresCommon10" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-850, 1600)
+rock_variant = "roccia_rossa"
+[node name="AresCommon11" parent="." instance=ExtResource("1_rock")]
+position = Vector2(750, 1800)
+rock_variant = "roccia_rossa"
+[node name="AresCommon12" parent="." instance=ExtResource("1_rock")]
+position = Vector2(2100, 600)
+rock_variant = "roccia_rossa"
+[node name="AresCommon13" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3500, 1500)
+rock_variant = "roccia_rossa"
+[node name="AresCommon14" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4400, 2900)
+rock_variant = "roccia_rossa"
+[node name="AresCommon15" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-3800, 2700)
+rock_variant = "roccia_rossa"
+[node name="AresCommon16" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8160, -6880)
+rock_variant = "roccia_rossa"
+[node name="AresCommon17" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-700, 3500)
+rock_variant = "roccia_rossa"
+[node name="AresCommon18" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1200, 4300)
+rock_variant = "roccia_rossa"
+[node name="AresCommon19" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3000, 3800)
+rock_variant = "roccia_rossa"
+[node name="AresCommon20" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4800, 4400)
+rock_variant = "roccia_rossa"
+[node name="AresRare01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-9440, -5920)
+rock_variant = "pietra_rossastra"
+[node name="AresRare02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3600, -3600)
+rock_variant = "pietra_rossastra"
+[node name="AresRare03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4800, 1800)
+rock_variant = "pietra_rossastra"
+[node name="AresRare04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(5000, 900)
+rock_variant = "pietra_rossastra"
+[node name="AresRare05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9120, -4960)
+rock_variant = "pietra_rossastra"
+
+; Calotta nord — ghiaccio polveroso comune e ghiaccio blu compatto raro.
+[node name="PolarCommon01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-1800, -14100)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(800, -14500)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3000, -13700)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2200, -11000)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2500, -12800)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon06" parent="." instance=ExtResource("1_rock")]
+position = Vector2(2500, -13000)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon07" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1000, -15000)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon08" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-5600, -15840)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon09" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4000, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon10" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-3040, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon11" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2080, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon12" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-1120, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon13" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-160, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon14" parent="." instance=ExtResource("1_rock")]
+position = Vector2(800, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon15" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1760, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon16" parent="." instance=ExtResource("1_rock")]
+position = Vector2(2720, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon17" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4000, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon18" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4640, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon19" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4960, -15520)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarCommon20" parent="." instance=ExtResource("1_rock")]
+position = Vector2(6880, -15840)
+rock_variant = "ghiaccio_leggero"
+[node name="PolarRare01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4960, -15520)
+rock_variant = "ghiaccio_blu"
+[node name="PolarRare02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(160, -15520)
+rock_variant = "ghiaccio_blu"
+[node name="PolarRare03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1440, -15520)
+rock_variant = "ghiaccio_blu"
+[node name="PolarRare04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3680, -15520)
+rock_variant = "ghiaccio_blu"
+[node name="PolarRare05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(7840, -15520)
+rock_variant = "ghiaccio_blu"
+
+; Crateri d'impatto — pietra da cratere comune e vetro d'impatto raro.
+[node name="CraterCommon01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-7100, -4200)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6650, -4350)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-7300, -3800)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6500, -3900)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9800, -3100)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon06" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10100, -3300)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon07" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9600, -2750)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon08" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10300, -2850)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon09" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-11000, 5900)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon10" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10500, 5700)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon11" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-11200, 6200)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon12" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10600, 6400)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon13" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2350, 9400)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon14" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2000, 9300)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon15" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2450, 9700)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon16" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2100, 9800)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon17" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6950, -4500)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon18" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9900, -2700)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon19" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10700, 6100)
+rock_variant = "roccia_grigia"
+[node name="CraterCommon20" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2250, 9100)
+rock_variant = "roccia_grigia"
+[node name="CraterRare01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6850, -4000)
+rock_variant = "roccia_scura"
+[node name="CraterRare02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9900, -3000)
+rock_variant = "roccia_scura"
+[node name="CraterRare03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10800, 6000)
+rock_variant = "roccia_scura"
+[node name="CraterRare04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-2200, 9550)
+rock_variant = "roccia_scura"
+[node name="CraterRare05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-7200, -4000)
+rock_variant = "roccia_scura"
+
+; Altopiano vulcanico — roccia basaltica comune e basalto nero raro.
+[node name="TharsisCommon01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8480, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8160, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6560, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6240, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-5920, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon06" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-5600, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon07" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-5280, -5600)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon08" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9440, -4320)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon09" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9760, -4320)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon10" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10080, -4320)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon11" parent="." instance=ExtResource("1_rock")]
+position = Vector2(8800, -4000)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon12" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9120, -4000)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon13" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9440, -4000)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon14" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9760, -4000)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon15" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10080, -4000)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon16" parent="." instance=ExtResource("1_rock")]
+position = Vector2(8480, -3680)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon17" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10400, -3680)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon18" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-9120, -5280)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon19" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-9120, -4960)
+rock_variant = "roccia_basaltica"
+[node name="TharsisCommon20" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8800, -4960)
+rock_variant = "roccia_basaltica"
+[node name="TharsisRare01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4600, -3200)
+rock_variant = "basalto"
+[node name="TharsisRare02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4400, 3300)
+rock_variant = "basalto"
+[node name="TharsisRare03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(3200, 5600)
+rock_variant = "basalto"
+[node name="TharsisRare04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(8800, -3680)
+rock_variant = "basalto"
+[node name="TharsisRare05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10720, -3680)
+rock_variant = "basalto"
+
+; Bordo della calotta — roccia criogenica comune e ghiaccio profondo raro.
+[node name="ValleyCommon01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10000, -12500)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8200, -13700)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6500, -11500)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4200, -13200)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(5200, -12500)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon06" parent="." instance=ExtResource("1_rock")]
+position = Vector2(7400, -11300)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon07" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9400, -12000)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon08" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-7000, -9800)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon09" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-4600, -10000)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon10" parent="." instance=ExtResource("1_rock")]
+position = Vector2(1500, -10400)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon11" parent="." instance=ExtResource("1_rock")]
+position = Vector2(4200, -9800)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon12" parent="." instance=ExtResource("1_rock")]
+position = Vector2(6500, -9500)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon13" parent="." instance=ExtResource("1_rock")]
+position = Vector2(8500, -10000)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon14" parent="." instance=ExtResource("1_rock")]
+position = Vector2(0, -12000)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon15" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-6000, -14200)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon16" parent="." instance=ExtResource("1_rock")]
+position = Vector2(6000, -11500)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon17" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-11040, -15840)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon18" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-9120, -15840)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon19" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-7200, -15840)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyCommon20" parent="." instance=ExtResource("1_rock")]
+position = Vector2(9440, -15840)
+rock_variant = "roccia_ghiacciata"
+[node name="ValleyRare01" parent="." instance=ExtResource("1_rock")]
+position = Vector2(10720, -15840)
+rock_variant = "ghiaccio_profondo"
+[node name="ValleyRare02" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-10720, -15520)
+rock_variant = "ghiaccio_profondo"
+[node name="ValleyRare03" parent="." instance=ExtResource("1_rock")]
+position = Vector2(-8160, -15520)
+rock_variant = "ghiaccio_profondo"
+[node name="ValleyRare04" parent="." instance=ExtResource("1_rock")]
+position = Vector2(7520, -15840)
+rock_variant = "ghiaccio_profondo"
+[node name="ValleyRare05" parent="." instance=ExtResource("1_rock")]
+position = Vector2(11680, -15840)
+rock_variant = "ghiaccio_profondo"

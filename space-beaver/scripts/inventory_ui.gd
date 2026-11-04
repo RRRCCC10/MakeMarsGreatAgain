@@ -1,6 +1,18 @@
 extends CanvasLayer
 
 const ROCK_ICON := preload("res://sprites/rock.png")
+const ROCK_ICONS: Dictionary = {
+	"rock_roccia_rossa": preload("res://sprites/rocks/roccia_rossa.png"),
+	"rock_pietra_rossastra": preload("res://sprites/rocks/pietra_rossastra.png"),
+	"rock_ghiaccio_leggero": preload("res://sprites/rocks/ghiaccio_leggero.png"),
+	"rock_ghiaccio_blu": preload("res://sprites/rocks/ghiaccio_blu.png"),
+	"rock_roccia_grigia": preload("res://sprites/rocks/roccia_grigia.png"),
+	"rock_roccia_scura": preload("res://sprites/rocks/roccia_scura.png"),
+	"rock_roccia_basaltica": preload("res://sprites/rocks/roccia_basaltica.png"),
+	"rock_basalto": preload("res://sprites/rocks/basalto.png"),
+	"rock_roccia_ghiacciata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
+	"rock_ghiaccio_profondo": preload("res://sprites/rocks/ghiaccio_profondo.png"),
+}
 const WATER_ICON := preload("res://sprites/water-bottle.jpg")
 const RATION_ICON := preload("res://sprites/food-ration.jpg")
 const HAMMER_ICON := preload("res://sprites/pipe-hammer.png")
@@ -309,16 +321,18 @@ func _refresh() -> void:
 	for index in Inventory.BACKPACK_SIZE:
 		var button := backpack_buttons[index]
 		var item := Inventory.backpack[index]
-		var is_rock: bool = item.get("id", "") == "rock"
+		var is_rock: bool = Inventory.is_rock_item(str(item.get("id", "")))
 		button.text = "x" + str(item.get("count", 0)) if is_rock else ""
 		button.alignment = HORIZONTAL_ALIGNMENT_RIGHT if is_rock else HORIZONTAL_ALIGNMENT_CENTER
-		if item.is_empty() or is_rock:
+		if item.is_empty():
 			backpack_name_labels[index].text = ""
+		elif is_rock:
+			backpack_name_labels[index].text = str(item.get("name", "Pietra"))
 		else:
 			backpack_name_labels[index].text = "%s x%d" % [str(item.get("name", "")), int(item.get("count", 0))]
 		var backpack_icon := _item_icon(item)
 		backpack_icons[index].texture = backpack_icon
-		backpack_icons[index].material = icon_mask_material if is_rock else null
+		backpack_icons[index].material = icon_mask_material if item.get("id", "") == "rock" else null
 		backpack_icons[index].position = Vector2(20, 5)
 		backpack_icons[index].size = Vector2(56, 50)
 		backpack_icons[index].scale = Vector2.ONE
@@ -330,7 +344,7 @@ func _refresh() -> void:
 	if Inventory.selected_backpack_index >= 0:
 		var selected := Inventory.backpack[Inventory.selected_backpack_index]
 		var selected_id := str(selected.get("id", ""))
-		detail_label.text = "Pietra raccolta · materiale da studiare, non piazzabile" if selected_id == "rock" else str(selected.get("name", ""))
+		detail_label.text = "%s · campione geologico, non piazzabile" % str(selected.get("name", "Pietra")) if Inventory.is_rock_item(selected_id) else str(selected.get("name", ""))
 	else:
 		detail_label.text = "Slot rapido " + str(Inventory.selected_hotbar_index + 1) + " · premi 1-5 per cambiarlo. Clicca un oggetto costruibile per equipaggiarlo."
 
@@ -361,7 +375,10 @@ func _update_hotbar_labels(index: int, item: Dictionary) -> void:
 
 
 func _item_icon(item: Dictionary) -> Texture2D:
-	match item.get("id", ""):
+	var item_id := str(item.get("id", ""))
+	if ROCK_ICONS.has(item_id):
+		return ROCK_ICONS[item_id]
+	match item_id:
 		"pipe_hammer":
 			return HAMMER_ICON
 		"water_bottle":

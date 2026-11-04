@@ -31,7 +31,11 @@ func _run() -> void:
 	_expect(root.get_node("Hunger").hunger > 99.9, "La fame deve ripartire da 100")
 	_expect(root.get_node("Hydration").thirst > 99.9, "La sete deve ripartire da 100")
 	_expect(root.get_node("DeliveryManager").pending_order.is_empty(), "Gli ordini devono essere cancellati")
-	_expect(current_scene.get_tree().get_nodes_in_group("collectible_rocks").size() == 10, "La mappa iniziale deve essere ripristinata")
+	var authored_rock_count := 0
+	for rock in current_scene.get_tree().get_nodes_in_group("collectible_rocks"):
+		if bool(rock.is_authored):
+			authored_rock_count += 1
+	_expect(authored_rock_count == 125, "Le rocce fisiche della mappa devono essere ripristinate")
 	if failures.is_empty():
 		print("RESTART_FROM_ZERO_SMOKE_OK")
 		quit(0)

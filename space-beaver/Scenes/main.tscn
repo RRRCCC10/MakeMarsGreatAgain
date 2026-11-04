@@ -1,8 +1,7 @@
 [gd_scene format=3 uid="uid://cchp7lkc7xij7"]
 
 [ext_resource type="PackedScene" uid="uid://c5hs5kjd08e5h" path="res://Scenes/player.tscn" id="1_jjgbg"]
-[ext_resource type="PackedScene" uid="uid://cfuv1tj0whd8j" path="res://Scenes/map.tscn" id="3_8gbba"]
-[ext_resource type="PackedScene" path="res://Scenes/rock.tscn" id="4_rock"]
+[ext_resource type="PackedScene" path="res://Scenes/map_streaming.tscn" id="3_8gbba"]
 [ext_resource type="Script" path="res://scripts/inventory_ui.gd" id="5_ui"]
 [ext_resource type="Script" path="res://scripts/survival_ui.gd" id="6_survival"]
 [ext_resource type="Script" path="res://scripts/shop_ui.gd" id="7_shop"]
@@ -12,13 +11,21 @@
 [ext_resource type="Script" path="res://scripts/death_ui.gd" id="11_death"]
 [ext_resource type="Script" path="res://scripts/radiation_ui.gd" id="12_radiation"]
 [ext_resource type="Script" path="res://scripts/MissionLandingSequence.gd" id="13_landing"]
+[ext_resource type="PackedScene" path="res://Scenes/rock_fields.tscn" id="14_rocks"]
+[ext_resource type="Script" path="res://scripts/RockScatter.gd" id="15_scatter"]
+[ext_resource type="Script" path="res://scripts/WorldMapUI.gd" id="16_worldmap"]
 
 [node name="main" type="Node2D" unique_id=49560634]
 
 [node name="player" parent="." unique_id=219627335 instance=ExtResource("1_jjgbg")]
 z_index = 1
 
-[node name="Node2D" parent="." unique_id=1293852038 instance=ExtResource("3_8gbba")]
+[node name="Map" parent="." unique_id=1293852038 instance=ExtResource("3_8gbba")]
+
+[node name="RockFields" parent="." instance=ExtResource("14_rocks")]
+
+[node name="RockScatter" type="Node2D" parent="."]
+script = ExtResource("15_scatter")
 
 [node name="DayNightEnvironment" type="Node2D" parent="."]
 script = ExtResource("9_daynight")
@@ -44,35 +51,8 @@ script = ExtResource("11_death")
 [node name="RadiationUI" type="CanvasLayer" parent="."]
 script = ExtResource("12_radiation")
 
+[node name="WorldMapUI" type="CanvasLayer" parent="."]
+script = ExtResource("16_worldmap")
+
 [node name="LandingSequence" type="Node2D" parent="."]
 script = ExtResource("13_landing")
-
-[node name="Rock1" parent="." instance=ExtResource("4_rock")]
-position = Vector2(96, 32)
-
-[node name="Rock2" parent="." instance=ExtResource("4_rock")]
-position = Vector2(210, -70)
-
-[node name="Rock3" parent="." instance=ExtResource("4_rock")]
-position = Vector2(-150, 145)
-
-[node name="Rock4" parent="." instance=ExtResource("4_rock")]
-position = Vector2(-330, -130)
-
-[node name="Rock5" parent="." instance=ExtResource("4_rock")]
-position = Vector2(360, 200)
-
-[node name="Rock6" parent="." instance=ExtResource("4_rock")]
-position = Vector2(520, -220)
-
-[node name="Rock7" parent="." instance=ExtResource("4_rock")]
-position = Vector2(-510, 265)
-
-[node name="Rock8" parent="." instance=ExtResource("4_rock")]
-position = Vector2(690, 45)
-
-[node name="Rock9" parent="." instance=ExtResource("4_rock")]
-position = Vector2(-730, -310)
-
-[node name="Rock10" parent="." instance=ExtResource("4_rock")]
-position = Vector2(870, 360)

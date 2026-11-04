@@ -27,13 +27,13 @@ texture = ExtResource("2_texture")
 shape = SubResource("CircleShape2D_rock")
 
 [node name="PickupMarker" type="Label" parent="."]
-offset_left = -12.0
-offset_top = -38.0
-offset_right = 12.0
-offset_bottom = -15.0
+offset_left = -64.0
+offset_top = -28.0
+offset_right = 64.0
+offset_bottom = -12.0
 theme_override_colors/font_outline_color = Color(0.08, 0.08, 0.08, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 9
 text = "E"
 horizontal_alignment = 1
 vertical_alignment = 1

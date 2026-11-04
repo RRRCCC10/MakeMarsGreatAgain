@@ -4,8 +4,12 @@ const SPEED := 190.0
 const PICKUP_DISTANCE := 70.0
 const FRAME_SIZE := Vector2i(32, 32)
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
+const MIN_CAMERA_ZOOM := 0.35
+const MAX_CAMERA_ZOOM := 3.0
+const ZOOM_FACTOR := 1.18
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var camera: Camera2D = $Camera2D
 
 var facing := "down"
 
@@ -94,6 +98,19 @@ func nearest_delivery_capsule() -> Node:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed:
+		var map_ui := get_tree().get_first_node_in_group("world_map_ui")
+		if map_ui != null and map_ui.has_method("handle_mouse_wheel") and bool(map_ui.call("handle_mouse_wheel", event)):
+			get_viewport().set_input_as_handled()
+			return
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_set_camera_zoom(camera.zoom.x * ZOOM_FACTOR)
+			get_viewport().set_input_as_handled()
+			return
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_set_camera_zoom(camera.zoom.x / ZOOM_FACTOR)
+			get_viewport().set_input_as_handled()
+			return
 	if not Inventory.is_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
 		var capsule := nearest_delivery_capsule()
 		if capsule != null:
@@ -101,10 +118,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		var rock := nearest_rock()
-		if rock != null and Inventory.add_rock():
-			rock.queue_free()
-			PowerGrid.request_rebuild()
+		if rock != null and rock.has_method("collect") and bool(rock.call("collect")):
 			get_viewport().set_input_as_handled()
+
+
+func _set_camera_zoom(value: float) -> void:
+	var clamped := clampf(value, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
+	camera.zoom = Vector2.ONE * clamped
 
 
 func _on_suit_equipped(_suit_id: String, definition: Dictionary) -> void:
