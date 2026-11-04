@@ -4,6 +4,8 @@ signal changed
 
 const HOTBAR_SIZE := 5
 const BACKPACK_SIZE := 20
+const ROVER_ITEM_ID := "rover"
+const ROVER_STARTING_BATTERY_KWH := 72.0
 const RockResource = preload("res://scripts/rock.gd")
 
 var hotbar: Array[Dictionary] = []
@@ -67,6 +69,8 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 	var suit_system := get_node_or_null("/root/SuitSystem")
 	if suit_system != null and bool(suit_system.call("is_suit", item_id)):
 		return amount == 1 and bool(suit_system.call("acquire_suit", item_id))
+	if item_id == ROVER_ITEM_ID:
+		return _add_rover_units(amount, ROVER_STARTING_BATTERY_KWH, item_name, placeable)
 	if not can_add_item(item_id):
 		return false
 	for item in hotbar + backpack:
@@ -85,6 +89,65 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 			changed.emit()
 			return true
 	return false
+
+
+func add_rover(battery_energy_kwh: float) -> bool:
+	"""Aggiunge un rover mantenendo la carica effettiva del suo pacco batteria."""
+	return _add_rover_units(1, battery_energy_kwh, "Rover esplorativo", true)
+
+
+func peek_selected_rover_battery() -> float:
+	var item := get_selected_item()
+	if str(item.get("id", "")) != ROVER_ITEM_ID or int(item.get("count", 0)) <= 0:
+		return -1.0
+	_ensure_rover_battery_list(item)
+	var batteries: Array = item["battery_kwhs"]
+	return clampf(float(batteries[0]), 0.0, 120.0) if not batteries.is_empty() else ROVER_STARTING_BATTERY_KWH
+
+
+func _add_rover_units(amount: int, battery_energy_kwh: float, item_name: String, placeable: bool) -> bool:
+	if amount <= 0 or not can_add_item(ROVER_ITEM_ID):
+		return false
+	var remaining := amount
+	for item in hotbar + backpack:
+		if str(item.get("id", "")) != ROVER_ITEM_ID or int(item.get("count", 0)) >= 99:
+			continue
+		_ensure_rover_battery_list(item)
+		var batteries: Array = item["battery_kwhs"]
+		var capacity := mini(remaining, 99 - int(item.get("count", 0)))
+		for _index in capacity:
+			batteries.append(clampf(battery_energy_kwh, 0.0, 120.0) if remaining == 1 else ROVER_STARTING_BATTERY_KWH)
+		item["count"] = int(item.get("count", 0)) + capacity
+		remaining -= capacity
+		if remaining <= 0:
+			changed.emit()
+			return true
+	for index in BACKPACK_SIZE:
+		if not backpack[index].is_empty():
+			continue
+		var batteries: Array = []
+		for _index in amount:
+			batteries.append(clampf(battery_energy_kwh, 0.0, 120.0) if amount == 1 else ROVER_STARTING_BATTERY_KWH)
+		backpack[index] = {
+			"id": ROVER_ITEM_ID,
+			"name": item_name,
+			"count": amount,
+			"placeable": placeable,
+			"battery_kwhs": batteries,
+		}
+		changed.emit()
+		return true
+	return false
+
+
+func _ensure_rover_battery_list(item: Dictionary) -> void:
+	var count := maxi(0, int(item.get("count", 0)))
+	var batteries: Array = item.get("battery_kwhs", [])
+	while batteries.size() < count:
+		batteries.append(ROVER_STARTING_BATTERY_KWH)
+	while batteries.size() > count:
+		batteries.pop_back()
+	item["battery_kwhs"] = batteries
 
 
 func count_item(item_id: String) -> int:
@@ -135,6 +198,11 @@ func consume_selected_item() -> bool:
 	var item := get_selected_item()
 	if item.is_empty() or int(item.get("count", 0)) <= 0:
 		return false
+	if str(item.get("id", "")) == ROVER_ITEM_ID:
+		_ensure_rover_battery_list(item)
+		var batteries: Array = item["battery_kwhs"]
+		if not batteries.is_empty():
+			batteries.pop_front()
 	item["count"] -= 1
 	if item["count"] <= 0:
 		# Le razioni devono restare visibili a zero, per rendere chiaro che sono finite.

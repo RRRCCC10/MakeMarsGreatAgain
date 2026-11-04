@@ -78,12 +78,13 @@ static func can_place_at(world_position: Vector2) -> bool:
 	return true
 
 
-static func place(parent: Node, cell: Vector2i) -> Rover:
+static func place(parent: Node, cell: Vector2i, battery_energy_kwh: float = STARTING_ENERGY_KWH) -> Rover:
 	var target_position := placement_world_position(cell)
 	if not can_place_at(target_position):
 		return null
 	var rover := Rover.new()
 	rover.position = target_position
+	rover.battery_energy_kwh = clampf(battery_energy_kwh, 0.0, BATTERY_CAPACITY_KWH)
 	parent.add_child(rover)
 	return rover
 
@@ -230,7 +231,7 @@ func pickup() -> bool:
 	var inventory := _service("Inventory")
 	if is_instance_valid(driver) or inventory == null or not bool(inventory.call("can_add_item", "rover")):
 		return false
-	if not bool(inventory.call("add_item", "rover", "Rover esplorativo", 1, true)):
+	if not bool(inventory.call("add_rover", battery_energy_kwh)):
 		return false
 	queue_free()
 	return true

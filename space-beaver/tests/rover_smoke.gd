@@ -78,6 +78,26 @@ func _run() -> void:
 	rover.call("_update_panel_animation", 1.0)
 	_expect(not rover.is_panels_open(), "L'animazione di chiusura deve rendere nuovamente il rover guidabile")
 	_expect(rover.get_machine_specs().get("title", "").contains("ROVER"), "Il rover deve offrire la propria scheda tecnica")
+	# La demolizione deve conservare la carica reale, non ricreare sempre il 60%.
+	rover.battery_energy_kwh = 31.25
+	_expect(rover.pickup(), "Il rover fermo deve poter essere raccolto")
+	await process_frame
+	var rover_backpack_index := -1
+	for index in inventory.backpack.size():
+		if str(inventory.backpack[index].get("id", "")) == "rover":
+			rover_backpack_index = index
+			break
+	_expect(rover_backpack_index >= 0, "Il rover raccolto deve finire nell'inventario")
+	if rover_backpack_index >= 0:
+		inventory.call("select_backpack", rover_backpack_index)
+		inventory.call("move_selected_to_hotbar", 1)
+		inventory.call("select_hotbar", 1)
+		var stored_battery := float(inventory.call("peek_selected_rover_battery"))
+		_expect(is_equal_approx(stored_battery, 31.25), "La batteria del rover raccolto deve essere salvata")
+		var redeployed := ROVER_SCRIPT.place(current_scene, Vector2i(700, 400), stored_battery) as Rover
+		_expect(redeployed != null and is_equal_approx(redeployed.battery_energy_kwh, 31.25), "Il rover ripiazzato deve mantenere la carica salvata")
+		if redeployed != null:
+			inventory.call("consume_selected_item")
 	_finish()
 
 

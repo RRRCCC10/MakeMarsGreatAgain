@@ -154,7 +154,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				Inventory.consume_selected_item()
 		"rover":
 			var rover_cell := PowerGrid.get_mouse_cell(camera)
-			if Rover.place(get_tree().current_scene, rover_cell) != null:
+			var stored_battery := float(Inventory.call("peek_selected_rover_battery"))
+			if stored_battery < 0.0:
+				stored_battery = Rover.STARTING_ENERGY_KWH
+			if Rover.place(get_tree().current_scene, rover_cell, stored_battery) != null:
 				Inventory.consume_selected_item()
 		_:
 			if item.get("placeable", false):
