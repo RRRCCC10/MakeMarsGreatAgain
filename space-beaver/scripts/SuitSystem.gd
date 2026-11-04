@@ -11,44 +11,44 @@ const SUITS := {
 		"short_name": "EVA STANDARD",
 		"solar_protection": 0.30,
 		"cosmic_protection": 0.05,
-		"cold_tolerance_c": -68.0,
+		"cold_tolerance_c": -50.0,
 		"oxygen_capacity": 100.0,
 		"movement_multiplier": 1.0,
 		"tint": Color("fff1e4"),
-		"description": "Tuta iniziale leggera. Schermatura di base, O₂ 100 e protezione termica fino a −68°C.",
+		"description": "Tuta iniziale leggera. Schermatura di base, O₂ 100 e protezione termica limitata fino a −50°C: di notte uscire è rischioso.",
 	},
 	"suit_reinforced": {
 		"name": "Tuta EVA rinforzata",
 		"short_name": "EVA RINFORZATA",
 		"solar_protection": 0.45,
 		"cosmic_protection": 0.08,
-		"cold_tolerance_c": -82.0,
+		"cold_tolerance_c": -72.0,
 		"oxygen_capacity": 130.0,
 		"movement_multiplier": 0.98,
 		"tint": Color("a8d8ff"),
-		"description": "Strati polimerici ricchi di idrogeno. Solare 45%, O₂ 130 e freddo fino a −82°C.",
+		"description": "Strati polimerici ricchi di idrogeno. Solare 45%, O₂ 130 e freddo fino a −72°C.",
 	},
 	"suit_explorer": {
 		"name": "Tuta da esplorazione",
 		"short_name": "EVA EXPLORER",
 		"solar_protection": 0.60,
 		"cosmic_protection": 0.12,
-		"cold_tolerance_c": -96.0,
+		"cold_tolerance_c": -90.0,
 		"oxygen_capacity": 160.0,
 		"movement_multiplier": 1.0,
 		"tint": Color("a9f0c0"),
-		"description": "Composito avanzato, mobilita' completa, O₂ 160 e freddo fino a −96°C.",
+		"description": "Composito avanzato, mobilita' completa, O₂ 160 e freddo fino a −90°C.",
 	},
 	"suit_storm": {
 		"name": "Tuta anti-tempesta solare",
 		"short_name": "EVA STORM",
 		"solar_protection": 0.75,
 		"cosmic_protection": 0.18,
-		"cold_tolerance_c": -110.0,
+		"cold_tolerance_c": -112.0,
 		"oxygen_capacity": 200.0,
 		"movement_multiplier": 0.94,
 		"tint": Color("e1b5ff"),
-		"description": "Massima protezione portatile: solare 75%, O₂ 200 e freddo fino a −110°C.",
+		"description": "Massima protezione portatile: solare 75%, O₂ 200 e freddo fino a −112°C.",
 	},
 }
 
@@ -118,7 +118,7 @@ func get_cosmic_protection() -> float:
 
 
 func get_cold_tolerance_c() -> float:
-	return float(get_equipped_definition().get("cold_tolerance_c", -68.0))
+	return float(get_equipped_definition().get("cold_tolerance_c", -50.0))
 
 
 func get_movement_multiplier() -> float:

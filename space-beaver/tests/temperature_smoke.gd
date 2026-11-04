@@ -28,12 +28,18 @@ func _run() -> void:
 	var polar_night := float(temperature.call("get_surface_temperature_for_source", 4))
 	_expect(equatorial_day > equatorial_night + 45.0, "La pianura marziana deve raffreddarsi nettamente di notte")
 	_expect(polar_night < equatorial_night - 30.0, "Il ghiaccio polare deve essere molto piu' freddo della base")
-	_expect(float(suits.call("get_cold_tolerance_c")) <= -68.0, "La tuta standard deve offrire protezione termica di base")
+	_expect(float(suits.call("get_cold_tolerance_c")) >= -55.0, "La tuta standard deve avere una protezione termica limitata")
+
+	temperature.call("reset_for_new_mission")
+	temperature.call("_apply_thermal_step", 11.0, -73.0, 0.0)
+	var base_night_core := float(temperature.core_temperature_c)
+	_expect(base_night_core < 34.0, "Una notte nella pianura con la tuta base deve rendere l'uscita difficile")
+	_expect(float(temperature.call("get_movement_multiplier")) <= 0.65, "L'ipotermia notturna deve rallentare sensibilmente il movimento")
 
 	temperature.call("reset_for_new_mission")
 	temperature.call("_apply_thermal_step", 12.0, -115.0, 0.0)
 	var exposed_core := float(temperature.core_temperature_c)
-	_expect(exposed_core < 34.0, "Una notte polare esposta deve causare ipotermia concreta")
+	_expect(exposed_core <= 28.0, "Una notte polare esposta deve essere letale con la tuta base")
 	_expect(float(temperature.call("get_movement_multiplier")) < 1.0, "Il freddo deve ridurre la mobilita' prima di essere letale")
 	_expect(float(temperature.call("get_oxygen_consumption_multiplier")) > 1.0, "Il freddo deve aumentare il consumo di ossigeno")
 

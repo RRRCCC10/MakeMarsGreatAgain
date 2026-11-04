@@ -9,9 +9,12 @@ signal changed(data: Dictionary)
 const NORMAL_CORE_TEMPERATURE_C := 37.0
 const LETHAL_CORE_TEMPERATURE_C := 28.0
 const SHELTER_BONUS_C := 18.0
-const COOLING_PER_GAP_C_PER_HOUR := 0.0065
-const OPEN_AIR_RECOVERY_C_PER_HOUR := 0.22
-const SHELTER_RECOVERY_C_PER_HOUR := 0.42
+# Il freddo marziano deve essere una pressione di gioco reale: una notte
+# completa all'aperto con la tuta iniziale porta già verso l'ipotermia, mentre
+# il polo nord senza una tuta avanzata diventa una spedizione quasi suicida.
+const COOLING_PER_GAP_C_PER_HOUR := 0.014
+const OPEN_AIR_RECOVERY_C_PER_HOUR := 0.20
+const SHELTER_RECOVERY_C_PER_HOUR := 0.50
 
 const BIOME_PROFILES := {
 	0: {"name": "PIANURA DI ATTERRAGGIO", "day_c": -20.0, "night_c": -73.0},
@@ -111,22 +114,26 @@ func get_condition_color() -> Color:
 
 
 func get_movement_multiplier() -> float:
+	if core_temperature_c <= LETHAL_CORE_TEMPERATURE_C:
+		return 0.0
 	if core_temperature_c < 31.5:
-		return 0.55
+		return 0.42
 	if core_temperature_c < 33.5:
-		return 0.75
+		return 0.65
 	if core_temperature_c < 35.5:
-		return 0.92
+		return 0.86
 	return 1.0
 
 
 func get_oxygen_consumption_multiplier() -> float:
+	if core_temperature_c <= LETHAL_CORE_TEMPERATURE_C:
+		return 2.50
 	if core_temperature_c < 31.5:
-		return 1.60
+		return 2.10
 	if core_temperature_c < 33.5:
-		return 1.35
+		return 1.70
 	if core_temperature_c < 35.5:
-		return 1.15
+		return 1.25
 	return 1.0
 
 
