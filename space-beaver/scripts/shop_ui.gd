@@ -5,6 +5,7 @@ const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spriteshe
 const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
+const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
 
 var overlay: ColorRect
 var message_label: Label
@@ -202,6 +203,8 @@ func _texture_for_item(item_id: String) -> Texture2D:
 			return _atlas_frame(BATTERY_SHEET, Vector2i(16, 16))
 		"ice_drill":
 			return _atlas_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
+		"rover":
+			return _atlas_frame(ROVER_SHEET, Vector2i(48, 32))
 		"suit_reinforced", "suit_explorer", "suit_storm":
 			return _atlas_frame(PLAYER_SHEET, Vector2i(32, 32))
 	return null

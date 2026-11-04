@@ -32,6 +32,13 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Consuma 60 kW e produce 40 L/h. Uscita dell'acqua a destra, nella cella centrale.",
 	},
+	"rover": {
+		"name": "Rover esplorativo EVA",
+		"price": 2_400_000_000,
+		"category": "vehicles",
+		"placeable": true,
+		"description": "Veicolo elettrico con batteria da 120 kWh e pannelli solari dispiegabili. E sali/scendi, F apre o chiude i pannelli.",
+	},
 	"suit_reinforced": {
 		"name": "Tuta EVA rinforzata",
 		"price": 650_000_000,
@@ -55,9 +62,10 @@ const CATALOG := {
 	},
 }
 
-const CATEGORY_ORDER := ["equipment", "energy", "extraction", "life_support", "research"]
+const CATEGORY_ORDER := ["equipment", "vehicles", "energy", "extraction", "life_support", "research"]
 const CATEGORY_LABELS := {
 	"equipment": "TUTE ED EQUIPAGGIAMENTO EVA",
+	"vehicles": "VEICOLI DI ESPLORAZIONE",
 	"energy": "ENERGIA E DISTRIBUZIONE",
 	"extraction": "ESTRAZIONE RISORSE",
 	"life_support": "SUPPORTO VITALE",

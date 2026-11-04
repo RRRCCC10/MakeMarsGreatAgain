@@ -99,6 +99,36 @@ func get_world_rect() -> Rect2i:
 	return WORLD_RECT
 
 
+func get_world_pixel_rect() -> Rect2:
+	"""Limiti fisici della mappa dipinta, espressi in coordinate del mondo."""
+	return Rect2(Vector2(WORLD_RECT.position) * TILE_SIZE, Vector2(WORLD_RECT.size) * TILE_SIZE)
+
+
+func clamp_world_position(world_position: Vector2, margin: float = 0.0) -> Vector2:
+	"""Mantiene un attore dentro i 2.000 × 2.000 tile della mappa.
+
+	La margin evita che il collider o lo sprite attraversino il bordo: il centro
+	dell'attore resta quindi sempre nella porzione realmente giocabile.
+	"""
+	var bounds := get_world_pixel_rect()
+	var safe_margin := maxf(0.0, margin)
+	return Vector2(
+		clampf(world_position.x, bounds.position.x + safe_margin, bounds.end.x - safe_margin),
+		clampf(world_position.y, bounds.position.y + safe_margin, bounds.end.y - safe_margin)
+	)
+
+
+func is_world_position_inside(world_position: Vector2, margin: float = 0.0) -> bool:
+	var bounds := get_world_pixel_rect()
+	var safe_margin := maxf(0.0, margin)
+	return (
+		world_position.x >= bounds.position.x + safe_margin
+		and world_position.x <= bounds.end.x - safe_margin
+		and world_position.y >= bounds.position.y + safe_margin
+		and world_position.y <= bounds.end.y - safe_margin
+	)
+
+
 func world_to_cell(world_position: Vector2) -> Vector2i:
 	return Vector2i(floori(world_position.x / TILE_SIZE), floori(world_position.y / TILE_SIZE))
 

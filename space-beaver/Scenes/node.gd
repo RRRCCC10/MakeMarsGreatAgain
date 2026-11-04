@@ -2,6 +2,7 @@ extends Node
 
 const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
+const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
 @onready var camera: Camera2D = $"../Camera2D"
@@ -10,6 +11,7 @@ var pipe_shape := PipeSegment.ShapeType.STRAIGHT
 var pipe_vertical := false
 var pipe_preview: PipeSegment
 var power_preview: PowerDevice
+var rover_preview: Rover
 var demolition_root: Control
 var demolition_question: Label
 var pending_demolition: Dictionary = {}
@@ -32,6 +34,7 @@ var nearby_machine: Node
 func _ready() -> void:
 	call_deferred("_create_pipe_preview")
 	call_deferred("_create_power_preview")
+	call_deferred("_create_rover_preview")
 	call_deferred("_create_demolition_ui")
 	call_deferred("_create_machine_info_ui")
 	call_deferred("_create_nearby_machine_ui")
@@ -50,6 +53,13 @@ func _create_power_preview() -> void:
 	power_preview.is_preview = true
 	get_tree().current_scene.add_child(power_preview)
 	power_preview.visible = false
+
+
+func _create_rover_preview() -> void:
+	rover_preview = ROVER_SCRIPT.new() as Rover
+	rover_preview.is_preview = true
+	get_tree().current_scene.add_child(rover_preview)
+	rover_preview.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -74,6 +84,13 @@ func _process(_delta: float) -> void:
 			power_preview.setup(selected_id, power_cell, true)
 			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell)
 			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell) else Color(1.0, 0.28, 0.24, 0.72)
+	if rover_preview != null:
+		var rover_active: bool = not blocked and selected_id == "rover"
+		rover_preview.visible = rover_active
+		if rover_active:
+			var rover_cell := PowerGrid.get_mouse_cell(camera)
+			rover_preview.global_position = Rover.placement_world_position(rover_cell)
+			rover_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if Rover.can_place_at(rover_preview.global_position) else Color(1.0, 0.28, 0.24, 0.72)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -135,6 +152,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			var cell := PowerGrid.get_mouse_cell(camera)
 			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell) != null:
 				Inventory.consume_selected_item()
+		"rover":
+			var rover_cell := PowerGrid.get_mouse_cell(camera)
+			if Rover.place(get_tree().current_scene, rover_cell) != null:
+				Inventory.consume_selected_item()
 		_:
 			if item.get("placeable", false):
 				var cell := GridManager.get_mouse_grid_position(camera)
@@ -152,6 +173,8 @@ func get_build_help_text() -> String:
 		return "BATTERIA: Click posiziona  ·  500 kWh  ·  Dx riprende"
 	if selected_id == "ice_drill":
 		return "TRIVELLA: Click posiziona  ·  60 kW  ·  uscita acqua a destra  ·  Dx rimuove"
+	if selected_id == "rover":
+		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
 	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
 

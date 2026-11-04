@@ -12,10 +12,13 @@ const ZOOM_FACTOR := 1.18
 @onready var camera: Camera2D = $Camera2D
 
 var facing := "down"
+var mounted_rover: Node2D
 
 
 func _ready() -> void:
 	add_to_group("player")
+	# Le rocce usano il layer 2: il giocatore ci urta, il rover no.
+	collision_mask = 3
 	animated_sprite.sprite_frames = _make_sprite_frames()
 	animated_sprite.play("idle_down")
 	SuitSystem.equipped_changed.connect(_on_suit_equipped)
@@ -23,6 +26,10 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	# Il bordo segue la mappa dipinta (2.000 × 2.000 tile), non la camera.
+	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
+	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
+	_clamp_to_world_bounds()
 	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
 		velocity = Vector2.ZERO
 		_update_animation(Vector2.ZERO)
@@ -30,7 +37,15 @@ func _physics_process(_delta: float) -> void:
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	velocity = direction * SPEED * SuitSystem.get_movement_multiplier() * Radiation.get_movement_multiplier() * Temperature.get_movement_multiplier()
 	move_and_slide()
+	_clamp_to_world_bounds()
 	_update_animation(direction)
+
+
+func _clamp_to_world_bounds() -> void:
+	var map_provider := get_tree().get_first_node_in_group("world_map_provider")
+	if map_provider == null or not map_provider.has_method("clamp_world_position"):
+		return
+	global_position = map_provider.call("clamp_world_position", global_position, 11.0)
 
 
 func _update_animation(direction: Vector2) -> void:
@@ -97,6 +112,44 @@ func nearest_delivery_capsule() -> Node:
 	return closest
 
 
+func nearest_rover() -> Node:
+	var closest: Node2D = null
+	var closest_distance := PICKUP_DISTANCE
+	for rover in get_tree().get_nodes_in_group("rovers"):
+		if not rover is Node2D or not rover.has_method("can_board"):
+			continue
+		var rover_node := rover as Node2D
+		var distance := global_position.distance_to(rover_node.global_position)
+		if distance < closest_distance and bool(rover.call("can_board", self)):
+			closest = rover_node
+			closest_distance = distance
+	return closest
+
+
+func mount_rover(rover: Node2D) -> void:
+	mounted_rover = rover
+	velocity = Vector2.ZERO
+	visible = false
+	set_physics_process(false)
+	var collider := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collider != null:
+		collider.disabled = true
+
+
+func dismount_rover(exit_position: Vector2) -> void:
+	mounted_rover = null
+	global_position = exit_position
+	visible = true
+	set_physics_process(true)
+	var collider := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collider != null:
+		collider.disabled = false
+
+
+func is_driving_rover() -> bool:
+	return is_instance_valid(mounted_rover)
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		var map_ui := get_tree().get_first_node_in_group("world_map_ui")
@@ -112,9 +165,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 	if not Inventory.is_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
+		# Il rover riceve lo stesso evento e gestisce l'uscita del pilota.
+		if is_driving_rover():
+			return
 		var capsule := nearest_delivery_capsule()
 		if capsule != null:
 			capsule.call("collect_all")
+			get_viewport().set_input_as_handled()
+			return
+		var rover := nearest_rover()
+		if rover != null and bool(rover.call("board", self)):
 			get_viewport().set_input_as_handled()
 			return
 		var rock := nearest_rock()
