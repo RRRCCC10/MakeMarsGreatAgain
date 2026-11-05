@@ -2,6 +2,7 @@ extends Node
 
 const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
+const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
@@ -11,6 +12,7 @@ var pipe_shape := PipeSegment.ShapeType.STRAIGHT
 var pipe_vertical := false
 var pipe_preview: PipeSegment
 var power_preview: PowerDevice
+var process_preview: ProcessMachine
 var rover_preview: Rover
 var demolition_root: Control
 var demolition_question: Label
@@ -34,6 +36,7 @@ var nearby_machine: Node
 func _ready() -> void:
 	call_deferred("_create_pipe_preview")
 	call_deferred("_create_power_preview")
+	call_deferred("_create_process_preview")
 	call_deferred("_create_rover_preview")
 	call_deferred("_create_demolition_ui")
 	call_deferred("_create_machine_info_ui")
@@ -62,6 +65,13 @@ func _create_rover_preview() -> void:
 	rover_preview.visible = false
 
 
+func _create_process_preview() -> void:
+	process_preview = PROCESS_MACHINE_SCRIPT.new() as ProcessMachine
+	process_preview.is_preview = true
+	get_tree().current_scene.add_child(process_preview)
+	process_preview.visible = false
+
+
 func _process(_delta: float) -> void:
 	if machine_info_root != null and machine_info_root.visible:
 		_refresh_machine_info()
@@ -84,6 +94,14 @@ func _process(_delta: float) -> void:
 			power_preview.setup(selected_id, power_cell, true)
 			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell)
 			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell) else Color(1.0, 0.28, 0.24, 0.72)
+	if process_preview != null:
+		var process_active := not blocked and selected_id in ["electrolyzer", "sabatier"]
+		process_preview.visible = process_active
+		if process_active:
+			var process_cell: Vector2i = ProcessMachine.sabatier_target_cell() if selected_id == "sabatier" else PowerGrid.get_mouse_cell(camera)
+			process_preview.setup(selected_id, process_cell, true)
+			process_preview.global_position = ProcessMachine.world_position_for(selected_id, process_cell)
+			process_preview.modulate = Color(0.55, 1.0, 0.62, 0.82) if PowerGrid.can_place_device(selected_id, process_cell) else Color(1.0, 0.28, 0.24, 0.82)
 	if rover_preview != null:
 		var rover_active: bool = not blocked and selected_id == "rover"
 		rover_preview.visible = rover_active
@@ -152,6 +170,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			var cell := PowerGrid.get_mouse_cell(camera)
 			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell) != null:
 				Inventory.consume_selected_item()
+		"electrolyzer", "sabatier":
+			var process_cell: Vector2i = ProcessMachine.sabatier_target_cell() if item.get("id", "") == "sabatier" else PowerGrid.get_mouse_cell(camera)
+			if item.get("id", "") == "sabatier" and PowerGrid.get_mouse_cell(camera) not in ProcessMachine.footprint_cells("sabatier", process_cell):
+				return
+			if PowerGrid.place_process_machine(get_tree().current_scene, str(item.get("id", "")), process_cell) != null:
+				Inventory.consume_selected_item()
 		"rover":
 			var rover_cell := PowerGrid.get_mouse_cell(camera)
 			var stored_battery := float(Inventory.call("peek_selected_rover_battery"))
@@ -176,6 +200,10 @@ func get_build_help_text() -> String:
 		return "BATTERIA: Click posiziona  ·  500 kWh  ·  Dx riprende"
 	if selected_id == "ice_drill":
 		return "TRIVELLA: Click posiziona  ·  60 kW  ·  uscita acqua a destra  ·  Dx rimuove"
+	if selected_id == "electrolyzer":
+		return "ELETTROLIZZATORE: Click posiziona  ·  65 kW + acqua dal basso-sinistra  ·  uscite H₂/O₂ in alto  ·  Dx rimuove"
+	if selected_id == "sabatier":
+		return "SABATIER: posizione vincolata evidenziata a sinistra del razzo  ·  richiede 50 kW + tubo H₂  ·  carica CH₄ direttamente nel razzo"
 	if selected_id == "rover":
 		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
@@ -356,9 +384,13 @@ func _update_nearby_machine_ui() -> void:
 	var enabled := bool(nearby_machine.call("is_network_enabled"))
 	var connection_color := Color("72eda0") if connection_label == "COLLEGATO ALLA RETE" else (Color("ffb45d") if enabled else Color("ff776d"))
 	nearby_machine_connection.add_theme_color_override("font_color", connection_color)
-	var stock: Array = nearby_machine.call("get_stock_items")
+	# Non tutti i macchinari hanno uno stock ritirabile a mano: i serbatoi
+	# dell'elettrolizzatore escono tramite tubi, e il Sabatier carica il razzo.
+	var stock: Array = []
+	if nearby_machine.has_method("get_stock_items"):
+		stock = Array(nearby_machine.call("get_stock_items"))
 	if stock.is_empty():
-		nearby_machine_stock.text = "STOCK  ·  nessun output disponibile"
+		nearby_machine_stock.text = str(nearby_machine.call("get_inventory_output_label")) if nearby_machine.has_method("get_inventory_output_label") else "STOCK  ·  nessun output disponibile"
 	else:
 		var first: Dictionary = stock[0]
 		nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]

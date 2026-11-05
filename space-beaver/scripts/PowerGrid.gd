@@ -80,6 +80,8 @@ func device_world_position(item_id: String, cell: Vector2i) -> Vector2:
 
 
 func can_place_device(item_id: String, cell: Vector2i) -> bool:
+	if item_id in ["electrolyzer", "sabatier"]:
+		return can_place_process_machine(item_id, cell)
 	if item_id not in ["solar_panel", "transformer", "battery", "ice_drill"]:
 		return false
 	if item_id == "transformer" and has_transformer():
@@ -100,6 +102,50 @@ func can_place_device(item_id: String, cell: Vector2i) -> bool:
 		var water_output := cell + Vector2i(2, 0)
 		if not PipeManager.can_attach_fluid_source(water_output, PipeSegment.Category.WATER, Vector2i.LEFT):
 			return false
+	return true
+
+
+func can_place_process_machine(item_id: String, cell: Vector2i) -> bool:
+	if item_id not in ["electrolyzer", "sabatier"]:
+		return false
+	if item_id == "sabatier" and cell != ProcessMachine.sabatier_target_cell():
+		return false
+	var occupied := ProcessMachine.footprint_cells(item_id, cell)
+	var blocked := _get_blocked_cells()
+	for occupied_cell in occupied:
+		if blocked.has(occupied_cell) or PipeManager.get_pipe(occupied_cell) != null:
+			return false
+	return true
+
+
+func place_process_machine(parent: Node, item_id: String, cell: Vector2i) -> ProcessMachine:
+	if not can_place_process_machine(item_id, cell):
+		return null
+	var machine := ProcessMachine.new()
+	machine.setup(item_id, cell)
+	parent.add_child(machine)
+	machine.global_position = ProcessMachine.world_position_for(item_id, cell)
+	register_consumer(machine, machine.get_power_connection_cell(), machine.get_power_demand_kw(), machine.get_power_attach_direction())
+	if item_id == "electrolyzer":
+		PipeManager.register_fluid_source(machine, machine.get_hydrogen_output_cell(), PipeSegment.Category.HYDROGEN, Vector2i.RIGHT)
+		PipeManager.register_fluid_source(machine, machine.get_oxygen_output_cell(), PipeSegment.Category.OXYGEN, Vector2i.LEFT)
+	for input_port in machine.get_fluid_input_ports():
+		PipeManager.register_fluid_input(machine, input_port["cell"], input_port["category"], input_port["required_opening"])
+	BuildableRegistry.register_buildable(machine, machine.get_display_name(), "machine", pickup_process_machine.bind(machine))
+	rebuild_network()
+	return machine
+
+
+func pickup_process_machine(machine: ProcessMachine) -> bool:
+	if not is_instance_valid(machine) or not Inventory.can_add_item(machine.device_id):
+		return false
+	if not Inventory.add_item(machine.device_id, machine.get_display_name(), 1, true):
+		return false
+	unregister_consumer(machine)
+	PipeManager.unregister_fluid_source(machine)
+	BuildableRegistry.unregister_buildable(machine)
+	machine.queue_free()
+	call_deferred("rebuild_network")
 	return true
 
 

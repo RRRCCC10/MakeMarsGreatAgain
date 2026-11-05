@@ -23,6 +23,7 @@ var battery_energy_kwh := 0.0
 var battery_charge_ratio := 0.0
 var water_extracted_liters := 0.0
 var water_transported_liters := 0.0
+var water_storage_liters := 0.0
 var fluid_output_connected := false
 var network_enabled := false
 var stock_items: Array[Dictionary] = []
@@ -58,6 +59,7 @@ func _process(delta: float) -> void:
 		if powered:
 			var produced := ICE_DRILL_WATER_L_PER_HOUR * WorldClock.get_game_hours_for_real_delta(delta)
 			water_extracted_liters += produced
+			water_storage_liters += produced
 			if fluid_output_connected:
 				water_transported_liters += produced
 	if is_preview or device_id == "solar_panel":
@@ -204,6 +206,14 @@ func get_fluid_output_cell() -> Vector2i:
 
 func get_fluid_output_rate_lph() -> float:
 	return ICE_DRILL_WATER_L_PER_HOUR if device_id == "ice_drill" and powered and fluid_output_connected else 0.0
+
+
+func consume_fluid_resource(amount: float) -> float:
+	if device_id != "ice_drill" or amount <= 0.0:
+		return 0.0
+	var transferred := minf(amount, water_storage_liters)
+	water_storage_liters -= transferred
+	return transferred
 
 
 func get_machine_specs() -> Dictionary:

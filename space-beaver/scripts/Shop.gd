@@ -32,6 +32,20 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Consuma 60 kW e produce 40 L/h. Uscita dell'acqua a destra, nella cella centrale.",
 	},
+	"electrolyzer": {
+		"name": "Elettrolizzatore",
+		"price": 1_800_000_000,
+		"category": "life_support",
+		"placeable": true,
+		"description": "Consuma 65 kW e acqua da una tubazione in basso a sinistra. Accumula idrogeno e ossigeno; le due uscite possono essere collegate separatamente.",
+	},
+	"sabatier": {
+		"name": "Reattore Sabatier",
+		"price": 2_200_000_000,
+		"category": "life_support",
+		"placeable": true,
+		"description": "Consuma 50 kW e idrogeno. Si installa nell'unico spazio a sinistra del razzo e carica direttamente il metano nel razzo, senza tubi.",
+	},
 	"rover": {
 		"name": "Rover esplorativo EVA",
 		"price": 2_400_000_000,

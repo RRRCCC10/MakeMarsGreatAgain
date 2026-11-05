@@ -22,6 +22,8 @@ const LANDED_ROCKET_OFFSET := Vector2(0.0, -24.0)
 const CELL_SIZE := 16
 
 var landing_complete := false
+var methane_kg := 0.0
+const METHANE_CAPACITY_KG := 400.0
 var phase := Phase.SPACE_FLIGHT
 var phase_time := 0.0
 var player: CharacterBody2D
@@ -323,6 +325,18 @@ func get_occupied_power_cells() -> Array[Vector2i]:
 		for x in range(min_cell.x, max_cell.x + 1):
 			result.append(Vector2i(x, y))
 	return result
+
+
+func get_methane_capacity_kg() -> float:
+	return METHANE_CAPACITY_KG
+
+
+func load_methane_kg(amount: float) -> float:
+	if amount <= 0.0:
+		return 0.0
+	var loaded := minf(amount, maxf(0.0, METHANE_CAPACITY_KG - methane_kg))
+	methane_kg += loaded
+	return loaded
 
 
 func contains_world_point(world_point: Vector2) -> bool:

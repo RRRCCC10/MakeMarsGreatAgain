@@ -4,6 +4,8 @@ const SOLAR_TEXTURE := preload("res://sprites/machines/solar-panel-spritesheet.p
 const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
 const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
+const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
 
@@ -203,6 +205,10 @@ func _texture_for_item(item_id: String) -> Texture2D:
 			return _atlas_frame(BATTERY_SHEET, Vector2i(16, 16))
 		"ice_drill":
 			return _atlas_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
+		"electrolyzer":
+			return _atlas_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
+		"sabatier":
+			return _atlas_frame(SABATIER_SHEET, Vector2i(48, 48))
 		"rover":
 			return _atlas_frame(ROVER_SHEET, Vector2i(48, 32))
 		"suit_reinforced", "suit_explorer", "suit_storm":

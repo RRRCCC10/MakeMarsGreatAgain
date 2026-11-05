@@ -20,6 +20,8 @@ const SOLAR_ICON := preload("res://sprites/machines/solar-panel-spritesheet.png"
 const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
 const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
+const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"
@@ -291,7 +293,7 @@ func _process(_delta: float) -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
-	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rover"] and player != null:
+	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "rover"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
@@ -374,6 +376,10 @@ func _update_hotbar_labels(index: int, item: Dictionary) -> void:
 			hotbar_name_labels[index].text = "Batteria x" + str(item.get("count", 0))
 		"ice_drill":
 			hotbar_name_labels[index].text = "Trivella x" + str(item.get("count", 0))
+		"electrolyzer":
+			hotbar_name_labels[index].text = "Elettrolizz. x" + str(item.get("count", 0))
+		"sabatier":
+			hotbar_name_labels[index].text = "Sabatier x" + str(item.get("count", 0))
 		"rover":
 			hotbar_name_labels[index].text = "Rover x" + str(item.get("count", 0))
 		_:
@@ -399,6 +405,10 @@ func _item_icon(item: Dictionary) -> Texture2D:
 			return _first_frame(BATTERY_SHEET)
 		"ice_drill":
 			return _first_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
+		"electrolyzer":
+			return _first_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
+		"sabatier":
+			return _first_frame(SABATIER_SHEET, Vector2i(48, 48))
 		"rover":
 			return _first_frame(ROVER_SHEET, Vector2i(48, 32))
 		"rock":
