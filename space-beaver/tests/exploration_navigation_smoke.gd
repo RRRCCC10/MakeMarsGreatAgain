@@ -48,6 +48,24 @@ func _run() -> void:
 	player._unhandled_input(zoom_in)
 	_expect(camera.zoom.x == original_zoom, "Con la mappa aperta la rotella non deve cambiare la visuale del giocatore")
 	_expect(float(map_ui.map_zoom) > 1.0, "Con la mappa aperta la rotella deve cambiare lo zoom della carta")
+	var center_before_pan: Vector2 = map_ui.call("get_map_view_center_cell")
+	var middle_down := InputEventMouseButton.new()
+	middle_down.button_index = MOUSE_BUTTON_MIDDLE
+	middle_down.pressed = true
+	middle_down.position = Vector2(540.0, 320.0)
+	map_ui._unhandled_input(middle_down)
+	var drag := InputEventMouseMotion.new()
+	drag.position = Vector2(620.0, 320.0)
+	drag.relative = Vector2(80.0, 0.0)
+	map_ui._unhandled_input(drag)
+	var middle_up := InputEventMouseButton.new()
+	middle_up.button_index = MOUSE_BUTTON_MIDDLE
+	middle_up.pressed = false
+	middle_up.position = drag.position
+	map_ui._unhandled_input(middle_up)
+	var center_after_pan: Vector2 = map_ui.call("get_map_view_center_cell")
+	_expect(bool(map_ui.map_was_panned) and not bool(map_ui.is_panning), "Il trascinamento con tasto centrale deve terminare correttamente")
+	_expect(center_after_pan.x < center_before_pan.x, "Con la mappa ingrandita il trascinamento deve spostare la visuale")
 	map_ui.call("toggle_map")
 	var zoom_out := InputEventMouseButton.new()
 	zoom_out.pressed = true

@@ -30,6 +30,10 @@ var map_root: Control
 var map_canvas: MapCanvas
 var is_open := false
 var map_zoom := 1.0
+var map_view_center_cell := Vector2.ZERO
+var map_was_panned := false
+var is_panning := false
+var last_pan_mouse_position := Vector2.ZERO
 
 const MIN_MAP_ZOOM := 1.0
 const MAX_MAP_ZOOM := 8.0
@@ -62,12 +66,34 @@ func _setup() -> void:
 func _process(_delta: float) -> void:
 	_reveal_around_player()
 	if is_open and map_canvas != null:
+		# Finche' il giocatore non trascina la carta, questa continua a seguirlo
+		# anche mentre resta aperta e il personaggio si muove.
+		if not map_was_panned and player != null and map_provider != null:
+			map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
 		map_canvas.queue_redraw()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_M:
 		toggle_map()
+		get_viewport().set_input_as_handled()
+		return
+	if not is_open:
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
+		# Il pan e' utile solo dopo lo zoom: a zoom 1 l'intero mondo e' gia'
+		# visibile e non c'e' una visuale da traslare.
+		if event.pressed and map_zoom > MIN_MAP_ZOOM:
+			is_panning = true
+			last_pan_mouse_position = event.position
+			get_viewport().set_input_as_handled()
+		elif not event.pressed and is_panning:
+			is_panning = false
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseMotion and is_panning:
+		_pan_map(event.position - last_pan_mouse_position)
+		last_pan_mouse_position = event.position
 		get_viewport().set_input_as_handled()
 
 
@@ -90,7 +116,13 @@ func toggle_map() -> void:
 	map_root.visible = is_open
 	if is_open:
 		_reveal_around_player()
+		map_was_panned = false
+		is_panning = false
+		if player != null and map_provider != null:
+			map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
 		map_canvas.queue_redraw()
+	else:
+		is_panning = false
 
 
 func _reveal_around_player() -> void:
@@ -164,7 +196,7 @@ func _build_ui() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(title)
 	var hint := Label.new()
-	hint.text = "M · chiudi     Rotella · zoom"
+	hint.text = "M · chiudi     Rotella · zoom     Trascina rotella · sposta"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hint.position = Vector2(370, 13)
 	hint.size = Vector2(345, 20)
@@ -185,25 +217,14 @@ func _build_ui() -> void:
 
 
 func _draw_map(canvas: Control) -> void:
-	var available := canvas.size - Vector2(22, 10)
-	var map_size := maxf(80.0, minf(available.x, available.y))
+	var map_size := _get_map_size(canvas)
 	var map_rect := Rect2((canvas.size - Vector2.ONE * map_size) * 0.5, Vector2.ONE * map_size)
 	canvas.draw_rect(map_rect.grow(3), Color("020608"), true)
 	canvas.draw_rect(map_rect, Color("10181d"), true)
 	if map_provider == null or world_rect.size.x <= 0 or world_rect.size.y <= 0:
 		return
-	var visible_tiles := maxi(1, roundi(float(world_rect.size.x) / map_zoom))
-	var player_cell := world_rect.get_center()
-	if player != null:
-		player_cell = map_provider.call("world_to_cell", player.global_position)
-	var max_top_left := world_rect.end - Vector2i.ONE * visible_tiles
-	var visible_rect := Rect2i(
-		Vector2i(
-			clampi(player_cell.x - visible_tiles / 2, world_rect.position.x, max_top_left.x),
-			clampi(player_cell.y - visible_tiles / 2, world_rect.position.y, max_top_left.y)
-		),
-		Vector2i.ONE * visible_tiles
-	)
+	var visible_tiles := _get_visible_tiles()
+	var visible_rect := _get_visible_rect(visible_tiles)
 	var pixels_per_tile := map_size / float(visible_tiles)
 	for block in explored_blocks:
 		var cell := Vector2i(block) * DRAW_BLOCK_TILES
@@ -218,9 +239,11 @@ func _draw_map(canvas: Control) -> void:
 	_draw_structure_markers(canvas, map_rect, visible_rect, pixels_per_tile)
 	_draw_airdrop_markers(canvas, map_rect, visible_rect, pixels_per_tile)
 	if player != null:
-		var marker_pos := map_rect.position + Vector2(player_cell - visible_rect.position) * pixels_per_tile
-		canvas.draw_circle(marker_pos, 3.5, Color("ffd56b"))
-		canvas.draw_arc(marker_pos, 5.0, 0.0, TAU, 12, Color("fff2bd"), 1.0)
+		var player_cell: Vector2i = map_provider.call("world_to_cell", player.global_position)
+		if visible_rect.has_point(player_cell):
+			var marker_pos := map_rect.position + Vector2(player_cell - visible_rect.position) * pixels_per_tile
+			canvas.draw_circle(marker_pos, 3.5, Color("ffd56b"))
+			canvas.draw_arc(marker_pos, 5.0, 0.0, TAU, 12, Color("fff2bd"), 1.0)
 	canvas.draw_rect(map_rect, Color("6bd8ed"), false, 1.5)
 
 
@@ -317,3 +340,55 @@ func _find_sprite_texture(root: Node) -> Texture2D:
 
 func get_explored_block_count() -> int:
 	return explored_blocks.size()
+
+
+func get_map_view_center_cell() -> Vector2:
+	return map_view_center_cell
+
+
+func _get_visible_tiles() -> int:
+	return maxi(1, roundi(float(world_rect.size.x) / map_zoom))
+
+
+func _get_map_size(canvas: Control) -> float:
+	var available := canvas.size - Vector2(22, 10)
+	return maxf(80.0, minf(available.x, available.y))
+
+
+func _get_visible_rect(visible_tiles: int) -> Rect2i:
+	var center := _clamp_map_view_center(map_view_center_cell, visible_tiles)
+	var max_top_left := world_rect.end - Vector2i.ONE * visible_tiles
+	return Rect2i(
+		Vector2i(
+			clampi(roundi(center.x - visible_tiles * 0.5), world_rect.position.x, max_top_left.x),
+			clampi(roundi(center.y - visible_tiles * 0.5), world_rect.position.y, max_top_left.y)
+		),
+		Vector2i.ONE * visible_tiles
+	)
+
+
+func _pan_map(mouse_delta: Vector2) -> void:
+	if map_canvas == null or world_rect.size.x <= 0 or map_zoom <= MIN_MAP_ZOOM:
+		return
+	var visible_tiles := _get_visible_tiles()
+	var pixels_per_tile := _get_map_size(map_canvas) / float(visible_tiles)
+	if pixels_per_tile <= 0.0:
+		return
+	# La carta segue il trascinamento: spostando il mouse a destra si guarda
+	# verso ovest, come in una mappa cartacea.
+	map_view_center_cell = _clamp_map_view_center(map_view_center_cell - mouse_delta / pixels_per_tile, visible_tiles)
+	map_was_panned = true
+	map_canvas.queue_redraw()
+
+
+func _clamp_map_view_center(center: Vector2, visible_tiles: int) -> Vector2:
+	var half_visible := float(visible_tiles) * 0.5
+	var min_center := Vector2(world_rect.position) + Vector2.ONE * half_visible
+	var max_center := Vector2(world_rect.end) - Vector2.ONE * half_visible
+	if min_center.x > max_center.x:
+		min_center.x = float(world_rect.get_center().x)
+		max_center.x = min_center.x
+	if min_center.y > max_center.y:
+		min_center.y = float(world_rect.get_center().y)
+		max_center.y = min_center.y
+	return Vector2(clampf(center.x, min_center.x, max_center.x), clampf(center.y, min_center.y, max_center.y))
