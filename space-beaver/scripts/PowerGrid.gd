@@ -26,6 +26,8 @@ var batteries: Array[PowerDevice] = []
 var transformer: PowerDevice
 var consumers: Array[Dictionary] = []
 var cables: Dictionary = {}
+var _pending_cable_visuals: Array[CableSegment] = []
+var _cable_visual_generation := 0
 var cable_cells_by_network: Dictionary = {}
 var cable_attachments_by_network: Dictionary = {}
 var connection_ok: Dictionary = {}
@@ -589,17 +591,37 @@ func _finalize_network_visuals() -> void:
 					openings.append(typed_attachment)
 			var cable := CABLE_SEGMENT_SCRIPT.new() as CableSegment
 			cable.setup(cell, openings)
-			get_tree().current_scene.add_child(cable)
-			cable.global_position = cell_to_world(cell)
-			cables[network_id + ":" + str(cell.x) + ":" + str(cell.y)] = cable
+			cable.position = cell_to_world(cell)
+			var cable_key := network_id + ":" + str(cell.x) + ":" + str(cell.y)
+			_pending_cable_visuals.append(cable)
+			call_deferred("_attach_cable_visual", cable, cable_key, _cable_visual_generation)
 	network_changed.emit()
 	stats_changed.emit(get_stats())
 
 
+func _attach_cable_visual(cable: CableSegment, cable_key: String, generation: int) -> void:
+	_pending_cable_visuals.erase(cable)
+	if generation != _cable_visual_generation or not is_instance_valid(cable) or cable.is_queued_for_deletion():
+		return
+	var scene := get_tree().current_scene
+	if scene == null:
+		cable.queue_free()
+		return
+	# Questo callback e' differito rispetto al rebuild della rete: il SceneTree
+	# ha sbloccato il parent e l'aggiunta non compete con setup dei suoi figli.
+	scene.add_child(cable)
+	cables[cable_key] = cable
+
+
 func _clear_cables() -> void:
+	_cable_visual_generation += 1
 	for cable in cables.values():
 		if is_instance_valid(cable):
 			cable.queue_free()
+	for cable in _pending_cable_visuals:
+		if is_instance_valid(cable):
+			cable.queue_free()
+	_pending_cable_visuals.clear()
 	cables.clear()
 	cable_cells_by_network.clear()
 	cable_attachments_by_network.clear()

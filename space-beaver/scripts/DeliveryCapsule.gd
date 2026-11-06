@@ -133,8 +133,9 @@ func collect_all() -> bool:
 	for index in range(contents.size() - 1, -1, -1):
 		var item := contents[index]
 		var remaining := int(item.get("count", 0))
+		var inventory := get_node_or_null("/root/Inventory")
 		while remaining > 0:
-			if not Inventory.add_item(str(item.get("id", "")), str(item.get("name", "Oggetto")), 1, bool(item.get("placeable", true))):
+			if inventory == null or not bool(inventory.call("add_item", str(item.get("id", "")), str(item.get("name", "Oggetto")), 1, bool(item.get("placeable", true)), item.get("configuration", {}))):
 				break
 			remaining -= 1
 			collected_any = true

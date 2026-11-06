@@ -46,12 +46,26 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Consuma 50 kW e idrogeno. Si installa nell'unico spazio a sinistra del razzo e carica direttamente il metano nel razzo, senza tubi.",
 	},
-	"rover": {
-		"name": "Rover esplorativo EVA",
-		"price": 2_400_000_000,
-		"category": "vehicles",
+	"dome_small": {
+		"name": "Cupola base piccola",
+		"price": 1_200_000_000,
+		"category": "habitats",
 		"placeable": true,
-		"description": "Veicolo elettrico con batteria da 120 kWh e pannelli solari dispiegabili. E sali/scendi, F apre o chiude i pannelli.",
+		"description": "Cupola piccola. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
+	},
+	"dome_medium": {
+		"name": "Cupola base media",
+		"price": 2_400_000_000,
+		"category": "habitats",
+		"placeable": true,
+		"description": "Cupola media. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
+	},
+	"dome_large": {
+		"name": "Cupola base grande",
+		"price": 4_000_000_000,
+		"category": "habitats",
+		"placeable": true,
+		"description": "Cupola grande. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
 	},
 	"suit_reinforced": {
 		"name": "Tuta EVA rinforzata",
@@ -76,10 +90,11 @@ const CATALOG := {
 	},
 }
 
-const CATEGORY_ORDER := ["equipment", "vehicles", "energy", "extraction", "life_support", "research"]
+const CATEGORY_ORDER := ["equipment", "vehicles", "habitats", "energy", "extraction", "life_support", "research"]
 const CATEGORY_LABELS := {
 	"equipment": "TUTE ED EQUIPAGGIAMENTO EVA",
 	"vehicles": "VEICOLI DI ESPLORAZIONE",
+	"habitats": "HABITAT E CUPOLE",
 	"energy": "ENERGIA E DISTRIBUZIONE",
 	"extraction": "ESTRAZIONE RISORSE",
 	"life_support": "SUPPORTO VITALE",
@@ -122,6 +137,66 @@ func purchase(item_id: String) -> bool:
 		return false
 	message_changed.emit("%s aggiunto all'ordine unico. Partenza tra pochi secondi." % definition["name"], false)
 	return true
+
+
+func get_dome_addon_prices() -> Dictionary:
+	return {
+		"lead_shielding": 500_000_000,
+		"hydrogen_shielding": 350_000_000,
+		"rover_pad": 600_000_000,
+	}
+
+
+func purchase_dome(item_id: String, configuration: Dictionary = {}) -> bool:
+	if item_id not in ["dome_small", "dome_medium", "dome_large"] or not CATALOG.has(item_id):
+		message_changed.emit("Configurazione cupola non valida.", true)
+		return false
+	if bool(configuration.get("rover_pad", false)) and item_id == "dome_small":
+		message_changed.emit("La base rover richiede una cupola media o grande.", true)
+		return false
+	var options := {
+		"lead_shielding": bool(configuration.get("lead_shielding", false)),
+		"hydrogen_shielding": bool(configuration.get("hydrogen_shielding", false)),
+		"rover_pad": bool(configuration.get("rover_pad", false)),
+	}
+	var price := int(CATALOG[item_id]["price"])
+	var add_on_prices := get_dome_addon_prices()
+	for option in options:
+		if options[option]:
+			price += int(add_on_prices[option])
+	if not Economy.spend(price):
+		message_changed.emit("Budget insufficiente per questa configurazione.", true)
+		return false
+	var definition: Dictionary = CATALOG[item_id].duplicate(true)
+	definition["name"] = _dome_order_name(str(definition["name"]), options)
+	if not DeliveryManager.queue_item(item_id, definition, 1, options):
+		Economy.add_funds(price)
+		message_changed.emit("Impossibile preparare la spedizione.", true)
+		return false
+	message_changed.emit("Cupola configurata aggiunta all'ordine · %s." % Economy.format_money(price), false)
+	return true
+
+
+func get_dome_total_price(item_id: String, configuration: Dictionary = {}) -> int:
+	if not CATALOG.has(item_id):
+		return 0
+	var total := int(CATALOG[item_id]["price"])
+	var prices := get_dome_addon_prices()
+	for option in prices:
+		if bool(configuration.get(option, false)):
+			total += int(prices[option])
+	return total
+
+
+func _dome_order_name(base_name: String, options: Dictionary) -> String:
+	var parts := PackedStringArray([base_name])
+	if options["lead_shielding"]:
+		parts.append("piombo")
+	if options["hydrogen_shielding"]:
+		parts.append("schermatura idrogenata")
+	if options["rover_pad"]:
+		parts.append("base rover")
+	return " · ".join(parts)
 
 
 func get_definition(item_id: String) -> Dictionary:

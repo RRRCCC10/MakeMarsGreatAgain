@@ -4,6 +4,7 @@ const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
+const BASE_DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
 @onready var camera: Camera2D = $"../Camera2D"
@@ -14,6 +15,8 @@ var pipe_preview: PipeSegment
 var power_preview: PowerDevice
 var process_preview: ProcessMachine
 var rover_preview: Rover
+var dome_preview: BaseDome
+var dome_entrance_direction := 1
 var demolition_root: Control
 var demolition_question: Label
 var pending_demolition: Dictionary = {}
@@ -38,6 +41,7 @@ func _ready() -> void:
 	call_deferred("_create_power_preview")
 	call_deferred("_create_process_preview")
 	call_deferred("_create_rover_preview")
+	call_deferred("_create_dome_preview")
 	call_deferred("_create_demolition_ui")
 	call_deferred("_create_machine_info_ui")
 	call_deferred("_create_nearby_machine_ui")
@@ -70,6 +74,13 @@ func _create_process_preview() -> void:
 	process_preview.is_preview = true
 	get_tree().current_scene.add_child(process_preview)
 	process_preview.visible = false
+
+
+func _create_dome_preview() -> void:
+	dome_preview = BASE_DOME_SCRIPT.new() as BaseDome
+	dome_preview.setup("dome_small", dome_entrance_direction, true)
+	get_tree().current_scene.add_child(dome_preview)
+	dome_preview.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -109,6 +120,15 @@ func _process(_delta: float) -> void:
 			var rover_cell := PowerGrid.get_mouse_cell(camera)
 			rover_preview.global_position = Rover.placement_world_position(rover_cell)
 			rover_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if Rover.can_place_at(rover_preview.global_position) else Color(1.0, 0.28, 0.24, 0.72)
+	if dome_preview != null:
+		var dome_active: bool = not blocked and selected_id in ["dome_small", "dome_medium", "dome_large"]
+		dome_preview.visible = dome_active
+		if dome_active:
+			var dome_cell := PowerGrid.get_mouse_cell(camera)
+			var dome_configuration: Dictionary = Inventory.get_selected_item().get("configuration", {})
+			dome_preview.setup(selected_id, dome_entrance_direction, true, dome_configuration)
+			dome_preview.global_position = BaseDome.world_position_for(dome_cell)
+			dome_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if BaseDome.can_place_at(dome_preview.global_position, selected_id, dome_configuration) else Color(1.0, 0.28, 0.24, 0.72)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -135,6 +155,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 	var item := Inventory.get_selected_item()
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		var mouse_world_position := camera.get_global_mouse_position()
+		for dome in get_tree().get_nodes_in_group("base_domes"):
+			if is_instance_valid(dome) and dome.has_method("handle_oxygen_port_right_click") and bool(dome.call("handle_oxygen_port_right_click", mouse_world_position)):
+				get_viewport().set_input_as_handled()
+				return
 		_try_demolish_at_mouse(item)
 		get_viewport().set_input_as_handled()
 		return
@@ -147,6 +172,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			pipe_vertical = not pipe_vertical
 			get_viewport().set_input_as_handled()
 			return
+	if item.get("id", "") in ["dome_small", "dome_medium", "dome_large"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+		dome_entrance_direction = posmod(dome_entrance_direction + 1, 4)
+		get_viewport().set_input_as_handled()
+		return
 	if not event.is_action_pressed("left_click"):
 		return
 	var clicked_entry := BuildableRegistry.find_at(camera.get_global_mouse_position())
@@ -183,6 +212,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				stored_battery = Rover.STARTING_ENERGY_KWH
 			if Rover.place(get_tree().current_scene, rover_cell, stored_battery) != null:
 				Inventory.consume_selected_item()
+		"dome_small", "dome_medium", "dome_large":
+			var dome_cell := PowerGrid.get_mouse_cell(camera)
+			var dome_configuration: Dictionary = item.get("configuration", {})
+			if BaseDome.place(get_tree().current_scene, str(item.get("id", "")), dome_cell, dome_entrance_direction, dome_configuration) != null:
+				Inventory.consume_selected_item()
 		_:
 			if item.get("placeable", false):
 				var cell := GridManager.get_mouse_grid_position(camera)
@@ -206,6 +240,8 @@ func get_build_help_text() -> String:
 		return "SABATIER: posizione vincolata evidenziata a sinistra del razzo  ·  richiede 50 kW + tubo H₂  ·  carica CH₄ direttamente nel razzo"
 	if selected_id == "rover":
 		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
+	if selected_id in ["dome_small", "dome_medium", "dome_large"]:
+		return "CUPOLE: Click posiziona  ·  R ruota ingresso/camera  ·  E usa la camera di decompressione  ·  Dx demolisce"
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
 	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
 

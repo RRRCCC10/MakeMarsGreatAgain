@@ -24,17 +24,19 @@ func _process(delta: float) -> void:
 		_dispatch_pending_order()
 
 
-func queue_item(item_id: String, definition: Dictionary, amount: int = 1) -> bool:
+func queue_item(item_id: String, definition: Dictionary, amount: int = 1, configuration: Dictionary = {}) -> bool:
 	if item_id.is_empty() or amount <= 0:
 		return false
-	var item: Dictionary = pending_order.get(item_id, {
+	var order_key := item_id if configuration.is_empty() else "%s|%s" % [item_id, JSON.stringify(configuration)]
+	var item: Dictionary = pending_order.get(order_key, {
 		"id": item_id,
 		"name": str(definition.get("name", "Oggetto")),
 		"count": 0,
 		"placeable": bool(definition.get("placeable", true)),
+		"configuration": configuration.duplicate(true),
 	})
 	item["count"] = int(item.get("count", 0)) + amount
-	pending_order[item_id] = item
+	pending_order[order_key] = item
 	# Ogni nuovo acquisto riapre per pochi secondi la stessa spedizione.
 	batch_time_remaining = BATCH_WINDOW_SECONDS
 	order_changed.emit()
@@ -42,7 +44,10 @@ func queue_item(item_id: String, definition: Dictionary, amount: int = 1) -> boo
 
 
 func count_uncollected(item_id: String) -> int:
-	var total := int(pending_order.get(item_id, {}).get("count", 0))
+	var total := 0
+	for item in pending_order.values():
+		if str(item.get("id", "")) == item_id:
+			total += int(item.get("count", 0))
 	for capsule in active_capsules:
 		if not is_instance_valid(capsule):
 			continue

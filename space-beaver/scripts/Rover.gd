@@ -34,11 +34,12 @@ var is_preview := false
 var battery_energy_kwh := STARTING_ENERGY_KWH
 var panel_state := PanelState.CLOSED
 var animation_elapsed := 0.0
-var facing_index := 3 # destra, sinistra, alto, basso
+var facing_index := 0 # destra, sinistra, alto, basso
 var driver: Node2D
 var sprite: Sprite2D
 var collision_shape: CollisionShape2D
 var interaction_label: Label
+var boarding_click_area: Area2D
 
 
 static func placement_world_position(cell: Vector2i) -> Vector2:
@@ -90,14 +91,20 @@ static func place(parent: Node, cell: Vector2i, battery_energy_kwh: float = STAR
 
 
 func _ready() -> void:
-	add_to_group("rovers")
-	z_index = 2
+	# Il rover deve restare sopra terreno, cupola e piattaforma anche se vengono
+	# riordinati nodi o layer dei chunk durante il caricamento della mappa.
+	z_as_relative = false
+	z_index = 10
 	_setup_sprite()
 	_setup_collision()
 	_setup_interaction_label()
 	if is_preview:
 		collision_shape.disabled = true
 		return
+	# Le anteprime di piazzamento sono nodi temporanei invisibili: non devono
+	# comparire nella ricerca del rover reale, nel dock o negli input.
+	add_to_group("rovers")
+	_setup_boarding_click_area()
 	var registry := _service("BuildableRegistry")
 	if registry != null:
 		registry.call("register_buildable", self, "ROVER DI ESPLORAZIONE", "vehicle", pickup)
@@ -145,21 +152,41 @@ func _process(delta: float) -> void:
 	if is_preview:
 		_refresh_visual()
 		return
+	_update_docked_draw_order()
 	_update_panel_animation(delta)
 	_charge_from_solar(delta)
 	_update_interaction_label()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _update_docked_draw_order() -> void:
+	var docked := false
+	for dome in get_tree().get_nodes_in_group("base_domes"):
+		if is_instance_valid(dome) and dome.has_method("is_rover_on_charging_pad") and bool(dome.call("is_rover_on_charging_pad", self)):
+			docked = true
+			break
+	z_index = 10
+
+
+func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo or is_preview:
 		return
 	if _input_blocked():
 		return
-	if event.keycode == KEY_E and is_instance_valid(driver):
-		exit_rover()
-		get_viewport().set_input_as_handled()
-		return
-	if event.keycode == KEY_F and _can_toggle_panels():
+	if _is_control_key(event, KEY_E):
+		if is_instance_valid(driver):
+			exit_rover()
+			get_viewport().set_input_as_handled()
+			return
+		# Ridondanza intenzionale rispetto al player: il rover è responsabile
+		# anche del proprio ingresso, così nessun pannello o macchinario può
+		# sottrarre E prima dell'imbarco.
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if player != null and can_board(player) and board(player):
+			get_viewport().set_input_as_handled()
+			return
+	# F e' un comando locale del rover, non una scorciatoia globale. Senza
+	# questo controllo un rover remoto poteva rubare F alla camera d'aria.
+	if _is_control_key(event, KEY_F) and _is_player_nearby() and _can_toggle_panels():
 		toggle_panels()
 		get_viewport().set_input_as_handled()
 
@@ -237,6 +264,32 @@ func pickup() -> bool:
 	return true
 
 
+func can_be_recalled_to_base() -> bool:
+	return not is_instance_valid(driver) and panel_state == PanelState.CLOSED
+
+
+func prepare_base_recall(target_position: Vector2) -> bool:
+	if not can_be_recalled_to_base():
+		return false
+	velocity = Vector2.ZERO
+	global_position = target_position
+	present_docked_at_base()
+	return true
+
+
+func present_docked_at_base() -> void:
+	# Anche un rover creato prima di un aggiornamento del gioco deve tornare
+	# leggibile sul dock: vista laterale arancione, sprite riattivato e layer alto.
+	facing_index = 0
+	visible = true
+	z_as_relative = false
+	z_index = 10
+	if is_instance_valid(sprite):
+		sprite.visible = true
+		sprite.modulate = Color.WHITE
+		_refresh_visual()
+
+
 func get_machine_specs() -> Dictionary:
 	var solar_factor := _solar_factor()
 	var panels_label := "APERTI · ricarica solare %.1f kW" % (SOLAR_CHARGE_KW * solar_factor) if is_panels_open() else "CHIUSI"
@@ -286,8 +339,41 @@ func _setup_interaction_label() -> void:
 	interaction_label.add_theme_color_override("font_color", Color("d8f3f2"))
 	interaction_label.add_theme_color_override("font_outline_color", Color("071015"))
 	interaction_label.add_theme_constant_override("outline_size", 3)
+	interaction_label.z_as_relative = false
+	interaction_label.z_index = 20
 	interaction_label.visible = false
 	add_child(interaction_label)
+
+
+func _setup_boarding_click_area() -> void:
+	# Via alternativa intenzionale: quando il player e' gia' vicino al rover,
+	# un click sul mezzo esegue la stessa azione di E. Il layer 4 non collide
+	# con player, rocce o tubi; serve solo al picking del mouse.
+	boarding_click_area = Area2D.new()
+	boarding_click_area.name = "BoardingClickArea"
+	boarding_click_area.collision_layer = 4
+	boarding_click_area.collision_mask = 0
+	boarding_click_area.input_pickable = true
+	var click_shape := CollisionShape2D.new()
+	click_shape.name = "BoardingClickHitbox"
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = Vector2(52.0, 34.0)
+	click_shape.shape = rectangle
+	boarding_click_area.add_child(click_shape)
+	boarding_click_area.input_event.connect(_on_boarding_click)
+	add_child(boarding_click_area)
+
+
+func _on_boarding_click(_viewport: Node, event: InputEvent, _shape_index: int) -> void:
+	if not event is InputEventMouseButton or not event.pressed or event.button_index != MOUSE_BUTTON_LEFT or _input_blocked():
+		return
+	if is_instance_valid(driver):
+		exit_rover()
+		get_viewport().set_input_as_handled()
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and can_board(player) and board(player):
+		get_viewport().set_input_as_handled()
 
 
 func _update_vehicle_visual(moving: bool) -> void:
@@ -373,14 +459,31 @@ func _can_toggle_panels() -> bool:
 	return not is_instance_valid(driver) and panel_state in [PanelState.CLOSED, PanelState.OPEN] and velocity.length_squared() < 1.0
 
 
+func _is_player_nearby() -> bool:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	return player != null and is_instance_valid(player) and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
+
+
 func _charge_from_solar(delta: float) -> void:
-	if not is_panels_open() or battery_energy_kwh >= BATTERY_CAPACITY_KWH:
+	if battery_energy_kwh >= BATTERY_CAPACITY_KWH:
 		return
-	var charged := SOLAR_CHARGE_KW * _solar_factor() * _game_hours_for_delta(delta)
+	var charge_rate_kw := _get_base_pad_charge_rate_kw()
+	if charge_rate_kw <= 0.0 and is_panels_open():
+		charge_rate_kw = SOLAR_CHARGE_KW * _solar_factor()
+	if charge_rate_kw <= 0.0:
+		return
+	var charged := charge_rate_kw * _game_hours_for_delta(delta)
 	if charged <= 0.0:
 		return
 	battery_energy_kwh = minf(BATTERY_CAPACITY_KWH, battery_energy_kwh + charged)
 	battery_changed.emit(battery_energy_kwh, BATTERY_CAPACITY_KWH)
+
+
+func _get_base_pad_charge_rate_kw() -> float:
+	for dome in get_tree().get_nodes_in_group("base_domes"):
+		if is_instance_valid(dome) and dome.has_method("is_rover_on_charging_pad") and bool(dome.call("is_rover_on_charging_pad", self)):
+			return float(dome.call("get_rover_pad_charge_rate_kw"))
+	return 0.0
 
 
 func _consume_driving_energy(delta: float) -> void:
@@ -394,6 +497,10 @@ func _input_blocked() -> bool:
 	var shop := _service("Shop")
 	var registry := _service("BuildableRegistry")
 	return (inventory != null and bool(inventory.get("is_open"))) or (shop != null and bool(shop.get("is_open"))) or (registry != null and bool(registry.get("is_modal_open"))) or get_tree().paused
+
+
+func _is_control_key(event: InputEventKey, keycode: Key) -> bool:
+	return event.keycode == keycode or event.physical_keycode == keycode
 
 
 func _solar_factor() -> float:
@@ -415,7 +522,7 @@ func _update_interaction_label() -> void:
 		return
 	if is_instance_valid(driver):
 		interaction_label.visible = true
-		interaction_label.text = "E · SCENDI\nSCENDI PRIMA DI APRIRE I PANNELLI · %d%%" % roundi(get_battery_percent())
+		interaction_label.text = "E / CLICK · SCENDI\nSCENDI PRIMA DI APRIRE I PANNELLI · %d%%" % roundi(get_battery_percent())
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	var nearby := player != null and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
@@ -423,7 +530,7 @@ func _update_interaction_label() -> void:
 	if not nearby:
 		return
 	if panel_state == PanelState.CLOSED:
-		interaction_label.text = "E · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())
+		interaction_label.text = "E / CLICK · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())
 	elif panel_state == PanelState.OPEN:
 		interaction_label.text = "F · CHIUDI PANNELLI\nRICARICA %d%%" % roundi(get_battery_percent())
 	else:

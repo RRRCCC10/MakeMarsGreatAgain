@@ -1,7 +1,7 @@
 extends Node
 
-## L'ossigeno diminuisce fuori da una struttura pressurizzata.
-## In questa prima mappa non esistono ancora ambienti chiusi, quindi resta sempre in consumo.
+## La riserva della tuta si ricarica dentro una cupola con atmosfera respirabile.
+## Ogni cupola ha una carica iniziale limitata, rifornita da una rete O₂ collegata.
 signal changed(current: float, maximum: float)
 
 const MAX_OXYGEN := 100.0
@@ -18,14 +18,32 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if is_in_closed_environment:
-		_set_oxygen(oxygen + RECOVERY_PER_SECOND * delta)
+	var dome := _get_player_dome()
+	var breathable := dome != null and bool(dome.call("has_breathable_atmosphere"))
+	is_in_closed_environment = breathable
+	if breathable:
+		_set_oxygen(max_oxygen)
 	else:
 		var thermal_multiplier := 1.0
 		var temperature := get_node_or_null("/root/Temperature")
 		if temperature != null and temperature.has_method("get_oxygen_consumption_multiplier"):
 			thermal_multiplier = float(temperature.call("get_oxygen_consumption_multiplier"))
 		_set_oxygen(oxygen - LOSS_PER_SECOND * thermal_multiplier * delta)
+
+
+func _player_inside_pressurized_dome() -> bool:
+	return _get_player_dome() != null
+
+
+func _get_player_dome() -> Node:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return null
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if not is_instance_valid(dome) or not dome.has_method("contains_world_point") or not bool(dome.call("contains_world_point", player.global_position)):
+			continue
+		return dome
+	return null
 
 
 func set_closed_environment(value: bool) -> void:

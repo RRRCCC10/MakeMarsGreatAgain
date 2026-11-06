@@ -8,11 +8,25 @@ const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
 const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
+const SHOP_SECTIONS := [
+	{"label": "TUTE", "categories": ["equipment"]},
+	{"label": "BASE & INFRASTRUTTURE", "categories": ["habitats", "energy", "life_support"]},
+	{"label": "RISORSE & RICERCA", "categories": ["extraction", "research"]},
+]
 
 var overlay: ColorRect
 var message_label: Label
 var order_label: Label
 var buy_buttons: Dictionary = {}
+var catalog_view: Control
+var dome_config_view: VBoxContainer
+var dome_config_image: TextureRect
+var dome_config_title: Label
+var dome_config_total: Label
+var dome_lead_checkbox: Button
+var dome_hydrogen_checkbox: Button
+var dome_rover_pad_checkbox: Button
+var selected_dome_id := ""
 
 
 func _ready() -> void:
@@ -40,10 +54,13 @@ func _build_ui() -> void:
 	panel.anchor_top = 0.5
 	panel.anchor_right = 0.5
 	panel.anchor_bottom = 0.5
-	panel.offset_left = -470
-	panel.offset_top = -300
-	panel.offset_right = 470
-	panel.offset_bottom = 300
+	var viewport_size := get_viewport().get_visible_rect().size
+	var panel_width := minf(940.0, viewport_size.x - 24.0)
+	var panel_height := minf(600.0, viewport_size.y - 20.0)
+	panel.offset_left = -panel_width * 0.5
+	panel.offset_top = -panel_height * 0.5
+	panel.offset_right = panel_width * 0.5
+	panel.offset_bottom = panel_height * 0.5
 	panel.add_theme_stylebox_override("panel", _panel_style())
 	overlay.add_child(panel)
 	var rows := VBoxContainer.new()
@@ -56,16 +73,19 @@ func _build_ui() -> void:
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(subtitle)
 	rows.add_child(HSeparator.new())
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(890, 430)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	rows.add_child(scroll)
-	var categories := VBoxContainer.new()
-	categories.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	categories.add_theme_constant_override("separation", 18)
-	scroll.add_child(categories)
-	for category in Shop.get_category_ids():
-		_add_category(categories, category)
+	var tabs := TabContainer.new()
+	var content_width := minf(890.0, panel_width - 54.0)
+	var content_height := maxf(180.0, minf(330.0, viewport_size.y - 320.0))
+	tabs.custom_minimum_size = Vector2(content_width, content_height)
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	rows.add_child(tabs)
+	for section in SHOP_SECTIONS:
+		_add_section(tabs, section, content_width, content_height)
+	catalog_view = tabs
+	dome_config_view = _build_dome_config_view()
+	dome_config_view.custom_minimum_size = Vector2(content_width, content_height)
+	dome_config_view.visible = false
+	rows.add_child(dome_config_view)
 	order_label = _label("", 12, Color("8cd9ff"))
 	order_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	order_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -83,18 +103,110 @@ func _build_ui() -> void:
 	rows.add_child(close_button)
 
 
-func _add_category(parent: VBoxContainer, category: String) -> void:
-	var section := VBoxContainer.new()
-	section.add_theme_constant_override("separation", 7)
-	parent.add_child(section)
-	section.add_child(_label("▸ %s" % Shop.get_category_label(category), 15, Color("86d4e5")))
+func _add_section(parent: TabContainer, section_data: Dictionary, content_width: float, content_height: float) -> void:
+	var scroll := ScrollContainer.new()
+	var section_label := str(section_data["label"])
+	scroll.name = section_label
+	scroll.custom_minimum_size = Vector2(content_width, content_height)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	parent.add_child(scroll)
+	parent.set_tab_title(parent.get_tab_count() - 1, section_label)
+	var groups := VBoxContainer.new()
+	groups.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	groups.add_theme_constant_override("separation", 12)
+	scroll.add_child(groups)
+	for category in section_data["categories"]:
+		_add_category_group(groups, str(category))
+
+
+func _add_category_group(parent: VBoxContainer, category: String) -> void:
+	var group := VBoxContainer.new()
+	group.add_theme_constant_override("separation", 7)
+	parent.add_child(group)
+	group.add_child(_label("▸ %s" % Shop.get_category_label(category), 14, Color("86d4e5")))
 	var cards := HFlowContainer.new()
 	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cards.add_theme_constant_override("h_separation", 12)
 	cards.add_theme_constant_override("v_separation", 12)
-	section.add_child(cards)
-	for item_id in Shop.get_items_for_category(category):
+	group.add_child(cards)
+	var item_ids := Shop.get_items_for_category(category)
+	for item_id in item_ids:
 		_add_card(cards, item_id, _texture_for_item(item_id))
+func _build_dome_config_view() -> VBoxContainer:
+	var config := VBoxContainer.new()
+	config.custom_minimum_size = Vector2(890, 330)
+	config.alignment = BoxContainer.ALIGNMENT_CENTER
+	config.add_theme_constant_override("separation", 4)
+	var back := Button.new()
+	back.text = "← TORNA ALLE SEZIONI DELLO SHOP"
+	back.custom_minimum_size = Vector2(280, 30)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	back.pressed.connect(_close_dome_config)
+	config.add_child(back)
+	dome_config_image = TextureRect.new()
+	dome_config_image.custom_minimum_size = Vector2(76, 56)
+	dome_config_image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	dome_config_image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	dome_config_image.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	dome_config_image.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	config.add_child(dome_config_image)
+	dome_config_title = _label("", 18, Color("e8f0ed"))
+	dome_config_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	config.add_child(dome_config_title)
+	var shield_header := _label("SCHERMATURE E MODULI", 14, Color("86d4e5"))
+	shield_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	config.add_child(shield_header)
+	var prices: Dictionary = Shop.get_dome_addon_prices()
+	dome_lead_checkbox = _make_dome_option("Piombo · solare −25%%, cosmica −8%% (+%s)" % Economy.format_money(int(prices["lead_shielding"])))
+	dome_lead_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_lead_checkbox))
+	config.add_child(dome_lead_checkbox)
+	dome_hydrogen_checkbox = _make_dome_option("Materiale idrogenato · cosmica −35%%, solare −12%% (+%s)" % Economy.format_money(int(prices["hydrogen_shielding"])))
+	dome_hydrogen_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_hydrogen_checkbox))
+	config.add_child(dome_hydrogen_checkbox)
+	dome_rover_pad_checkbox = _make_dome_option("Base di ricarica rover accanto alla cupola (+%s)" % Economy.format_money(int(prices["rover_pad"])))
+	dome_rover_pad_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_rover_pad_checkbox))
+	config.add_child(dome_rover_pad_checkbox)
+	dome_config_total = _label("", 14, Color("ffe38a"))
+	dome_config_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	config.add_child(dome_config_total)
+	var confirm := Button.new()
+	confirm.text = "[ CONFERMA CUPOLA E ORDINA ]"
+	confirm.custom_minimum_size = Vector2(280, 34)
+	confirm.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	confirm.add_theme_stylebox_override("normal", _button_style(Color("3b664a")))
+	confirm.add_theme_stylebox_override("hover", _button_style(Color("559266")))
+	confirm.pressed.connect(_confirm_dome_purchase)
+	config.add_child(confirm)
+	_refresh_dome_config_price()
+	return config
+
+
+func _make_dome_option(description: String) -> Button:
+	var option := Button.new()
+	option.toggle_mode = true
+	option.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	option.custom_minimum_size = Vector2(620, 36)
+	option.add_theme_font_size_override("font_size", 13)
+	option.add_theme_color_override("font_color", Color("d9e3e4"))
+	option.add_theme_color_override("font_hover_color", Color("ffffff"))
+	option.add_theme_color_override("font_pressed_color", Color("ffffff"))
+	option.add_theme_stylebox_override("normal", _button_style(Color("1c2b32")))
+	option.add_theme_stylebox_override("hover", _button_style(Color("29444d")))
+	option.add_theme_stylebox_override("pressed", _button_style(Color("315c49")))
+	option.add_theme_stylebox_override("hover_pressed", _button_style(Color("3c7056")))
+	option.set_meta("description", description)
+	_update_dome_option_text(option)
+	return option
+
+
+func _update_dome_option_text(option: Button) -> void:
+	var mark := "☑" if option.button_pressed else "☐"
+	option.text = "%s  %s" % [mark, str(option.get_meta("description"))]
+
+
+func _on_dome_option_toggled(pressed: bool, option: Button) -> void:
+	_update_dome_option_text(option)
+	_refresh_dome_config_price()
 
 
 func _add_card(parent: HFlowContainer, item_id: String, texture: Texture2D) -> void:
@@ -128,19 +240,61 @@ func _add_card(parent: HFlowContainer, item_id: String, texture: Texture2D) -> v
 	description.custom_minimum_size = Vector2(180, 64)
 	rows.add_child(description)
 	var buy := Button.new()
-	buy.text = "[ ORDINA ]"
+	buy.text = "[ CONFIGURA ]" if item_id in ["dome_small", "dome_medium", "dome_large"] else "[ ORDINA ]"
 	buy.custom_minimum_size = Vector2(150, 32)
 	buy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	buy.add_theme_stylebox_override("normal", _button_style(Color("3b664a")))
 	buy.add_theme_stylebox_override("hover", _button_style(Color("559266")))
-	buy.pressed.connect(_purchase.bind(item_id))
+	buy.pressed.connect(_select_or_purchase.bind(item_id))
 	rows.add_child(buy)
 	buy_buttons[item_id] = buy
 
 
-func _purchase(item_id: String) -> void:
+func _select_or_purchase(item_id: String) -> void:
+	if item_id in ["dome_small", "dome_medium", "dome_large"]:
+		selected_dome_id = item_id
+		var definition := Shop.get_definition(item_id)
+		dome_lead_checkbox.button_pressed = false
+		dome_hydrogen_checkbox.button_pressed = false
+		dome_rover_pad_checkbox.button_pressed = false
+		dome_rover_pad_checkbox.disabled = item_id == "dome_small"
+		dome_config_title.text = str(definition["name"]).to_upper()
+		dome_config_image.texture = _texture_for_item(item_id)
+		_refresh_dome_config_price()
+		catalog_view.visible = false
+		dome_config_view.visible = true
+		return
 	Shop.purchase(item_id)
 	_refresh_order()
+
+
+func _close_dome_config() -> void:
+	selected_dome_id = ""
+	dome_config_view.visible = false
+	catalog_view.visible = true
+
+
+func _confirm_dome_purchase() -> void:
+	if selected_dome_id.is_empty():
+		return
+	if Shop.purchase_dome(selected_dome_id, _get_dome_configuration()):
+		_close_dome_config()
+		_refresh_order()
+
+
+func _get_dome_configuration() -> Dictionary:
+	return {
+		"lead_shielding": dome_lead_checkbox.button_pressed,
+		"hydrogen_shielding": dome_hydrogen_checkbox.button_pressed,
+		"rover_pad": dome_rover_pad_checkbox.button_pressed,
+	}
+
+
+func _refresh_dome_config_price(_toggled: bool = false) -> void:
+	if dome_config_total == null:
+		return
+	var total := Shop.get_dome_total_price(selected_dome_id, _get_dome_configuration()) if not selected_dome_id.is_empty() else 0
+	dome_config_total.text = "TOTALE CUPOLA CONFIGURATA: %s" % Economy.format_money(total)
 
 
 func _input(event: InputEvent) -> void:
@@ -196,6 +350,8 @@ func _on_balance_changed(_current: int) -> void:
 
 
 func _texture_for_item(item_id: String) -> Texture2D:
+	if item_id in ["dome_small", "dome_medium", "dome_large"]:
+		return BaseDome.EXTERIOR_TEXTURES[item_id]
 	match item_id:
 		"solar_panel":
 			return SOLAR_TEXTURE

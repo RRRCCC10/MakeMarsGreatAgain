@@ -59,7 +59,9 @@ func _process(delta: float) -> void:
 	if game_hours <= 0.0:
 		return
 	acute_dose_msv *= pow(0.5, game_hours / ACUTE_HALF_LIFE_HOURS)
-	var cosmic_rate := GCR_AMBIENT_RATE_MSV_H * (1.0 - SuitSystem.get_cosmic_protection())
+	var dome_cosmic_protection := _get_dome_radiation_protection("get_cosmic_radiation_protection")
+	var dome_solar_protection := _get_dome_radiation_protection("get_solar_radiation_protection")
+	var cosmic_rate := GCR_AMBIENT_RATE_MSV_H * (1.0 - SuitSystem.get_cosmic_protection()) * (1.0 - dome_cosmic_protection)
 	var solar_ambient_rate := 0.0
 	if event_state == EventState.QUIET:
 		time_to_next_event_hours -= game_hours
@@ -76,7 +78,7 @@ func _process(delta: float) -> void:
 		# Curva morbida con media circa 1: il centro dell'evento e' il picco.
 		var intensity_shape := 0.25 + 1.1781 * sin(PI * progress)
 		solar_ambient_rate = float(definition["unshielded_total_msv"]) / duration * intensity_shape
-		var received_solar_rate := solar_ambient_rate * (1.0 - SuitSystem.get_solar_protection())
+		var received_solar_rate := solar_ambient_rate * (1.0 - SuitSystem.get_solar_protection()) * (1.0 - dome_solar_protection)
 		var solar_step := received_solar_rate * game_hours
 		solar_dose_msv += solar_step
 		acute_dose_msv += solar_step
@@ -90,7 +92,7 @@ func _process(delta: float) -> void:
 	acute_dose_msv += cosmic_step
 	cumulative_dose_msv += cosmic_step
 	current_ambient_rate_msv_h = GCR_AMBIENT_RATE_MSV_H + solar_ambient_rate
-	current_received_rate_msv_h = cosmic_rate + solar_ambient_rate * (1.0 - SuitSystem.get_solar_protection())
+	current_received_rate_msv_h = cosmic_rate + solar_ambient_rate * (1.0 - SuitSystem.get_solar_protection()) * (1.0 - dome_solar_protection)
 	_ui_timer += delta
 	if _ui_timer >= 0.10:
 		_ui_timer = 0.0
@@ -114,6 +116,16 @@ func get_data() -> Dictionary:
 		"condition": get_condition_label(),
 		"movement_multiplier": get_movement_multiplier(),
 	}
+
+
+func _get_dome_radiation_protection(method_name: String) -> float:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return 0.0
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if is_instance_valid(dome) and dome.has_method("contains_world_point") and bool(dome.call("contains_world_point", player.global_position)) and dome.has_method(method_name):
+			return clampf(float(dome.call(method_name)), 0.0, 0.95)
+	return 0.0
 
 
 func get_condition_label() -> String:

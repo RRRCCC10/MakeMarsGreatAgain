@@ -32,7 +32,7 @@ func _run() -> void:
 	_expect(registry.call("find_at", rover.global_position).get("node") == rover, "Il rover deve avere hitbox e registro costruibile")
 	_expect(map_ui.call("get_structure_map_markers").any(func(marker): return marker.get("node") == rover), "Il rover deve comparire sulla carta topografica con la sua icona")
 	var shop: Node = root.get_node("Shop")
-	_expect(str(shop.call("get_definition", "rover").get("category", "")) == "vehicles", "Il rover deve essere acquistabile nella sezione veicoli")
+	_expect(shop.call("get_definition", "rover").is_empty() and not bool(shop.call("purchase", "rover")), "Il rover non deve essere acquistabile nello shop generale")
 
 	player.global_position = rover.global_position + Vector2(20.0, 0.0)
 	_expect(rover.can_board(player), "L'astronauta vicino deve poter salire con il tasto E")

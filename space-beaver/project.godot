@@ -32,6 +32,7 @@ PowerGrid="*res://scripts/PowerGrid.gd"
 DeliveryManager="*res://scripts/DeliveryManager.gd"
 Shop="*res://scripts/Shop.gd"
 GameState="*res://scripts/GameState.gd"
+RoverInteraction="*res://scripts/RoverInteraction.gd"
 
 [display]
 

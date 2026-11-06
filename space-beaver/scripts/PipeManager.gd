@@ -158,9 +158,14 @@ func consume_connected_resource(input_cell: Vector2i, opening_toward_machine: Ve
 
 
 func is_input_connected(input_cell: Vector2i, opening_toward_machine: Vector2i, category: int) -> bool:
+	return not get_connected_source_nodes(input_cell, opening_toward_machine, category).is_empty()
+
+
+func get_connected_source_nodes(input_cell: Vector2i, opening_toward_machine: Vector2i, category: int) -> Array[Node]:
+	var result: Array[Node] = []
 	var input_pipe := get_pipe(input_cell)
 	if input_pipe == null or input_pipe.category != category or not input_pipe.has_opening(opening_toward_machine):
-		return false
+		return result
 	var network := get_network(input_cell)
 	for definition in fluid_sources:
 		if int(definition.get("category", PipeSegment.Category.GENERIC)) != category:
@@ -169,9 +174,9 @@ func is_input_connected(input_cell: Vector2i, opening_toward_machine: Vector2i, 
 		var source_cell := Vector2i(definition.get("cell", Vector2i.ZERO))
 		var source_pipe := get_pipe(source_cell)
 		var source_opening := Vector2i(definition.get("required_opening", Vector2i.LEFT))
-		if is_instance_valid(source_node) and source_pipe != null and source_pipe in network and source_pipe.has_opening(source_opening):
-			return true
-	return false
+		if is_instance_valid(source_node) and (source_node.has_method("consume_fluid_resource") or source_node.has_method("consume_fluid_resource_for_category")) and source_pipe != null and source_pipe in network and source_pipe.has_opening(source_opening):
+			result.append(source_node)
+	return result
 
 
 func get_pipe(cell: Vector2i) -> PipeSegment:

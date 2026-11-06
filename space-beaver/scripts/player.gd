@@ -13,6 +13,7 @@ const ZOOM_FACTOR := 1.18
 
 var facing := "down"
 var mounted_rover: Node2D
+var _rover_board_key_down := false
 
 
 func _ready() -> void:
@@ -26,6 +27,7 @@ func _ready() -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	_poll_rover_board_hotkey()
 	# Il bordo segue la mappa dipinta (2.000 × 2.000 tile), non la camera.
 	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
 	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
@@ -150,6 +152,34 @@ func is_driving_rover() -> bool:
 	return is_instance_valid(mounted_rover)
 
 
+func _try_board_nearby_rover() -> bool:
+	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
+		return false
+	var nearby_rover := nearest_rover()
+	return nearby_rover != null and bool(nearby_rover.call("board", self))
+
+
+func _poll_rover_board_hotkey() -> void:
+	# Fallback indipendente dal routing degli eventi: alcuni pannelli di gioco
+	# consumano _unhandled_input, ma lo stato fisico della tastiera resta valido.
+	var e_down := Input.is_key_pressed(KEY_E)
+	if e_down and not _rover_board_key_down:
+		_try_board_nearby_rover()
+	_rover_board_key_down = e_down
+
+
+func _input(event: InputEvent) -> void:
+	# Il gestore del macchinario è un figlio del player e usa _unhandled_input:
+	# se il rover veniva controllato lì, un macchinario vicino poteva consumare E
+	# prima della salita. Il veicolo va gestito nel passaggio input prioritario.
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if not _is_control_key(event, KEY_E):
+		return
+	if _try_board_nearby_rover():
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		var map_ui := get_tree().get_first_node_in_group("world_map_ui")
@@ -164,17 +194,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_camera_zoom(camera.zoom.x / ZOOM_FACTOR)
 			get_viewport().set_input_as_handled()
 			return
-	if not Inventory.is_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_E:
+	if not Inventory.is_open and not Shop.is_open and event is InputEventKey and event.pressed and not event.echo:
+		var control_key := _get_control_key(event)
+		if control_key in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D] and not is_driving_rover():
+			for dome in get_tree().get_nodes_in_group("base_domes"):
+				if is_instance_valid(dome) and dome.has_method("handle_airlock_key") and bool(dome.call("handle_airlock_key", self, control_key)):
+					get_viewport().set_input_as_handled()
+					return
+		if control_key != KEY_E:
+			return
 		# Il rover riceve lo stesso evento e gestisce l'uscita del pilota.
 		if is_driving_rover():
 			return
 		var capsule := nearest_delivery_capsule()
 		if capsule != null:
 			capsule.call("collect_all")
-			get_viewport().set_input_as_handled()
-			return
-		var rover := nearest_rover()
-		if rover != null and bool(rover.call("board", self)):
 			get_viewport().set_input_as_handled()
 			return
 		var rock := nearest_rock()
@@ -185,6 +219,17 @@ func _unhandled_input(event: InputEvent) -> void:
 func _set_camera_zoom(value: float) -> void:
 	var clamped := clampf(value, MIN_CAMERA_ZOOM, MAX_CAMERA_ZOOM)
 	camera.zoom = Vector2.ONE * clamped
+
+
+func _is_control_key(event: InputEventKey, keycode: Key) -> bool:
+	return event.keycode == keycode or event.physical_keycode == keycode
+
+
+func _get_control_key(event: InputEventKey) -> Key:
+	for keycode in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D]:
+		if event.physical_keycode == keycode:
+			return keycode
+	return event.keycode
 
 
 func _on_suit_equipped(_suit_id: String, definition: Dictionary) -> void:

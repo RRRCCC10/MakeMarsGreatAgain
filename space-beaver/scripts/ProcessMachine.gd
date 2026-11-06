@@ -126,6 +126,14 @@ func _process_electrolysis(hours: float) -> void:
 	oxygen_flow_kg = oxygen if oxygen_connected else 0.0
 
 
+func get_fluid_output_available_for_category(category: int) -> float:
+	if device_id == "electrolyzer" and category == PipeSegment.Category.OXYGEN:
+		return oxygen_flow_kg
+	if device_id == "electrolyzer" and category == PipeSegment.Category.HYDROGEN:
+		return hydrogen_flow_kg
+	return 0.0
+
+
 func _process_sabatier(hours: float) -> void:
 	var rocket := _find_landing_sequence()
 	if rocket == null:

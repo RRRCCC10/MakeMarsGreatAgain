@@ -63,7 +63,7 @@ func can_add_item(item_id: String) -> bool:
 	return false
 
 
-func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bool = true) -> bool:
+func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bool = true, configuration: Dictionary = {}) -> bool:
 	if amount <= 0:
 		return false
 	var suit_system := get_node_or_null("/root/SuitSystem")
@@ -74,7 +74,7 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 	if not can_add_item(item_id):
 		return false
 	for item in hotbar + backpack:
-		if item.get("id", "") == item_id and int(item.get("count", 0)) < 99:
+		if item.get("id", "") == item_id and item.get("configuration", {}) == configuration and int(item.get("count", 0)) < 99:
 			item["count"] = mini(99, int(item.get("count", 0)) + amount)
 			changed.emit()
 			return true
@@ -85,6 +85,7 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 				"name": item_name,
 				"count": amount,
 				"placeable": placeable,
+				"configuration": configuration.duplicate(true),
 			}
 			changed.emit()
 			return true
