@@ -5,6 +5,7 @@ const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const BASE_DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
+const GREENHOUSE_SCRIPT := preload("res://scripts/Greenhouse.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
 @onready var camera: Camera2D = $"../Camera2D"
@@ -16,6 +17,7 @@ var power_preview: PowerDevice
 var process_preview: ProcessMachine
 var rover_preview: Rover
 var dome_preview: BaseDome
+var greenhouse_preview: Greenhouse
 var dome_entrance_direction := 1
 var demolition_root: Control
 var demolition_question: Label
@@ -42,6 +44,7 @@ func _ready() -> void:
 	call_deferred("_create_process_preview")
 	call_deferred("_create_rover_preview")
 	call_deferred("_create_dome_preview")
+	call_deferred("_create_greenhouse_preview")
 	call_deferred("_create_demolition_ui")
 	call_deferred("_create_machine_info_ui")
 	call_deferred("_create_nearby_machine_ui")
@@ -81,6 +84,13 @@ func _create_dome_preview() -> void:
 	dome_preview.setup("dome_small", dome_entrance_direction, true)
 	get_tree().current_scene.add_child(dome_preview)
 	dome_preview.visible = false
+
+
+func _create_greenhouse_preview() -> void:
+	greenhouse_preview = GREENHOUSE_SCRIPT.new() as Greenhouse
+	greenhouse_preview.setup_greenhouse(dome_entrance_direction, true)
+	get_tree().current_scene.add_child(greenhouse_preview)
+	greenhouse_preview.visible = false
 
 
 func _process(_delta: float) -> void:
@@ -129,6 +139,14 @@ func _process(_delta: float) -> void:
 			dome_preview.setup(selected_id, dome_entrance_direction, true, dome_configuration)
 			dome_preview.global_position = BaseDome.world_position_for(dome_cell)
 			dome_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if BaseDome.can_place_at(dome_preview.global_position, selected_id, dome_configuration) else Color(1.0, 0.28, 0.24, 0.72)
+	if greenhouse_preview != null:
+		var greenhouse_active: bool = not blocked and selected_id == "greenhouse"
+		greenhouse_preview.visible = greenhouse_active
+		if greenhouse_active:
+			var greenhouse_cell := PowerGrid.get_mouse_cell(camera)
+			greenhouse_preview.setup_greenhouse(dome_entrance_direction, true)
+			greenhouse_preview.global_position = BaseDome.world_position_for(greenhouse_cell)
+			greenhouse_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if bool(greenhouse_preview.call("can_place_greenhouse_at", greenhouse_preview.global_position)) else Color(1.0, 0.28, 0.24, 0.72)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -172,7 +190,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			pipe_vertical = not pipe_vertical
 			get_viewport().set_input_as_handled()
 			return
-	if item.get("id", "") in ["dome_small", "dome_medium", "dome_large"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+	if item.get("id", "") in ["dome_small", "dome_medium", "dome_large", "greenhouse"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		dome_entrance_direction = posmod(dome_entrance_direction + 1, 4)
 		get_viewport().set_input_as_handled()
 		return
@@ -217,6 +235,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			var dome_configuration: Dictionary = item.get("configuration", {})
 			if BaseDome.place(get_tree().current_scene, str(item.get("id", "")), dome_cell, dome_entrance_direction, dome_configuration) != null:
 				Inventory.consume_selected_item()
+		"greenhouse":
+			var greenhouse_cell := PowerGrid.get_mouse_cell(camera)
+			var greenhouse_position := BaseDome.world_position_for(greenhouse_cell)
+			if greenhouse_preview != null and bool(greenhouse_preview.call("can_place_greenhouse_at", greenhouse_position)):
+				var greenhouse := GREENHOUSE_SCRIPT.new() as Greenhouse
+				greenhouse.setup_greenhouse(dome_entrance_direction, false)
+				get_tree().current_scene.add_child(greenhouse)
+				greenhouse.global_position = greenhouse_position
+				Inventory.consume_selected_item()
 		_:
 			if item.get("placeable", false):
 				var cell := GridManager.get_mouse_grid_position(camera)
@@ -242,6 +269,8 @@ func get_build_help_text() -> String:
 		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
 	if selected_id in ["dome_small", "dome_medium", "dome_large"]:
 		return "CUPOLE: Click posiziona  ·  R ruota ingresso/camera  ·  E usa la camera di decompressione  ·  Dx demolisce"
+	if selected_id == "greenhouse":
+		return "SERRA: Click posiziona  ·  R ruota ingresso/camera  ·  acqua a sinistra  ·  E semina dentro  ·  Dx demolisce"
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
 	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
 
@@ -440,10 +469,13 @@ func _find_nearest_electrical_device() -> Dictionary:
 	var closest: Dictionary = {}
 	var best_distance := MACHINE_INTERACTION_DISTANCE
 	for entry in BuildableRegistry.get_entries():
-		if entry.get("kind", "") not in ["power_device", "machine"]:
-			continue
 		var node := entry.get("node") as Node2D
 		if node == null or not node.has_method("is_network_enabled"):
+			continue
+		# La serra è un edificio, ma deve poter essere volontariamente connessa
+		# o disconnessa dalla rete con V, come gli altri consumatori elettrici.
+		var supports_greenhouse_power := node.has_method("get_interaction_summary") and node.has_method("get_connection_label")
+		if entry.get("kind", "") not in ["power_device", "machine"] and not supports_greenhouse_power:
 			continue
 		var distance := player.global_position.distance_to(node.global_position)
 		if distance <= best_distance:

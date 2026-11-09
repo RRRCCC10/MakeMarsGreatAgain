@@ -8,6 +8,9 @@ const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
 const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
+const GREENHOUSE_TEXTURE := preload("res://assets/greenhouse/greenhouse_base.jpg")
+const POTATO_TEXTURE := preload("res://assets/greenhouse/potato_first_cycle.jpg")
+const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const SHOP_SECTIONS := [
 	{"label": "TUTE", "categories": ["equipment"]},
 	{"label": "BASE & INFRASTRUTTURE", "categories": ["habitats", "energy", "life_support"]},
@@ -367,6 +370,10 @@ func _texture_for_item(item_id: String) -> Texture2D:
 			return _atlas_frame(SABATIER_SHEET, Vector2i(48, 48))
 		"rover":
 			return _atlas_frame(ROVER_SHEET, Vector2i(48, 32))
+		"greenhouse":
+			return TRANSPARENCY.without_white_background(GREENHOUSE_TEXTURE)
+		"potato_seeds":
+			return _atlas_frame(TRANSPARENCY.without_white_background(POTATO_TEXTURE), Vector2i(16, 16))
 		"suit_reinforced", "suit_explorer", "suit_storm":
 			return _atlas_frame(PLAYER_SHEET, Vector2i(32, 32))
 	return null

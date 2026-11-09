@@ -25,6 +25,9 @@ const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
 const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
 const DOME_ICON := preload("res://assets/base_dome/small_exterior.png")
+const GREENHOUSE_ICON := preload("res://assets/greenhouse/greenhouse_base.jpg")
+const POTATO_SEED_ICON := preload("res://assets/greenhouse/potato_first_cycle.jpg")
+const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"
 
 var hotbar_buttons: Array[Button] = []
@@ -294,7 +297,7 @@ func _process(_delta: float) -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
-	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "rover", "dome_small", "dome_medium", "dome_large"] and player != null:
+	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
@@ -424,6 +427,10 @@ func _item_icon(item: Dictionary) -> Texture2D:
 			return _first_frame(ROVER_SHEET, Vector2i(48, 32))
 		"dome_small", "dome_medium", "dome_large":
 			return DOME_ICON
+		"greenhouse":
+			return TRANSPARENCY.without_white_background(GREENHOUSE_ICON)
+		"potato_seeds":
+			return _first_frame(TRANSPARENCY.without_white_background(POTATO_SEED_ICON))
 		"rock":
 			return ROCK_ICON
 		"suit_standard", "suit_reinforced", "suit_explorer", "suit_storm":

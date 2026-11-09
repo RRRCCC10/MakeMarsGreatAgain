@@ -67,6 +67,20 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Cupola grande. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
 	},
+	"greenhouse": {
+		"name": "Serra di patate",
+		"price": 3_200_000_000,
+		"category": "habitats",
+		"placeable": true,
+		"description": "Serra con camera di decompressione, due aiuole da 8 piante e raccordo acqua sul lato sinistro.",
+	},
+	"potato_seeds": {
+		"name": "Semi di patate (lotto)",
+		"price": 120_000_000,
+		"category": "habitats",
+		"placeable": false,
+		"description": "Un lotto semina tutte e 16 le piante della serra. Dopo il raccolto le piante ricrescono.",
+	},
 	"suit_reinforced": {
 		"name": "Tuta EVA rinforzata",
 		"price": 650_000_000,

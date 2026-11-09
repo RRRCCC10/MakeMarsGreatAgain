@@ -162,6 +162,28 @@ func count_item(item_id: String) -> int:
 	return total
 
 
+func consume_item(item_id: String, amount: int = 1) -> bool:
+	"""Consuma un oggetto ovunque si trovi, senza obbligare il giocatore a selezionarlo."""
+	if amount <= 0 or count_item(item_id) < amount:
+		return false
+	var remaining := amount
+	for collection in [hotbar, backpack]:
+		for index in collection.size():
+			var item: Dictionary = collection[index]
+			if str(item.get("id", "")) != item_id:
+				continue
+			var removed := mini(remaining, int(item.get("count", 0)))
+			item["count"] = int(item.get("count", 0)) - removed
+			remaining -= removed
+			if int(item["count"]) <= 0:
+				collection[index] = {}
+			if remaining <= 0:
+				changed.emit()
+				return true
+	changed.emit()
+	return false
+
+
 func get_selected_item() -> Dictionary:
 	return hotbar[selected_hotbar_index]
 
