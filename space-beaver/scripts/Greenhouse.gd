@@ -7,7 +7,7 @@ class_name Greenhouse
 const GREENHOUSE_RADIUS := 80.0
 const BASE_TEXTURE := preload("res://assets/greenhouse/greenhouse_base.jpg")
 const GLASS_TEXTURE := preload("res://assets/greenhouse/greenhouse_glass.jpg")
-const BED_TEXTURE := preload("res://assets/greenhouse/potato_bed.jpg")
+const BED_TEXTURE := preload("res://assets/greenhouse/potato_bed.png")
 const FIRST_GROWTH_SHEET := preload("res://assets/greenhouse/potato_first_cycle.jpg")
 const REGROWTH_SHEET := preload("res://assets/greenhouse/potato_regrowth.jpg")
 const PIPE_SHEET := preload("res://sprites/machines/pipe-spritesheet.png")
@@ -15,9 +15,10 @@ const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 
 const FIRST_CYCLE_SECONDS := 5.0 * 60.0
 const REGROWTH_SECONDS := 3.0 * 60.0
-const POWERED_TIME_MULTIPLIER := 1.25 # 20% di tempo in meno: 300 s / 1.25 = 240 s
+const POWERED_TIME_MULTIPLIER := 1.60 # +60% velocita' di crescita quando alimentata
 const WATER_L_PER_GAME_HOUR := 16.0
 const POWER_DEMAND_KW := 10.0
+const POWERED_EXTRA_DEMAND_KW := 15.0 # riscaldamento/luci della serra
 const PLOT_COUNT := 16
 const HARVEST_FOOD := 16
 const WALL_COLLISION_RADIUS := 70.0
@@ -42,6 +43,7 @@ var _growth_seconds := 0.0
 var _water_consumed_liters := 0.0
 var _oxygen_produced_units := 0.0
 var _visual_asset_revision := 0
+var _power_refresh_queued := false
 const VISUAL_ASSET_REVISION := 2
 
 
@@ -49,6 +51,9 @@ func setup_greenhouse(direction: int = 1, preview: bool = false) -> void:
 	# dome_medium è usata solo come configurazione neutra per la camera d'aria;
 	# raggio, sprite, porta acqua e logica sono ridefiniti da questa classe.
 	super.setup("dome_medium", direction, preview, {})
+	# L'alimentazione elettrica della serra e' sempre una scelta manuale.
+	network_enabled = false
+	powered = false
 
 
 static func world_position_for(cell: Vector2i) -> Vector2:
@@ -105,7 +110,7 @@ func get_thermal_shelter_bonus_c() -> float:
 
 
 func get_power_demand_kw() -> float:
-	return POWER_DEMAND_KW
+	return POWER_DEMAND_KW + (POWERED_EXTRA_DEMAND_KW if powered else 0.0)
 
 
 func has_breathable_atmosphere() -> bool:
@@ -191,9 +196,35 @@ func get_connection_label() -> String:
 
 
 func set_network_enabled(value: bool) -> void:
+	var changed := network_enabled != value
 	network_enabled = value
 	if not network_enabled:
 		set_powered(false)
+	elif changed:
+		# La rete viene ricalcolata dopo l'aggiornamento del flag, senza
+		# ricostruirsi dentro il ciclo di distribuzione della PowerGrid.
+		_queue_power_consumer_refresh()
+
+
+func set_powered(value: bool) -> void:
+	var changed := powered != value
+	powered = value
+	if changed:
+		_queue_power_consumer_refresh()
+
+
+func _queue_power_consumer_refresh() -> void:
+	if _power_refresh_queued or is_preview or not is_inside_tree():
+		return
+	_power_refresh_queued = true
+	call_deferred("_refresh_power_consumer")
+
+
+func _refresh_power_consumer() -> void:
+	_power_refresh_queued = false
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("register_consumer", self, get_power_connection_cell(), get_power_demand_kw(), get_power_attach_direction())
 
 
 func is_planted() -> bool:
@@ -231,7 +262,7 @@ func get_prompt_for_player(player: Node2D) -> String:
 	if _ready_to_harvest:
 		return "RACCOLTA PRONTA · avvicinati alle aiuole"
 	var water_status := "ACQUA OK" if has_water_source() else ("TUBO COLLEGATO · flusso assente" if is_water_connected() else "COLLEGA ACQUA A SINISTRA")
-	var power_status := " · crescita +25%" if powered else " · senza alimentazione"
+	var power_status := " · crescita +60% · consumo elettrico aumentato" if powered else " · senza alimentazione"
 	return "PATATE: pronte tra %s\n%s%s" % [_format_crop_time(get_remaining_growth_seconds()), water_status, power_status]
 
 
@@ -578,11 +609,21 @@ func _inventory() -> Node:
 
 
 func get_machine_specs() -> Dictionary:
+	var power_state := "ATTIVA (+60% crescita)" if powered else ("abilitata, in attesa rete" if network_enabled else "disattivata manualmente")
+	var specs := [
+		"Tubo acqua sinistra: %s" % ("collegato" if is_water_connected() else "non collegato"),
+		"Sorgente acqua: %s" % ("disponibile" if has_water_source() else "assente o senza rete"),
+		"Elettricità: %s · %.0f kW" % [power_state, get_power_demand_kw()],
+		"O₂ serra: %.1f / %.0f (piante %.3f unità/s)" % [oxygen_reserve, GREENHOUSE_OXYGEN_CAPACITY, _get_plant_oxygen_per_second()],
+		"Coltura: %s" % ("pronta" if _ready_to_harvest else (_format_crop_time(get_remaining_growth_seconds()) if _planted else "da seminare")),
+		"Acqua usata: %.1f L" % _water_consumed_liters,
+		"Raccolta: %d razioni" % HARVEST_FOOD,
+	]
 	return {
 		"title": "SERRA DI PATATE",
 		"category": "AGRICOLTURA PRESSURIZZATA",
 		"status": "RACCOLTA PRONTA" if _ready_to_harvest else ("IN CRESCITA" if _planted else "AIUOLE VUOTE"),
 		"status_color": Color("72eda0") if _ready_to_harvest else Color("8cd9ff"),
 		"principle": "Due aiuole da otto piante coltivano un lotto sincronizzato di patate. La prima crescita richiede 5 minuti, le successive 3 minuti.",
-		"specs": ["Tubo acqua sinistra: %s" % ("collegato" if is_water_connected() else "non collegato"), "Sorgente acqua: %s" % ("disponibile" if has_water_source() else "assente o senza rete"), "Assorbimento elettrico: %.0f kW (%s)" % [POWER_DEMAND_KW, "crescita +25% e luce notturna" if powered else "non alimentata"], "O₂ serra: %.1f / %.0f (piante %.3f unità/s)" % [oxygen_reserve, GREENHOUSE_OXYGEN_CAPACITY, _get_plant_oxygen_per_second()], "Coltura: %s" % ("pronta" if _ready_to_harvest else (_format_crop_time(get_remaining_growth_seconds()) if _planted else "da seminare")), "Acqua usata: %.1f L" % _water_consumed_liters, "Raccolta: %d razioni" % HARVEST_FOOD],
+		"specs": specs,
 	}

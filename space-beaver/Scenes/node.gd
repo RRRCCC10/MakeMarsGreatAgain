@@ -5,6 +5,8 @@ const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const BASE_DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
+# Greenhouse.gd is kept as a project resource so the editor can resolve the
+# typed preview and the manual power-control panel without a stale reference.
 const GREENHOUSE_SCRIPT := preload("res://scripts/Greenhouse.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
@@ -28,6 +30,7 @@ var machine_category: Label
 var machine_status: Label
 var machine_specs: Label
 var machine_principle: Label
+var machine_power_button: Button
 var inspected_machine: Node
 var nearby_machine_root: PanelContainer
 var nearby_machine_name: Label
@@ -583,6 +586,11 @@ func _create_machine_info_ui() -> void:
 	machine_principle.add_theme_font_size_override("font_size", 12)
 	machine_principle.add_theme_color_override("font_color", Color("c5d2d4"))
 	content.add_child(machine_principle)
+	machine_power_button = _make_demolition_button("[ CONNETTI ALLA RETE ]", Color("315d4c"))
+	machine_power_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	machine_power_button.visible = false
+	machine_power_button.pressed.connect(_toggle_inspected_network)
+	content.add_child(machine_power_button)
 	var close_button := _make_demolition_button("[ CHIUDI · ESC ]", Color("304c58"))
 	close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_button.pressed.connect(_close_machine_info)
@@ -612,6 +620,20 @@ func _refresh_machine_info() -> void:
 		rendered_specs.append("▪  " + str(specification))
 	machine_specs.text = "\n".join(rendered_specs)
 	machine_principle.text = str(data.get("principle", ""))
+	var can_toggle_network := inspected_machine.has_method("set_network_enabled") and inspected_machine.has_method("is_network_enabled")
+	machine_power_button.visible = can_toggle_network
+	if can_toggle_network:
+		var enabled := bool(inspected_machine.call("is_network_enabled"))
+		machine_power_button.text = "[ DISCONNETTI ELETTRICITÀ ]" if enabled else "[ CONNETTI ELETTRICITÀ ]"
+
+
+func _toggle_inspected_network() -> void:
+	if not is_instance_valid(inspected_machine) or not inspected_machine.has_method("set_network_enabled"):
+		return
+	var enabled := bool(inspected_machine.call("is_network_enabled"))
+	inspected_machine.call("set_network_enabled", not enabled)
+	PowerGrid.rebuild_network()
+	_refresh_machine_info()
 
 
 func _close_machine_info() -> void:
