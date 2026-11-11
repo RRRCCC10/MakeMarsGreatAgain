@@ -16,6 +16,13 @@ func is_cell_empty(cell_pos: Vector2i) -> bool:
 func place_item(cell_pos: Vector2i, item_data) -> bool:
 	if not is_cell_empty(cell_pos):
 		return false
+	var placement_rect := Rect2(Vector2(cell_pos * TILE_SIZE), Vector2(TILE_SIZE, TILE_SIZE))
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and placement_rect.grow(12.0).has_point(player.global_position):
+		return false
+	for rock in get_tree().get_nodes_in_group("collectible_rocks"):
+		if rock is Node2D and placement_rect.grow(14.0).has_point((rock as Node2D).global_position):
+			return false
 	grid[cell_pos] = item_data
 	return true
 

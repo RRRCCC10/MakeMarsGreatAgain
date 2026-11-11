@@ -40,6 +40,9 @@ var _planted := false
 var _ready_to_harvest := false
 var _completed_cycles := 0
 var _growth_seconds := 0.0
+# Timer persistente del lotto corrente. È separato dallo stato della rete:
+# togliere corrente non può ricalcolare né restituire il tempo già guadagnato.
+var _remaining_growth_seconds := 0.0
 var _water_consumed_liters := 0.0
 var _oxygen_produced_units := 0.0
 var _visual_asset_revision := 0
@@ -90,6 +93,8 @@ func can_place_greenhouse_at(world_position: Vector2) -> bool:
 		var clamped: Vector2 = map_provider.call("clamp_world_position", world_position, GREENHOUSE_RADIUS + 58.0)
 		if clamped.distance_to(world_position) > 0.1:
 			return false
+	if not BaseDome.is_placement_clear_of_player_and_rocks(world_position, GREENHOUSE_RADIUS, entrance_direction):
+		return false
 	var registry: Node = tree.root.get_node_or_null("BuildableRegistry") if tree != null else null
 	if registry == null:
 		return true
@@ -236,6 +241,12 @@ func is_crop_ready() -> bool:
 
 
 func get_remaining_growth_seconds() -> float:
+	if _ready_to_harvest:
+		return 0.0
+	if _remaining_growth_seconds > 0.0:
+		return _remaining_growth_seconds
+	# Compatibilità con una coltura già presente prima dell'introduzione del
+	# timer persistente: ricava una sola volta il residuo dal lavoro svolto.
 	return maxf(0.0, _cycle_duration() - _growth_seconds)
 
 
@@ -245,7 +256,8 @@ func get_crop_stage() -> int:
 	if _ready_to_harvest:
 		return 4 if _completed_cycles == 0 else 3
 	var frame_count := 5 if _completed_cycles == 0 else 4
-	return clampi(floori((_growth_seconds / maxf(_cycle_duration(), 0.001)) * frame_count), 0, frame_count - 1)
+	var completed_work := _cycle_duration() - get_remaining_growth_seconds()
+	return clampi(floori((completed_work / maxf(_cycle_duration(), 0.001)) * frame_count), 0, frame_count - 1)
 
 
 func get_prompt_for_player(player: Node2D) -> String:
@@ -508,6 +520,8 @@ func _process(delta: float) -> void:
 	_update_airlock_state()
 	_update_night_lighting()
 	_update_greenhouse_oxygen(delta)
+	if has_water_source():
+		_record_achievement("greenhouse")
 	_update_crop_growth(delta)
 	_try_harvest_nearby()
 	_update_port_markers()
@@ -552,8 +566,14 @@ func _update_crop_growth(delta: float) -> void:
 		return
 	var supplied_fraction := clampf(supplied_water / requested_water, 0.0, 1.0)
 	_water_consumed_liters += supplied_water
-	_growth_seconds = minf(_cycle_duration(), _growth_seconds + delta * supplied_fraction * (POWERED_TIME_MULTIPLIER if powered else 1.0))
-	if _growth_seconds >= _cycle_duration() - 0.001:
+	if _remaining_growth_seconds <= 0.0:
+		_remaining_growth_seconds = maxf(0.0, _cycle_duration() - _growth_seconds)
+	var growth_work := delta * supplied_fraction * (POWERED_TIME_MULTIPLIER if powered else 1.0) * _get_crop_achievement_multiplier()
+	_growth_seconds = minf(_cycle_duration(), _growth_seconds + growth_work)
+	_remaining_growth_seconds = maxf(0.0, _remaining_growth_seconds - growth_work)
+	if _remaining_growth_seconds <= 0.001:
+		_growth_seconds = _cycle_duration()
+		_remaining_growth_seconds = 0.0
 		_ready_to_harvest = true
 	_refresh_crop_visuals()
 
@@ -563,6 +583,8 @@ func _plant_crop() -> void:
 	_ready_to_harvest = false
 	_completed_cycles = 0
 	_growth_seconds = 0.0
+	_remaining_growth_seconds = _cycle_duration()
+	_record_achievement("first_planting")
 	_refresh_crop_visuals()
 
 
@@ -577,6 +599,8 @@ func _try_harvest_nearby() -> void:
 		_ready_to_harvest = false
 		_completed_cycles += 1
 		_growth_seconds = 0.0
+		_remaining_growth_seconds = _cycle_duration()
+		_record_achievement("first_harvest")
 		_refresh_crop_visuals()
 
 
@@ -606,6 +630,13 @@ func _format_crop_time(seconds: float) -> String:
 
 func _inventory() -> Node:
 	return get_node_or_null("/root/Inventory")
+
+
+func _get_crop_achievement_multiplier() -> float:
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null and achievements.has_method("get_crop_growth_multiplier"):
+		return float(achievements.call("get_crop_growth_multiplier"))
+	return 1.0
 
 
 func get_machine_specs() -> Dictionary:

@@ -66,6 +66,18 @@ func _run() -> void:
 	builder.call("_toggle_nearby_network")
 	_expect(drill.is_network_enabled(), "V deve riconnettere il macchinario")
 	_expect(bool(power_grid.connection_ok.get(drill, false)), "La riconnessione deve ricreare il collegamento elettrico")
+	power_grid._update_energy(0.0)
+	var inventory: Node = root.get_node("Inventory")
+	inventory.call("select_hotbar", 3)
+	var bottle: Dictionary = inventory.call("get_selected_item")
+	bottle["liters"] = 0.3
+	var water_before_refill := float(drill.water_storage_liters)
+	var refill_event := InputEventKey.new()
+	refill_event.keycode = KEY_E
+	refill_event.pressed = true
+	player.call("_unhandled_input", refill_event)
+	_expect(is_equal_approx(float(bottle.get("liters", 0.0)), 2.0), "Con borraccia selezionata, E vicino alla trivella alimentata deve riempirla")
+	_expect(float(drill.water_storage_liters) < water_before_refill, "Riempire la borraccia deve sottrarre acqua reale dalla riserva della trivella")
 	var drill_entry: Dictionary = registry.find_at(drill.global_position)
 	builder.call("_show_machine_info", drill_entry)
 	_expect(registry.is_modal_open, "Il click sul macchinario deve aprire una finestra modale")

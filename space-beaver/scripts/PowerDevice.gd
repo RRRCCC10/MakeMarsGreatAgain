@@ -11,10 +11,13 @@ const ICE_DRILL_FRAME_SIZE := Vector2i(32, 48)
 const BATTERY_CAPACITY_KWH := 500.0
 const ICE_DRILL_DEMAND_KW := 60.0
 const ICE_DRILL_WATER_L_PER_HOUR := 40.0
+const WATER_BOTTLE_REFILL_DISTANCE := 58.0
+const TILE_SIZE := 16
 
 var device_id := ""
 var origin_cell := Vector2i.ZERO
 var is_preview := false
+var placement_rotation := 0
 var powered := false
 var flow_state := 0
 var animation_frame := 0
@@ -26,6 +29,7 @@ var water_transported_liters := 0.0
 var water_storage_liters := 0.0
 var fluid_output_connected := false
 var network_enabled := false
+var refill_feedback := ""
 var stock_items: Array[Dictionary] = []
 var sprite: Sprite2D
 var status_indicator: Polygon2D
@@ -33,11 +37,13 @@ var night_light: PointLight2D
 var physics_body: StaticBody2D
 
 
-func setup(new_id: String, cell: Vector2i, preview: bool = false) -> void:
+func setup(new_id: String, cell: Vector2i, preview: bool = false, new_placement_rotation: int = 0) -> void:
 	device_id = new_id
 	origin_cell = cell
 	is_preview = preview
+	placement_rotation = posmod(new_placement_rotation, 4)
 	if is_node_ready():
+		_apply_placement_rotation()
 		_refresh_texture()
 
 
@@ -46,9 +52,12 @@ func _ready() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
 	z_index = 2
+	_apply_placement_rotation()
 	_refresh_texture()
 	_setup_night_light()
 	_setup_collision()
+	if device_id == "ice_drill" and not is_preview:
+		add_to_group("ice_drills")
 
 
 func _process(delta: float) -> void:
@@ -127,8 +136,61 @@ func get_interaction_summary() -> String:
 		"battery":
 			return "Carica: %.1f / %.0f kWh  ·  %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(battery_charge_ratio * 100.0)]
 		"ice_drill":
-			return "Consumo: 60 kW  ·  Acqua: %.0f L/h" % get_fluid_output_rate_lph()
+			var summary := "Consumo: 60 kW  ·  Acqua: %.0f L/h" % get_fluid_output_rate_lph()
+			var refill_prompt := get_bottle_refill_prompt()
+			return summary + ("\n" + refill_prompt if not refill_prompt.is_empty() else "")
 	return "Dispositivo elettrico"
+
+
+func get_bottle_refill_prompt() -> String:
+	if device_id != "ice_drill":
+		return ""
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory == null:
+		return ""
+	var bottle: Dictionary = inventory.call("get_selected_item")
+	if str(bottle.get("id", "")) != "water_bottle":
+		return ""
+	if not network_enabled:
+		return "BORRACCIA · collega prima la trivella alla rete"
+	if not powered:
+		return "BORRACCIA · in attesa di corrente"
+	var capacity := float(bottle.get("capacity_liters", 2.0))
+	var current := float(bottle.get("liters", 0.0))
+	if current >= capacity - 0.001:
+		return "BORRACCIA GIÀ PIENA"
+	if water_storage_liters < 0.05:
+		return "BORRACCIA · trivella in produzione (%s)" % (refill_feedback if not refill_feedback.is_empty() else "attendi acqua")
+	return "E · RIEMPI BORRACCIA · riserva %.1f L%s" % [water_storage_liters, (" · " + refill_feedback if not refill_feedback.is_empty() else "")]
+
+
+func try_refill_selected_bottle(player: Node2D) -> bool:
+	if is_preview or device_id != "ice_drill" or player == null:
+		return false
+	if player.global_position.distance_to(global_position) > WATER_BOTTLE_REFILL_DISTANCE:
+		return false
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory == null:
+		return false
+	var bottle: Dictionary = inventory.call("get_selected_item")
+	if str(bottle.get("id", "")) != "water_bottle":
+		return false
+	if not network_enabled or not powered:
+		refill_feedback = "servono corrente e collegamento"
+		return true
+	if water_storage_liters < 0.05:
+		refill_feedback = "riserva acqua insufficiente"
+		return true
+	var transferred := float(inventory.call("refill_selected_water_bottle", water_storage_liters))
+	if transferred <= 0.0001:
+		refill_feedback = "borraccia già piena"
+		return true
+	water_storage_liters = maxf(0.0, water_storage_liters - transferred)
+	refill_feedback = "+%.1f L ricaricati" % transferred
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null:
+		achievements.call("record", "refill_bottle")
+	return true
 
 
 func get_stock_items() -> Array[Dictionary]:
@@ -172,36 +234,76 @@ func get_battery_available_capacity_kwh() -> float:
 
 
 func get_occupied_power_cells() -> Array[Vector2i]:
-	if device_id == "solar_panel":
-		return [origin_cell, origin_cell + Vector2i.RIGHT]
-	if device_id in ["transformer", "ice_drill"]:
-		# Il cavo entra ed esce sulla riga centrale. Lo sprite da 32px
-		# sporge di 8px sopra e sotto, quindi riserviamo tutte le celle
-		# attraversate per impedire al pathfinding di tagliare l'edificio.
-		return [
-			origin_cell + Vector2i.UP,
-			origin_cell + Vector2i.RIGHT + Vector2i.UP,
-			origin_cell,
-			origin_cell + Vector2i.RIGHT,
-			origin_cell + Vector2i.DOWN,
-			origin_cell + Vector2i.RIGHT + Vector2i.DOWN,
-		]
-	return [origin_cell]
+	return footprint_cells_for(device_id, origin_cell, placement_rotation)
 
 
 func contains_world_point(world_point: Vector2) -> bool:
-	var footprint := Vector2(16, 16)
-	if device_id == "solar_panel":
-		footprint = Vector2(32, 16)
-	elif device_id == "transformer":
-		footprint = Vector2(32, 32)
-	elif device_id == "ice_drill":
-		footprint = Vector2(32, 48)
-	return Rect2(global_position - footprint * 0.5, footprint).has_point(world_point)
+	var point_cell := Vector2i(floori(world_point.x / TILE_SIZE), floori(world_point.y / TILE_SIZE))
+	return point_cell in get_occupied_power_cells()
 
 
 func get_fluid_output_cell() -> Vector2i:
-	return origin_cell + Vector2i(2, 0)
+	return rotated_cell_for(device_id, origin_cell, origin_cell + Vector2i(2, 0), placement_rotation)
+
+
+func get_fluid_output_required_opening() -> Vector2i:
+	return rotate_direction(Vector2i.LEFT, placement_rotation)
+
+
+func get_power_input_cell() -> Vector2i:
+	return rotated_cell_for(device_id, origin_cell, origin_cell + Vector2i.LEFT, placement_rotation)
+
+
+func get_power_input_attach_direction() -> Vector2i:
+	return rotate_direction(Vector2i.RIGHT, placement_rotation)
+
+
+func get_power_output_cell() -> Vector2i:
+	var native_cell := origin_cell + (Vector2i.RIGHT if device_id == "battery" else Vector2i(2, 0))
+	return rotated_cell_for(device_id, origin_cell, native_cell, placement_rotation)
+
+
+func get_power_output_attach_direction() -> Vector2i:
+	return rotate_direction(Vector2i.LEFT, placement_rotation)
+
+
+static func footprint_cells_for(item_id: String, cell: Vector2i, new_placement_rotation: int = 0) -> Array[Vector2i]:
+	var native_cells: Array[Vector2i] = [cell]
+	if item_id == "solar_panel":
+		native_cells = [cell, cell + Vector2i.RIGHT]
+	elif item_id in ["transformer", "ice_drill"]:
+		# Lo sprite occupa due colonne e tre righe attorno alla riga di aggancio.
+		native_cells = [cell + Vector2i.UP, cell + Vector2i.RIGHT + Vector2i.UP, cell, cell + Vector2i.RIGHT, cell + Vector2i.DOWN, cell + Vector2i.RIGHT + Vector2i.DOWN]
+	var rotated: Array[Vector2i] = []
+	for native_cell in native_cells:
+		var rotated_cell := rotated_cell_for(item_id, cell, native_cell, new_placement_rotation)
+		if rotated_cell not in rotated:
+			rotated.append(rotated_cell)
+	return rotated
+
+
+static func rotated_cell_for(item_id: String, cell: Vector2i, native_cell: Vector2i, new_placement_rotation: int = 0) -> Vector2i:
+	var center := _base_world_position_for(item_id, cell)
+	var native_center := Vector2(native_cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE * 0.5
+	var rotated_center := center + (native_center - center).rotated(float(posmod(new_placement_rotation, 4)) * PI * 0.5)
+	return Vector2i(floori(rotated_center.x / TILE_SIZE), floori(rotated_center.y / TILE_SIZE))
+
+
+static func rotate_direction(direction: Vector2i, new_placement_rotation: int = 0) -> Vector2i:
+	var result := direction
+	for _turn in posmod(new_placement_rotation, 4):
+		result = Vector2i(-result.y, result.x)
+	return result
+
+
+static func _base_world_position_for(item_id: String, cell: Vector2i) -> Vector2:
+	if item_id in ["solar_panel", "transformer", "ice_drill"]:
+		return Vector2(cell * TILE_SIZE) + Vector2(16.0, 8.0)
+	return Vector2(cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE * 0.5
+
+
+func _apply_placement_rotation() -> void:
+	rotation = float(placement_rotation) * PI * 0.5
 
 
 func get_fluid_output_rate_lph() -> float:
@@ -261,7 +363,7 @@ func get_machine_specs() -> Dictionary:
 				"status": drill_connection if not network_enabled else ("OPERATIVA" if powered else drill_connection),
 				"status_color": Color("72eda0") if powered else Color("ff655d"),
 				"principle": "La testa di perforazione frantuma il regolite marziano ghiacciato; un sistema termico interno separa e fonde il ghiaccio, ottenendo acqua liquida.",
-				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: 40 L/h", "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Acqua trasportata: %.1f L" % water_transported_liters, "Rete: %s" % drill_connection],
+			"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: 40 L/h", "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f L" % water_storage_liters, "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
 			}
 	return {"title": "MACCHINARIO", "category": "SISTEMA", "status": "SCONOSCIUTO", "status_color": Color.WHITE, "principle": "", "specs": []}
 

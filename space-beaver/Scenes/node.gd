@@ -8,6 +8,7 @@ const BASE_DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 # Greenhouse.gd is kept as a project resource so the editor can resolve the
 # typed preview and the manual power-control panel without a stale reference.
 const GREENHOUSE_SCRIPT := preload("res://scripts/Greenhouse.gd")
+const RESEARCH_MACHINE_SCRIPT := preload("res://scripts/ResearchMachine.gd")
 const MACHINE_INTERACTION_DISTANCE := 76.0
 
 @onready var camera: Camera2D = $"../Camera2D"
@@ -20,7 +21,9 @@ var process_preview: ProcessMachine
 var rover_preview: Rover
 var dome_preview: BaseDome
 var greenhouse_preview: Greenhouse
+var research_preview: Node2D
 var dome_entrance_direction := 1
+var machine_placement_rotation := 0
 var demolition_root: Control
 var demolition_question: Label
 var pending_demolition: Dictionary = {}
@@ -48,6 +51,7 @@ func _ready() -> void:
 	call_deferred("_create_rover_preview")
 	call_deferred("_create_dome_preview")
 	call_deferred("_create_greenhouse_preview")
+	call_deferred("_create_research_preview")
 	call_deferred("_create_demolition_ui")
 	call_deferred("_create_machine_info_ui")
 	call_deferred("_create_nearby_machine_ui")
@@ -96,11 +100,19 @@ func _create_greenhouse_preview() -> void:
 	greenhouse_preview.visible = false
 
 
+func _create_research_preview() -> void:
+	var preview := RESEARCH_MACHINE_SCRIPT.new()
+	preview.call("setup", "xrd_diffractometer", true)
+	research_preview = preview as Node2D
+	get_tree().current_scene.add_child(research_preview)
+	research_preview.visible = false
+
+
 func _process(_delta: float) -> void:
 	if machine_info_root != null and machine_info_root.visible:
 		_refresh_machine_info()
 	_update_nearby_machine_ui()
-	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open
+	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if pipe_preview != null:
 		var pipe_active: bool = not blocked and selected_id == "pipe_hammer"
@@ -115,17 +127,25 @@ func _process(_delta: float) -> void:
 		power_preview.visible = power_active
 		if power_active:
 			var power_cell := PowerGrid.get_mouse_cell(camera)
-			power_preview.setup(selected_id, power_cell, true)
-			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell)
-			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell) else Color(1.0, 0.28, 0.24, 0.72)
+			power_preview.setup(selected_id, power_cell, true, machine_placement_rotation)
+			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell, machine_placement_rotation)
+			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell, machine_placement_rotation) else Color(1.0, 0.28, 0.24, 0.72)
 	if process_preview != null:
 		var process_active := not blocked and selected_id in ["electrolyzer", "sabatier"]
 		process_preview.visible = process_active
 		if process_active:
 			var process_cell: Vector2i = ProcessMachine.sabatier_target_cell() if selected_id == "sabatier" else PowerGrid.get_mouse_cell(camera)
-			process_preview.setup(selected_id, process_cell, true)
+			process_preview.setup(selected_id, process_cell, true, machine_placement_rotation)
 			process_preview.global_position = ProcessMachine.world_position_for(selected_id, process_cell)
-			process_preview.modulate = Color(0.55, 1.0, 0.62, 0.82) if PowerGrid.can_place_device(selected_id, process_cell) else Color(1.0, 0.28, 0.24, 0.82)
+			process_preview.modulate = Color(0.55, 1.0, 0.62, 0.82) if PowerGrid.can_place_device(selected_id, process_cell, machine_placement_rotation) else Color(1.0, 0.28, 0.24, 0.82)
+	if research_preview != null:
+		var research_active := not blocked and selected_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]
+		research_preview.visible = research_active
+		if research_active:
+			var research_cell := PowerGrid.get_mouse_cell(camera)
+			research_preview.call("setup", selected_id, true, machine_placement_rotation)
+			research_preview.global_position = RESEARCH_MACHINE_SCRIPT.world_position_for(selected_id, research_cell, machine_placement_rotation)
+			research_preview.modulate = Color(0.55, 1.0, 0.62, 0.82) if RESEARCH_MACHINE_SCRIPT.can_place_at(selected_id, research_preview.global_position, machine_placement_rotation) else Color(1.0, 0.28, 0.24, 0.82)
 	if rover_preview != null:
 		var rover_active: bool = not blocked and selected_id == "rover"
 		rover_preview.visible = rover_active
@@ -141,7 +161,7 @@ func _process(_delta: float) -> void:
 			var dome_configuration: Dictionary = Inventory.get_selected_item().get("configuration", {})
 			dome_preview.setup(selected_id, dome_entrance_direction, true, dome_configuration)
 			dome_preview.global_position = BaseDome.world_position_for(dome_cell)
-			dome_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if BaseDome.can_place_at(dome_preview.global_position, selected_id, dome_configuration) else Color(1.0, 0.28, 0.24, 0.72)
+			dome_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if BaseDome.can_place_at(dome_preview.global_position, selected_id, dome_configuration, dome_entrance_direction) else Color(1.0, 0.28, 0.24, 0.72)
 	if greenhouse_preview != null:
 		var greenhouse_active: bool = not blocked and selected_id == "greenhouse"
 		greenhouse_preview.visible = greenhouse_active
@@ -162,7 +182,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 		return
-	if Inventory.is_open or Shop.is_open:
+	if Inventory.is_open or Shop.is_open or AchievementManager.is_board_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and nearby_machine != null:
 		if event.keycode == KEY_V:
@@ -197,6 +217,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		dome_entrance_direction = posmod(dome_entrance_direction + 1, 4)
 		get_viewport().set_input_as_handled()
 		return
+	if item.get("id", "") in ["solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+		machine_placement_rotation = posmod(machine_placement_rotation + 1, 4)
+		get_viewport().set_input_as_handled()
+		return
 	if not event.is_action_pressed("left_click"):
 		return
 	var clicked_entry := BuildableRegistry.find_at(camera.get_global_mouse_position())
@@ -218,13 +242,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			PipeManager.place_pipe(get_tree().current_scene, cell, pipe_shape, pipe_vertical)
 		"solar_panel", "transformer", "battery", "ice_drill":
 			var cell := PowerGrid.get_mouse_cell(camera)
-			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell) != null:
+			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell, machine_placement_rotation) != null:
 				Inventory.consume_selected_item()
 		"electrolyzer", "sabatier":
 			var process_cell: Vector2i = ProcessMachine.sabatier_target_cell() if item.get("id", "") == "sabatier" else PowerGrid.get_mouse_cell(camera)
 			if item.get("id", "") == "sabatier" and PowerGrid.get_mouse_cell(camera) not in ProcessMachine.footprint_cells("sabatier", process_cell):
 				return
-			if PowerGrid.place_process_machine(get_tree().current_scene, str(item.get("id", "")), process_cell) != null:
+			if PowerGrid.place_process_machine(get_tree().current_scene, str(item.get("id", "")), process_cell, machine_placement_rotation) != null:
+				Inventory.consume_selected_item()
+		"xrd_diffractometer", "raman_spectrometer", "icp_ms":
+			var research_cell := PowerGrid.get_mouse_cell(camera)
+			if RESEARCH_MACHINE_SCRIPT.place(get_tree().current_scene, str(item.get("id", "")), research_cell, machine_placement_rotation) != null:
 				Inventory.consume_selected_item()
 		"rover":
 			var rover_cell := PowerGrid.get_mouse_cell(camera)
@@ -257,29 +285,35 @@ func _unhandled_input(event: InputEvent) -> void:
 func get_build_help_text() -> String:
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if selected_id == "solar_panel":
-		return "PANNELLO: Click posiziona  ·  richiede 1 cella libera a destra  ·  Dx riprende"
+		return "PANNELLO: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "transformer":
-		return "TRASFORMATORE UNICO: Click posiziona  ·  Dx riprende"
+		return "TRASFORMATORE UNICO: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "battery":
-		return "BATTERIA: Click posiziona  ·  500 kWh  ·  Dx riprende"
+		return "BATTERIA: Click posiziona  ·  R ruota (%s)  ·  500 kWh  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "ice_drill":
-		return "TRIVELLA: Click posiziona  ·  60 kW  ·  uscita acqua a destra  ·  Dx rimuove"
+		return "TRIVELLA: Click posiziona  ·  R ruota (%s)  ·  60 kW  ·  Dx rimuove" % _machine_rotation_label()
 	if selected_id == "electrolyzer":
-		return "ELETTROLIZZATORE: Click posiziona  ·  65 kW + acqua dal basso-sinistra  ·  uscite H₂/O₂ in alto  ·  Dx rimuove"
+		return "ELETTROLIZZATORE: Click posiziona  ·  R ruota (%s)  ·  65 kW + acqua e uscite H₂/O₂  ·  Dx rimuove" % _machine_rotation_label()
 	if selected_id == "sabatier":
-		return "SABATIER: posizione vincolata evidenziata a sinistra del razzo  ·  richiede 50 kW + tubo H₂  ·  carica CH₄ direttamente nel razzo"
+		return "SABATIER: a sinistra del razzo  ·  R ruota (%s)  ·  50 kW + tubo H₂  ·  CH₄ diretto" % _machine_rotation_label()
 	if selected_id == "rover":
 		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
 	if selected_id in ["dome_small", "dome_medium", "dome_large"]:
 		return "CUPOLE: Click posiziona  ·  R ruota ingresso/camera  ·  E usa la camera di decompressione  ·  Dx demolisce"
 	if selected_id == "greenhouse":
 		return "SERRA: Click posiziona  ·  R ruota ingresso/camera  ·  acqua a sinistra  ·  E semina dentro  ·  Dx demolisce"
+	if selected_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
+		return "RICERCA: Click in una cupola abitativa  ·  R ruota (%s)  ·  E pietra/rapporto  ·  U upgrade  ·  Dx riprende" % _machine_rotation_label()
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
 	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
 
 
 func get_pipe_help_text() -> String:
 	return get_build_help_text()
+
+
+func _machine_rotation_label() -> String:
+	return ["EST", "SUD", "OVEST", "NORD"][posmod(machine_placement_rotation, 4)]
 
 
 func _try_demolish_at_mouse(item: Dictionary) -> void:
@@ -431,7 +465,7 @@ func _create_nearby_machine_ui() -> void:
 func _update_nearby_machine_ui() -> void:
 	if nearby_machine_root == null:
 		return
-	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
+	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
 		nearby_machine = null
 		nearby_machine_root.visible = false
 		return

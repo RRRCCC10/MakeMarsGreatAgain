@@ -50,6 +50,31 @@ func is_rock_item(item_id: String) -> bool:
 	return item_id.begins_with("rock_") or item_id == "rock"
 
 
+func get_first_rock_sample() -> Dictionary:
+	for collection in [hotbar, backpack]:
+		for item in collection:
+			if is_rock_item(str(item.get("id", ""))) and int(item.get("count", 0)) > 0:
+				return item.duplicate(true)
+	return {}
+
+
+func take_first_rock_sample() -> Dictionary:
+	## Estrae un singolo campione da qualunque slot, preservando lo stack delle
+	## pietre dello stesso tipo. I laboratori non dipendono dallo slot selezionato.
+	for collection in [hotbar, backpack]:
+		for index in collection.size():
+			var item: Dictionary = collection[index]
+			if not is_rock_item(str(item.get("id", ""))) or int(item.get("count", 0)) <= 0:
+				continue
+			var sample := {"id": str(item.get("id", "")), "name": str(item.get("name", "Pietra"))}
+			item["count"] = int(item.get("count", 0)) - 1
+			if int(item["count"]) <= 0:
+				collection[index] = {}
+			changed.emit()
+			return sample
+	return {}
+
+
 func can_add_item(item_id: String) -> bool:
 	var suit_system := get_node_or_null("/root/SuitSystem")
 	if suit_system != null and bool(suit_system.call("is_suit", item_id)):
@@ -188,6 +213,22 @@ func get_selected_item() -> Dictionary:
 	return hotbar[selected_hotbar_index]
 
 
+func refill_selected_water_bottle(available_liters: float) -> float:
+	## Riempie esclusivamente la borraccia che il giocatore ha effettivamente in mano.
+	## Restituisce i litri prelevati, così la trivella può sottrarli dalla propria riserva.
+	var bottle := get_selected_item()
+	if str(bottle.get("id", "")) != "water_bottle" or available_liters <= 0.0:
+		return 0.0
+	var capacity := maxf(0.0, float(bottle.get("capacity_liters", 2.0)))
+	var current := clampf(float(bottle.get("liters", 0.0)), 0.0, capacity)
+	var transferred := minf(maxf(0.0, capacity - current), available_liters)
+	if transferred <= 0.0001:
+		return 0.0
+	bottle["liters"] = roundf((current + transferred) * 10.0) / 10.0
+	changed.emit()
+	return transferred
+
+
 func select_hotbar(index: int) -> void:
 	if index >= 0 and index < HOTBAR_SIZE:
 		selected_hotbar_index = index
@@ -200,21 +241,52 @@ func select_backpack(index: int) -> void:
 		changed.emit()
 
 
-func move_selected_to_hotbar(index: int) -> void:
+func move_selected_to_hotbar(index: int) -> bool:
 	if selected_backpack_index < 0 or index < 0 or index >= HOTBAR_SIZE:
-		return
+		return false
 	# Slot 1, 4 e 5 sono riservati allo strumento e alle scorte di sopravvivenza.
 	if index == 0 or index >= 3:
-		return
+		return false
 	var item := backpack[selected_backpack_index]
 	if item.is_empty() or not item.get("placeable", false):
-		return
+		return false
 	var previous := hotbar[index]
 	hotbar[index] = item
 	backpack[selected_backpack_index] = previous
 	selected_backpack_index = -1
 	selected_hotbar_index = index
 	changed.emit()
+	return true
+
+
+func can_move_hotbar_to_backpack(index: int) -> bool:
+	if index < 0 or index >= HOTBAR_SIZE:
+		return false
+	var item := hotbar[index]
+	if item.is_empty() or not bool(item.get("placeable", false)):
+		return false
+	for slot in backpack:
+		if slot.is_empty():
+			return true
+	return false
+
+
+func move_hotbar_to_backpack(index: int) -> bool:
+	## Con l'inventario aperto un click su un macchinario nella hotbar lo ripone
+	## nello zaino. Gli slot riservati (tubi, acqua, razioni) non sono quindi
+	## spostabili per errore, mentre tutti i costruibili lo sono.
+	if not can_move_hotbar_to_backpack(index):
+		return false
+	for backpack_index in BACKPACK_SIZE:
+		if not backpack[backpack_index].is_empty():
+			continue
+		backpack[backpack_index] = hotbar[index]
+		hotbar[index] = {}
+		selected_hotbar_index = clampi(selected_hotbar_index, 0, HOTBAR_SIZE - 1)
+		selected_backpack_index = backpack_index
+		changed.emit()
+		return true
+	return false
 
 
 func consume_selected_item() -> bool:

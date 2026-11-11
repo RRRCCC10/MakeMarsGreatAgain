@@ -59,6 +59,7 @@ func _run() -> void:
 	shop.close()
 
 	var player := current_scene.get_node("player") as Node2D
+	var original_player_position := player.global_position
 	var preview := DOME_SCRIPT.new() as BaseDome
 	preview.setup("dome_small", 1, true)
 	current_scene.add_child(preview)
@@ -80,7 +81,20 @@ func _run() -> void:
 		_expect(oriented_preview.get_node("AirlockCorridor").texture != null, "Il corridoio deve avere uno sprite anche verso %s" % direction_name)
 		oriented_preview.queue_free()
 
-	var dome := DOME_SCRIPT.place(current_scene, "dome_small", Vector2i(620, 430), 1) as BaseDome
+	var dome_cell := Vector2i(620, 430)
+	var dome_target := DOME_SCRIPT.world_position_for(dome_cell)
+	player.global_position = dome_target
+	_expect(not DOME_SCRIPT.can_place_at(dome_target, "dome_small", {}, 1), "Non si deve poter piazzare una cupola sopra il giocatore")
+	player.global_position = original_player_position
+	var blocking_rock := Node2D.new()
+	blocking_rock.add_to_group("collectible_rocks")
+	blocking_rock.global_position = dome_target
+	current_scene.add_child(blocking_rock)
+	_expect(not DOME_SCRIPT.can_place_at(dome_target, "dome_small", {}, 1), "Non si deve poter piazzare una cupola sopra una roccia")
+	blocking_rock.free()
+	await process_frame
+	_expect(DOME_SCRIPT.can_place_at(dome_target, "dome_small", {}, 1), "Rimossa la roccia, la cupola deve tornare piazzabile")
+	var dome := DOME_SCRIPT.place(current_scene, "dome_small", dome_cell, 1) as BaseDome
 	_expect(dome != null, "La cupola piccola deve potersi piazzare in un'area libera")
 	if dome == null:
 		_finish()

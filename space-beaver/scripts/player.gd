@@ -32,7 +32,7 @@ func _physics_process(_delta: float) -> void:
 	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
 	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
 	_clamp_to_world_bounds()
-	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
+	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
 		velocity = Vector2.ZERO
 		_update_animation(Vector2.ZERO)
 		return
@@ -128,6 +128,34 @@ func nearest_rover() -> Node:
 	return closest
 
 
+func nearest_research_machine() -> Node2D:
+	var closest: Node2D = null
+	var closest_distance := PICKUP_DISTANCE
+	for machine in get_tree().get_nodes_in_group("research_machines"):
+		if not machine is Node2D or not machine.has_method("try_interact"):
+			continue
+		var machine_node := machine as Node2D
+		var distance := global_position.distance_to(machine_node.global_position)
+		if distance < closest_distance:
+			closest = machine_node
+			closest_distance = distance
+	return closest
+
+
+func nearest_ice_drill() -> Node2D:
+	var closest: Node2D = null
+	var closest_distance := PICKUP_DISTANCE
+	for drill in get_tree().get_nodes_in_group("ice_drills"):
+		if not drill is Node2D or not drill.has_method("try_refill_selected_bottle"):
+			continue
+		var drill_node := drill as Node2D
+		var distance := global_position.distance_to(drill_node.global_position)
+		if distance < closest_distance:
+			closest = drill_node
+			closest_distance = distance
+	return closest
+
+
 func mount_rover(rover: Node2D) -> void:
 	mounted_rover = rover
 	velocity = Vector2.ZERO
@@ -153,7 +181,7 @@ func is_driving_rover() -> bool:
 
 
 func _try_board_nearby_rover() -> bool:
-	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open:
+	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
 		return false
 	var nearby_rover := nearest_rover()
 	return nearby_rover != null and bool(nearby_rover.call("board", self))
@@ -194,13 +222,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_camera_zoom(camera.zoom.x / ZOOM_FACTOR)
 			get_viewport().set_input_as_handled()
 			return
-	if not Inventory.is_open and not Shop.is_open and event is InputEventKey and event.pressed and not event.echo:
+	if not Inventory.is_open and not Shop.is_open and not AchievementManager.is_board_open and event is InputEventKey and event.pressed and not event.echo:
 		var control_key := _get_control_key(event)
 		if control_key in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D] and not is_driving_rover():
 			for dome in get_tree().get_nodes_in_group("base_domes"):
 				if is_instance_valid(dome) and dome.has_method("handle_airlock_key") and bool(dome.call("handle_airlock_key", self, control_key)):
 					get_viewport().set_input_as_handled()
 					return
+		if control_key == KEY_U and not is_driving_rover():
+			var upgrade_machine := nearest_research_machine()
+			if upgrade_machine != null and bool(upgrade_machine.call("try_upgrade", self)):
+				get_viewport().set_input_as_handled()
+				return
 		if control_key != KEY_E:
 			return
 		# Il rover riceve lo stesso evento e gestisce l'uscita del pilota.
@@ -209,6 +242,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		var capsule := nearest_delivery_capsule()
 		if capsule != null:
 			capsule.call("collect_all")
+			get_viewport().set_input_as_handled()
+			return
+		var drill := nearest_ice_drill()
+		if drill != null and str(Inventory.get_selected_item().get("id", "")) == "water_bottle":
+			if bool(drill.call("try_refill_selected_bottle", self)):
+				get_viewport().set_input_as_handled()
+				return
+		var research_machine := nearest_research_machine()
+		if research_machine != null and bool(research_machine.call("try_interact", self)):
 			get_viewport().set_input_as_handled()
 			return
 		var rock := nearest_rock()
@@ -226,7 +268,7 @@ func _is_control_key(event: InputEventKey, keycode: Key) -> bool:
 
 
 func _get_control_key(event: InputEventKey) -> Key:
-	for keycode in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D]:
+	for keycode in [KEY_E, KEY_F, KEY_U, KEY_W, KEY_A, KEY_S, KEY_D]:
 		if event.physical_keycode == keycode:
 			return keycode
 	return event.keycode

@@ -15,6 +15,11 @@ var fluid_inputs: Array[Dictionary] = []
 func can_place_pipe(cell: Vector2i, shape_type: int, is_vertical: bool) -> bool:
 	if pipes.has(cell):
 		return false
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null:
+		var pipe_rect := Rect2(Vector2(cell * PIPE_TILE_SIZE), Vector2(PIPE_TILE_SIZE, PIPE_TILE_SIZE))
+		if pipe_rect.grow(8.0).has_point(player.global_position):
+			return false
 	if _cell_is_inside_buildable(cell):
 		return false
 	if not Economy.can_afford(PIPE_COST):
@@ -350,6 +355,11 @@ func _cell_is_inside_buildable(cell: Vector2i) -> bool:
 			continue
 		var node: Node = entry.get("node")
 		if not is_instance_valid(node) or not node.has_method("get_occupied_power_cells"):
+			continue
+		# Una cupola abitativa è un ambiente interno: permette macchinari e
+		# tubazioni al suo interno. Restano invece bloccate serre, macchinari,
+		# rocce e tutte le altre strutture reali.
+		if node.is_in_group("base_domes") and not node.is_in_group("greenhouses"):
 			continue
 		if cell in node.get_occupied_power_cells():
 			return true

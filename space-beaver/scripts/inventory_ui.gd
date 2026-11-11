@@ -27,6 +27,7 @@ const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
 const DOME_ICON := preload("res://assets/base_dome/small_exterior.png")
 const GREENHOUSE_ICON := preload("res://assets/greenhouse/greenhouse_base.jpg")
 const POTATO_SEED_ICON := preload("res://assets/greenhouse/potato_first_cycle.jpg")
+const RESEARCH_MACHINE_SCRIPT := preload("res://scripts/ResearchMachine.gd")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"
 
@@ -297,7 +298,7 @@ func _process(_delta: float) -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
-	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
+	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
@@ -363,10 +364,9 @@ func _refresh() -> void:
 		button.modulate = Color(1.0, 0.84, 0.45) if Inventory.selected_backpack_index == index else Color.WHITE
 	if Inventory.selected_backpack_index >= 0:
 		var selected := Inventory.backpack[Inventory.selected_backpack_index]
-		var selected_id := str(selected.get("id", ""))
-		detail_label.text = "%s · campione geologico, non piazzabile" % str(selected.get("name", "Pietra")) if Inventory.is_rock_item(selected_id) else str(selected.get("name", ""))
+		detail_label.text = "%s · campione geologico, non piazzabile" % str(selected.get("name", "Pietra")) if Inventory.is_rock_item(str(selected.get("id", ""))) else "%s selezionato · clicca uno slot rapido libero per equipaggiarlo (scambia se occupato)." % str(selected.get("name", ""))
 	else:
-		detail_label.text = "Slot rapido " + str(Inventory.selected_hotbar_index + 1) + " · premi 1-5 per cambiarlo. Clicca un oggetto costruibile per equipaggiarlo."
+		detail_label.text = "Clicca un oggetto nello zaino, poi uno slot rapido per equipaggiarlo. Clicca un macchinario nella hotbar per riporlo nello zaino."
 
 
 func _update_hotbar_labels(index: int, item: Dictionary) -> void:
@@ -423,6 +423,12 @@ func _item_icon(item: Dictionary) -> Texture2D:
 			return _first_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
 		"sabatier":
 			return _first_frame(SABATIER_SHEET, Vector2i(48, 48))
+		"xrd_diffractometer":
+			return RESEARCH_MACHINE_SCRIPT.get_icon_texture(item_id)
+		"raman_spectrometer":
+			return RESEARCH_MACHINE_SCRIPT.get_icon_texture(item_id)
+		"icp_ms":
+			return RESEARCH_MACHINE_SCRIPT.get_icon_texture(item_id)
 		"rover":
 			return _first_frame(ROVER_SHEET, Vector2i(48, 32))
 		"dome_small", "dome_medium", "dome_large":
@@ -447,19 +453,17 @@ func _first_frame(sheet: Texture2D, frame_size: Vector2i = Vector2i(16, 16)) -> 
 
 
 func _on_hotbar_pressed(index: int) -> void:
-	if Inventory.is_open and Inventory.selected_backpack_index >= 0:
-		Inventory.move_selected_to_hotbar(index)
-	else:
+	if not Inventory.is_open:
 		Inventory.select_hotbar(index)
+		return
+	if Inventory.selected_backpack_index >= 0:
+		Inventory.move_selected_to_hotbar(index)
+		return
+	Inventory.move_hotbar_to_backpack(index)
 
 
 func _on_backpack_pressed(index: int) -> void:
 	Inventory.select_backpack(index)
-	if Inventory.backpack[index].get("placeable", false):
-		var target_slot := Inventory.selected_hotbar_index
-		if target_slot == 0 or target_slot >= 3:
-			target_slot = 1
-		Inventory.move_selected_to_hotbar(target_slot)
 
 
 func _equip_selected_suit() -> void:

@@ -71,7 +71,7 @@ func cell_to_world(cell: Vector2i) -> Vector2:
 	return Vector2(cell * CELL_SIZE) + Vector2.ONE * CELL_SIZE * 0.5
 
 
-func device_world_position(item_id: String, cell: Vector2i) -> Vector2:
+func device_world_position(item_id: String, cell: Vector2i, _placement_rotation: int = 0) -> Vector2:
 	if item_id == "solar_panel":
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
 	if item_id in ["transformer", "ice_drill"]:
@@ -81,14 +81,14 @@ func device_world_position(item_id: String, cell: Vector2i) -> Vector2:
 	return cell_to_world(cell)
 
 
-func can_place_device(item_id: String, cell: Vector2i) -> bool:
+func can_place_device(item_id: String, cell: Vector2i, placement_rotation: int = 0) -> bool:
 	if item_id in ["electrolyzer", "sabatier"]:
-		return can_place_process_machine(item_id, cell)
+		return can_place_process_machine(item_id, cell, placement_rotation)
 	if item_id not in ["solar_panel", "transformer", "battery", "ice_drill"]:
 		return false
 	if item_id == "transformer" and has_transformer():
 		return false
-	var occupied := _footprint_for(item_id, cell)
+	var occupied := _footprint_for(item_id, cell, placement_rotation)
 	var blocked := _get_blocked_cells()
 	for occupied_cell in occupied:
 		if blocked.has(occupied_cell):
@@ -96,18 +96,18 @@ func can_place_device(item_id: String, cell: Vector2i) -> bool:
 		if PipeManager.get_pipe(occupied_cell) != null:
 			return false
 	if item_id == "solar_panel":
-		# La terza cella a destra e' l'uscita obbligatoria del pannello.
-		var right_clearance := cell + Vector2i(2, 0)
-		if blocked.has(right_clearance):
+		var panel_output := PowerDevice.rotated_cell_for(item_id, cell, cell + Vector2i(2, 0), placement_rotation)
+		if blocked.has(panel_output):
 			return false
 	if item_id == "ice_drill":
-		var water_output := cell + Vector2i(2, 0)
-		if not PipeManager.can_attach_fluid_source(water_output, PipeSegment.Category.WATER, Vector2i.LEFT):
+		var water_output := PowerDevice.rotated_cell_for(item_id, cell, cell + Vector2i(2, 0), placement_rotation)
+		var required_opening := PowerDevice.rotate_direction(Vector2i.LEFT, placement_rotation)
+		if not PipeManager.can_attach_fluid_source(water_output, PipeSegment.Category.WATER, required_opening):
 			return false
 	return true
 
 
-func can_place_process_machine(item_id: String, cell: Vector2i) -> bool:
+func can_place_process_machine(item_id: String, cell: Vector2i, placement_rotation: int = 0) -> bool:
 	if item_id not in ["electrolyzer", "sabatier"]:
 		return false
 	if item_id == "sabatier" and cell != ProcessMachine.sabatier_target_cell():
@@ -120,17 +120,17 @@ func can_place_process_machine(item_id: String, cell: Vector2i) -> bool:
 	return true
 
 
-func place_process_machine(parent: Node, item_id: String, cell: Vector2i) -> ProcessMachine:
-	if not can_place_process_machine(item_id, cell):
+func place_process_machine(parent: Node, item_id: String, cell: Vector2i, placement_rotation: int = 0) -> ProcessMachine:
+	if not can_place_process_machine(item_id, cell, placement_rotation):
 		return null
 	var machine := ProcessMachine.new()
-	machine.setup(item_id, cell)
+	machine.setup(item_id, cell, false, placement_rotation)
 	parent.add_child(machine)
 	machine.global_position = ProcessMachine.world_position_for(item_id, cell)
 	register_consumer(machine, machine.get_power_connection_cell(), machine.get_power_demand_kw(), machine.get_power_attach_direction())
 	if item_id == "electrolyzer":
-		PipeManager.register_fluid_source(machine, machine.get_hydrogen_output_cell(), PipeSegment.Category.HYDROGEN, Vector2i.RIGHT)
-		PipeManager.register_fluid_source(machine, machine.get_oxygen_output_cell(), PipeSegment.Category.OXYGEN, Vector2i.LEFT)
+		PipeManager.register_fluid_source(machine, machine.get_hydrogen_output_cell(), PipeSegment.Category.HYDROGEN, machine.get_hydrogen_output_required_opening())
+		PipeManager.register_fluid_source(machine, machine.get_oxygen_output_cell(), PipeSegment.Category.OXYGEN, machine.get_oxygen_output_required_opening())
 	for input_port in machine.get_fluid_input_ports():
 		PipeManager.register_fluid_input(machine, input_port["cell"], input_port["category"], input_port["required_opening"])
 	BuildableRegistry.register_buildable(machine, machine.get_display_name(), "machine", pickup_process_machine.bind(machine))
@@ -151,13 +151,13 @@ func pickup_process_machine(machine: ProcessMachine) -> bool:
 	return true
 
 
-func place_device(parent: Node, item_id: String, cell: Vector2i) -> PowerDevice:
-	if not can_place_device(item_id, cell):
+func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotation: int = 0) -> PowerDevice:
+	if not can_place_device(item_id, cell, placement_rotation):
 		return null
 	var device := POWER_DEVICE_SCRIPT.new() as PowerDevice
-	device.setup(item_id, cell, false)
+	device.setup(item_id, cell, false, placement_rotation)
 	parent.add_child(device)
-	device.global_position = device_world_position(item_id, cell)
+	device.global_position = device_world_position(item_id, cell, placement_rotation)
 	match item_id:
 		"solar_panel":
 			panels.append(device)
@@ -168,13 +168,17 @@ func place_device(parent: Node, item_id: String, cell: Vector2i) -> PowerDevice:
 		"ice_drill":
 			consumers.append({
 				"node": device,
-				"connection_cell": cell + Vector2i.LEFT,
+				"connection_cell": device.get_power_input_cell(),
 				"demand_kw": ICE_DRILL_DEMAND_KW,
-				"attach_direction": Vector2i.RIGHT,
+				"attach_direction": device.get_power_input_attach_direction(),
 			})
-			PipeManager.register_fluid_source(device, cell + Vector2i(2, 0), PipeSegment.Category.WATER, Vector2i.LEFT)
+			PipeManager.register_fluid_source(device, device.get_fluid_output_cell(), PipeSegment.Category.WATER, device.get_fluid_output_required_opening())
 	var buildable_kind := "machine" if item_id == "ice_drill" else "power_device"
 	BuildableRegistry.register_buildable(device, _display_name(item_id), buildable_kind, pickup_device.bind(device))
+	if item_id == "ice_drill":
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null:
+			achievements.call("record", "ice_drill")
 	rebuild_network()
 	return device
 
@@ -231,29 +235,29 @@ func rebuild_network() -> void:
 
 	# Le tre sezioni non condividono celle: prima della trasformazione,
 	# dopo il trasformatore e dopo la batteria sono reti elettriche distinte.
-	var transformer_input := transformer.origin_cell + Vector2i.LEFT
+	var transformer_input := transformer.get_power_input_cell()
 	for panel in panels:
 		if not _device_network_enabled(panel):
 			connection_ok[panel] = false
 			continue
-		var panel_output := panel.origin_cell + Vector2i(2, 0)
+		var panel_output := panel.get_power_output_cell()
 		var path := _find_path(panel_output, transformer_input, NETWORK_SOLAR)
 		var connected := not path.is_empty()
 		connection_ok[panel] = connected
 		if connected:
-			_add_path(path, Vector2i.LEFT, Vector2i.RIGHT, NETWORK_SOLAR)
+			_add_path(path, panel.get_power_output_attach_direction(), transformer.get_power_input_attach_direction(), NETWORK_SOLAR)
 
-	var transformer_output := transformer.origin_cell + Vector2i(2, 0)
+	var transformer_output := transformer.get_power_output_cell()
 	for battery in batteries:
 		if not _device_network_enabled(battery):
 			connection_ok[battery] = false
 			continue
-		var battery_input := battery.origin_cell + Vector2i.LEFT
+		var battery_input := battery.get_power_input_cell()
 		var path := _find_path(transformer_output, battery_input, NETWORK_TRANSFORMED)
 		var connected := not path.is_empty()
 		connection_ok[battery] = connected
 		if connected:
-			_add_path(path, Vector2i.LEFT, Vector2i.RIGHT, NETWORK_TRANSFORMED)
+			_add_path(path, transformer.get_power_output_attach_direction(), battery.get_power_input_attach_direction(), NETWORK_TRANSFORMED)
 
 	var connected_batteries := _connected_batteries()
 	var use_battery_bus := not connected_batteries.is_empty()
@@ -266,19 +270,21 @@ func rebuild_network() -> void:
 		var consumer_cell := Vector2i(consumer["connection_cell"])
 		var supply_cell := transformer_output
 		var supply_network := NETWORK_TRANSFORMED
+		var supply_attach := transformer.get_power_output_attach_direction()
 		if use_battery_bus:
 			var closest := _closest_connected_battery(consumer_cell)
 			if closest == null:
 				connection_ok[node] = false
 				continue
-			supply_cell = closest.origin_cell + Vector2i.RIGHT
+			supply_cell = closest.get_power_output_cell()
 			supply_network = NETWORK_BATTERY
+			supply_attach = closest.get_power_output_attach_direction()
 		var path := _find_path(supply_cell, consumer_cell, supply_network)
 		var connected := not path.is_empty()
 		connection_ok[node] = connected
 		if connected:
 			has_connected_consumer = true
-			_add_path(path, Vector2i.LEFT, Vector2i(consumer["attach_direction"]), supply_network)
+			_add_path(path, supply_attach, Vector2i(consumer["attach_direction"]), supply_network)
 
 	# Con una batteria collegata, l'uscita alimenta il bus di accumulo.
 	# Senza batterie, i macchinari vengono collegati direttamente all'uscita
@@ -368,6 +374,10 @@ func _update_energy(delta: float) -> void:
 		var powered: bool = network_powered and bool(connection_ok.get(node, false))
 		if is_instance_valid(node) and node.has_method("set_powered"):
 			node.set_powered(powered)
+	if network_powered and _connected_panel_count() > 0 and not connected_batteries.is_empty() and has_transformer():
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null:
+			achievements.call("record", "stable_grid")
 
 
 func _get_battery_autonomy_hours() -> float:
@@ -632,6 +642,15 @@ func _clear_cables() -> void:
 
 func _get_blocked_cells() -> Dictionary:
 	var blocked: Dictionary = {}
+	# Un dispositivo non può comparire sotto l'astronauta. Riserviamo il suo
+	# collider completo, non soltanto la cella centrale del click.
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null:
+		var player_min := Vector2i(floori((player.global_position.x - 12.0) / CELL_SIZE), floori((player.global_position.y - 12.0) / CELL_SIZE))
+		var player_max := Vector2i(floori((player.global_position.x + 12.0) / CELL_SIZE), floori((player.global_position.y + 12.0) / CELL_SIZE))
+		for y in range(player_min.y, player_max.y + 1):
+			for x in range(player_min.x, player_max.x + 1):
+				blocked[Vector2i(x, y)] = true
 	for panel in panels:
 		for cell in panel.get_occupied_power_cells():
 			blocked[cell] = true
@@ -654,25 +673,18 @@ func _get_blocked_cells() -> Dictionary:
 		if entry.get("kind", "") in ["pipe", "power_device"]:
 			continue
 		var node: Node = entry.get("node")
+		# Le cupole abitative sono contenitori: le loro pareti bloccano il
+		# movimento del player, non l'installazione dei macchinari interni.
+		if is_instance_valid(node) and node.is_in_group("base_domes") and not node.is_in_group("greenhouses"):
+			continue
 		if is_instance_valid(node) and node.has_method("get_occupied_power_cells"):
 			for cell in node.get_occupied_power_cells():
 				blocked[cell] = true
 	return blocked
 
 
-func _footprint_for(item_id: String, cell: Vector2i) -> Array[Vector2i]:
-	if item_id == "solar_panel":
-		return [cell, cell + Vector2i.RIGHT]
-	if item_id in ["transformer", "ice_drill"]:
-		return [
-			cell + Vector2i.UP,
-			cell + Vector2i.RIGHT + Vector2i.UP,
-			cell,
-			cell + Vector2i.RIGHT,
-			cell + Vector2i.DOWN,
-			cell + Vector2i.RIGHT + Vector2i.DOWN,
-		]
-	return [cell]
+func _footprint_for(item_id: String, cell: Vector2i, placement_rotation: int = 0) -> Array[Vector2i]:
+	return PowerDevice.footprint_cells_for(item_id, cell, placement_rotation)
 
 
 func _closest_connected_battery(target: Vector2i) -> PowerDevice:

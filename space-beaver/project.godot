@@ -33,6 +33,7 @@ DeliveryManager="*res://scripts/DeliveryManager.gd"
 Shop="*res://scripts/Shop.gd"
 GameState="*res://scripts/GameState.gd"
 RoverInteraction="*res://scripts/RoverInteraction.gd"
+AchievementManager="*res://scripts/AchievementManager.gd"
 
 [display]
 

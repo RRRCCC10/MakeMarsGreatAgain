@@ -46,6 +46,27 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Consuma 50 kW e idrogeno. Si installa nell'unico spazio a sinistra del razzo e carica direttamente il metano nel razzo, senza tubi.",
 	},
+	"xrd_diffractometer": {
+		"name": "Diffrattometro a raggi X",
+		"price": 1_600_000_000,
+		"category": "research",
+		"placeable": true,
+		"description": "Analizza un campione in 2 min 30 s. Si installa in qualunque cupola abitativa e trasmette un rapporto scientifico alla Terra.",
+	},
+	"raman_spectrometer": {
+		"name": "Spettrometro Raman",
+		"price": 2_000_000_000,
+		"category": "research",
+		"placeable": true,
+		"description": "Analizza un campione in 3 minuti. Si installa in qualunque cupola abitativa e trasmette un rapporto scientifico alla Terra.",
+	},
+	"icp_ms": {
+		"name": "Spettrometro ICP-MS",
+		"price": 2_800_000_000,
+		"category": "research",
+		"placeable": true,
+		"description": "Analisi elementare avanzata in 4 minuti. Si installa in qualunque cupola abitativa e genera il rapporto più remunerativo.",
+	},
 	"dome_small": {
 		"name": "Cupola base piccola",
 		"price": 1_200_000_000,

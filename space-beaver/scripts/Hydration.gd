@@ -16,7 +16,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_set_thirst(thirst - LOSS_PER_SECOND * delta)
+	_set_thirst(thirst - LOSS_PER_SECOND * _get_achievement_loss_multiplier() * delta)
+
+
+func _get_achievement_loss_multiplier() -> float:
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null and achievements.has_method("get_water_loss_multiplier"):
+		return float(achievements.call("get_water_loss_multiplier"))
+	return 1.0
 
 
 func drink_from_selected_bottle() -> bool:

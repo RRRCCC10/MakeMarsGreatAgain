@@ -134,11 +134,15 @@ static func world_position_for(cell: Vector2i) -> Vector2:
 	return Vector2(cell) * TILE_SIZE + Vector2(TILE_SIZE * 0.5, TILE_SIZE * 0.5)
 
 
-static func can_place_at(world_position: Vector2, size_id: String, dome_configuration: Dictionary = {}) -> bool:
+static func can_place_at(world_position: Vector2, size_id: String, dome_configuration: Dictionary = {}, direction: int = 1) -> bool:
 	var definition: Dictionary = SIZES.get(size_id, SIZES["dome_small"])
 	var radius := float(definition["radius"])
 	var has_rover_pad := bool(dome_configuration.get("rover_pad", false)) and size_id in ["dome_medium", "dome_large"]
 	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return false
+	if not is_placement_clear_of_player_and_rocks(world_position, radius, direction):
+		return false
 	var map_provider: Node = tree.get_first_node_in_group("world_map_provider") if tree != null else null
 	if map_provider != null and map_provider.has_method("clamp_world_position"):
 		var clamped: Vector2 = map_provider.call("clamp_world_position", world_position, radius + 58.0)
@@ -169,14 +173,44 @@ static func can_place_at(world_position: Vector2, size_id: String, dome_configur
 	return true
 
 
+static func is_placement_clear_of_player_and_rocks(center: Vector2, radius: float, direction: int = 1) -> bool:
+	## Controlla l'intera impronta della cupola e la sua camera di decompressione.
+	## Le rocce hanno un collider di circa 14px; il player ne occupa circa 12px.
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return false
+	var blockers: Array[Node2D] = []
+	var player := tree.get_first_node_in_group("player") as Node2D
+	if player != null:
+		blockers.append(player)
+	for rock in tree.get_nodes_in_group("collectible_rocks"):
+		if rock is Node2D and is_instance_valid(rock):
+			blockers.append(rock as Node2D)
+	var outward: Vector2 = DIRECTION_VECTORS[posmod(direction, DIRECTION_VECTORS.size())]
+	var side := Vector2(-outward.y, outward.x)
+	for blocker in blockers:
+		var blocker_radius := 14.0 if blocker.is_in_group("collectible_rocks") else 12.0
+		if blocker.global_position.distance_to(center) <= radius + blocker_radius:
+			return false
+		var relative := blocker.global_position - center
+		var along := relative.dot(outward)
+		var across := absf(relative.dot(side))
+		if along >= radius - 16.0 - blocker_radius and along <= radius + 52.0 + blocker_radius and across <= 24.0 + blocker_radius:
+			return false
+	return true
+
+
 static func place(parent: Node, size_id: String, cell: Vector2i, direction: int = 1, dome_configuration: Dictionary = {}) -> BaseDome:
 	var world_position := world_position_for(cell)
-	if not can_place_at(world_position, size_id, dome_configuration):
+	if not can_place_at(world_position, size_id, dome_configuration, direction):
 		return null
 	var dome := BaseDome.new()
 	dome.setup(size_id, direction, false, dome_configuration)
 	parent.add_child(dome)
 	dome.global_position = world_position
+	var achievements := parent.get_node_or_null("/root/AchievementManager")
+	if achievements != null:
+		achievements.call("record", "first_base")
 	return dome
 
 
@@ -966,6 +1000,7 @@ func _update_airlock_state() -> void:
 			_animate_door("outer", false)
 		elif _inner_door_open and in_dome and projected <= get_radius() - 24.0:
 			_animate_door("inner", false)
+			_record_achievement("airlock_cycle")
 			_reset_cycle()
 			_airlock_path = ""
 	elif _airlock_path == "exit":
@@ -974,6 +1009,7 @@ func _update_airlock_state() -> void:
 			_animate_door("inner", false)
 		elif _outer_door_open and projected >= get_radius() + 43.0:
 			_animate_door("outer", false)
+			_record_achievement("airlock_cycle")
 			_reset_cycle()
 			_airlock_path = ""
 
@@ -986,6 +1022,12 @@ func _destroy() -> bool:
 		return false
 	queue_free()
 	return true
+
+
+func _record_achievement(achievement_id: String) -> void:
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null:
+		achievements.call("record", achievement_id)
 
 
 func _exit_tree() -> void:

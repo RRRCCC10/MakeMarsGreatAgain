@@ -17,6 +17,7 @@ const SABATIER_METHANE_KG_PER_HOUR := 4.0
 var device_id := ""
 var origin_cell := Vector2i.ZERO
 var is_preview := false
+var placement_rotation := 0
 var powered := false
 var animation_frame := 0
 var animation_timer := 0.0
@@ -31,11 +32,13 @@ var indicator: Polygon2D
 var body: StaticBody2D
 
 
-func setup(new_id: String, cell: Vector2i, preview: bool = false) -> void:
+func setup(new_id: String, cell: Vector2i, preview: bool = false, new_placement_rotation: int = 0) -> void:
 	device_id = new_id
 	origin_cell = cell
 	is_preview = preview
+	placement_rotation = posmod(new_placement_rotation, 4)
 	if is_node_ready():
+		_apply_placement_rotation()
 		_refresh_texture()
 
 
@@ -75,6 +78,7 @@ func _ready() -> void:
 	sprite = Sprite2D.new()
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(sprite)
+	_apply_placement_rotation()
 	_refresh_texture()
 	if not is_preview:
 		_setup_indicator()
@@ -172,11 +176,11 @@ func is_network_enabled() -> bool:
 
 
 func get_power_connection_cell() -> Vector2i:
-	return origin_cell + (Vector2i(2, 0) if device_id == "electrolyzer" else Vector2i(1, 3))
+	return _rotated_port_cell(origin_cell + (Vector2i(2, 0) if device_id == "electrolyzer" else Vector2i(1, 3)))
 
 
 func get_power_attach_direction() -> Vector2i:
-	return Vector2i.LEFT if device_id == "electrolyzer" else Vector2i.UP
+	return _rotate_direction(Vector2i.LEFT if device_id == "electrolyzer" else Vector2i.UP)
 
 
 func get_power_demand_kw() -> float:
@@ -185,27 +189,35 @@ func get_power_demand_kw() -> float:
 
 func get_water_input_cell() -> Vector2i:
 	# Ingresso sul fianco sinistro della tile inferiore sinistra.
-	return origin_cell + Vector2i.LEFT + Vector2i.DOWN
+	return _rotated_port_cell(origin_cell + Vector2i.LEFT + Vector2i.DOWN)
 
 
 func get_hydrogen_input_cell() -> Vector2i:
-	return origin_cell + Vector2i.LEFT + Vector2i.DOWN
+	return _rotated_port_cell(origin_cell + Vector2i.LEFT + Vector2i.DOWN)
 
 
 func get_hydrogen_output_cell() -> Vector2i:
 	# H₂ esce dal fianco sinistro della tile superiore sinistra.
-	return origin_cell + Vector2i.LEFT
+	return _rotated_port_cell(origin_cell + Vector2i.LEFT)
 
 
 func get_oxygen_output_cell() -> Vector2i:
 	# O₂ esce dal fianco destro della tile superiore destra.
-	return origin_cell + Vector2i(2, 0)
+	return _rotated_port_cell(origin_cell + Vector2i(2, 0))
+
+
+func get_hydrogen_output_required_opening() -> Vector2i:
+	return _rotate_direction(Vector2i.RIGHT)
+
+
+func get_oxygen_output_required_opening() -> Vector2i:
+	return _rotate_direction(Vector2i.LEFT)
 
 
 func get_fluid_input_ports() -> Array[Dictionary]:
 	if device_id == "electrolyzer":
-		return [{"cell": get_water_input_cell(), "category": PipeSegment.Category.WATER, "required_opening": Vector2i.RIGHT}]
-	return [{"cell": get_hydrogen_input_cell(), "category": PipeSegment.Category.HYDROGEN, "required_opening": Vector2i.RIGHT}]
+		return [{"cell": get_water_input_cell(), "category": PipeSegment.Category.WATER, "required_opening": _rotate_direction(Vector2i.RIGHT)}]
+	return [{"cell": get_hydrogen_input_cell(), "category": PipeSegment.Category.HYDROGEN, "required_opening": _rotate_direction(Vector2i.RIGHT)}]
 
 
 func get_occupied_power_cells() -> Array[Vector2i]:
@@ -323,3 +335,21 @@ func _setup_collision() -> void:
 	collision.position.y = 4
 	body.add_child(collision)
 	add_child(body)
+
+
+func _rotated_port_cell(native_cell: Vector2i) -> Vector2i:
+	var center := world_position_for(device_id, origin_cell)
+	var native_center := Vector2(native_cell * CELL_SIZE) + Vector2.ONE * CELL_SIZE * 0.5
+	var rotated_center := center + (native_center - center).rotated(float(placement_rotation) * PI * 0.5)
+	return Vector2i(floori(rotated_center.x / CELL_SIZE), floori(rotated_center.y / CELL_SIZE))
+
+
+func _rotate_direction(direction: Vector2i) -> Vector2i:
+	var result := direction
+	for _turn in placement_rotation:
+		result = Vector2i(-result.y, result.x)
+	return result
+
+
+func _apply_placement_rotation() -> void:
+	rotation = float(placement_rotation) * PI * 0.5

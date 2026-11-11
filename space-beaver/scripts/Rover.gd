@@ -64,6 +64,9 @@ static func can_place_at(world_position: Vector2) -> bool:
 		if not bool(map_provider.call("is_world_position_inside", world_position, 24.0)):
 			return false
 	var registry := tree.root.get_node_or_null("BuildableRegistry")
+	var player := tree.get_first_node_in_group("player") as Node2D
+	if player != null and player.global_position.distance_to(world_position) < 36.0:
+		return false
 	if registry != null:
 		for entry in registry.call("get_entries"):
 			var structure := entry.get("node") as Node2D
