@@ -4,29 +4,55 @@ extends CanvasLayer
 ## connessi da linee. Il progresso di ogni nodo viene sempre mostrato, ma una
 ## ricompensa richiede che i suoi predecessori siano stati riscossi.
 
-const CARD_SIZE := Vector2(118.0, 76.0)
-const GRAPH_SIZE := Vector2(1_040.0, 470.0)
+const CARD_SIZE := Vector2(130.0, 70.0)
+const GRAPH_SIZE := Vector2(2_000.0, 550.0)
 
-# Le coordinate descrivono tre percorsi che si diramano dalla prima base e
-# avanzano sempre verso destra.
+# Due contratti sul campo partono subito, senza rete o macchinari. Da qui il
+# grafo si divide in sopravvivenza, habitat, laboratorio e biologia polare.
 const GRAPH_POSITIONS := {
-	"first_base": Vector2(48.0, 150.0),
-	# Sopravvivenza e acqua.
-	"airlock_cycle": Vector2(220.0, 38.0),
-	"ice_drill": Vector2(400.0, 38.0),
-	"refill_bottle": Vector2(580.0, 38.0),
-	# Habitat e coltivazione.
-	"stable_grid": Vector2(220.0, 150.0),
-	"greenhouse": Vector2(400.0, 150.0),
-	"first_planting": Vector2(580.0, 150.0),
-	"first_harvest": Vector2(760.0, 150.0),
-	# Ricerca: tre strumenti convergono nel centro scientifico.
-	"first_lab": Vector2(400.0, 334.0),
-	"first_report": Vector2(580.0, 270.0),
-	"xrd_master": Vector2(580.0, 348.0),
-	"raman_master": Vector2(760.0, 300.0),
-	"icp_master": Vector2(760.0, 392.0),
-	"science_center": Vector2(900.0, 348.0),
+	# Contratti a piedi: due radici completamente indipendenti dalla base.
+	"first_field_sample": Vector2(24.0, 30.0),
+	"field_notes": Vector2(190.0, 30.0),
+	"sample_satchel": Vector2(356.0, 30.0),
+	"surface_catalog": Vector2(522.0, 30.0),
+	"surface_anomaly": Vector2(522.0, 110.0),
+	"first_horizon": Vector2(24.0, 210.0),
+	"biome_survey": Vector2(190.0, 210.0),
+	"long_range_survey": Vector2(356.0, 210.0),
+	"polar_expedition": Vector2(522.0, 210.0),
+	# Sopravvivenza e habitat.
+	"first_base": Vector2(24.0, 400.0),
+	"airlock_cycle": Vector2(190.0, 300.0),
+	"ice_drill": Vector2(356.0, 300.0),
+	"refill_bottle": Vector2(522.0, 300.0),
+	"stable_grid": Vector2(190.0, 400.0),
+	"greenhouse": Vector2(356.0, 400.0),
+	"first_planting": Vector2(522.0, 400.0),
+	"first_harvest": Vector2(688.0, 480.0),
+	# Ricerca economica, dati rari e biologia polare.
+	"first_lab": Vector2(688.0, 400.0),
+	"first_extraction": Vector2(854.0, 300.0),
+	"first_report": Vector2(854.0, 400.0),
+	"chain_of_custody": Vector2(1_020.0, 400.0),
+	"rare_signal": Vector2(1_020.0, 30.0),
+	"regional_atlas": Vector2(1_186.0, 30.0),
+	"planetary_archive": Vector2(1_352.0, 30.0),
+	"rare_constellation": Vector2(1_518.0, 30.0),
+	"polar_drill": Vector2(1_020.0, 110.0),
+	"primordial_ice": Vector2(1_186.0, 110.0),
+	"deep_ice_study": Vector2(1_352.0, 110.0),
+	"ancient_life": Vector2(1_518.0, 110.0),
+	"life_relay": Vector2(1_684.0, 110.0),
+	"xrd_fieldwork": Vector2(1_186.0, 210.0),
+	"xrd_master": Vector2(1_352.0, 210.0),
+	"raman_fieldwork": Vector2(1_186.0, 300.0),
+	"raman_master": Vector2(1_352.0, 300.0),
+	"icp_fieldwork": Vector2(1_186.0, 400.0),
+	"icp_master": Vector2(1_352.0, 400.0),
+	"data_convoy": Vector2(1_186.0, 480.0),
+	"earth_relay": Vector2(1_352.0, 480.0),
+	"science_center": Vector2(1_684.0, 300.0),
+	"martian_dividend": Vector2(1_850.0, 300.0),
 }
 
 
@@ -152,7 +178,7 @@ func _build_ui() -> void:
 	var title_row := HBoxContainer.new()
 	content.add_child(title_row)
 	var title := Label.new()
-	title.text = "// OBIETTIVI DELLA MISSIONE //"
+	title.text = "// RETE DEI CONTRATTI DI MISSIONE //"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color("ffe37b"))
@@ -165,14 +191,14 @@ func _build_ui() -> void:
 	title_row.add_child(close_label)
 
 	var subtitle := Label.new()
-	subtitle.text = "Scegli un ramo: le frecce indicano i prerequisiti. Il progresso resta salvato anche nei nodi bloccati."
+	subtitle.text = "La ricerca è il motore economico della prima metà della missione: ogni rapporto paga, ogni contratto paga molto di più. Le frecce indicano i prerequisiti."
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	subtitle.add_theme_font_size_override("font_size", 11)
 	subtitle.add_theme_color_override("font_color", Color("c0d1db"))
 	content.add_child(subtitle)
 
 	var legend := Label.new()
-	legend.text = "ROSSO: BLOCCATO   ·   GRIGIO: IN CORSO   ·   COLORE: RISCOSSO   ·   ORO: RISCATTA"
+	legend.text = "ROSSO: BLOCCATO   ·   GRIGIO: IN CORSO   ·   COLORE: RISCOSSO   ·   ORO PULSANTE: RISCATTA"
 	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	legend.add_theme_font_size_override("font_size", 9)
 	legend.add_theme_color_override("font_color", Color("9ab6c2"))
@@ -186,8 +212,8 @@ func _build_ui() -> void:
 	var scroll := ScrollContainer.new()
 	scroll.name = "AchievementGraphScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.custom_minimum_size = Vector2(0.0, 470.0)
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.custom_minimum_size = Vector2(0.0, 460.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(scroll)
 	_graph = Control.new()
@@ -235,12 +261,18 @@ func _rebuild_graph() -> void:
 	background.position = Vector2.ZERO
 	background.size = GRAPH_SIZE
 	_graph.add_child(background)
-	_add_branch_lane(Rect2(196.0, 18.0, 548.0, 104.0), Color("123442"))
-	_add_branch_lane(Rect2(196.0, 130.0, 700.0, 104.0), Color("1d392e"))
-	_add_branch_lane(Rect2(196.0, 250.0, 832.0, 210.0), Color("2b263d"))
-	_add_branch_label("SOPRAVVIVENZA  /  ACQUA", Vector2(202.0, 21.0), Color("73dfff"))
-	_add_branch_label("HABITAT  /  CIBO", Vector2(202.0, 133.0), Color("9ce66f"))
-	_add_branch_label("RICERCA  /  TRASMISSIONE", Vector2(202.0, 253.0), Color("d4b6ff"))
+	_add_branch_lane(Rect2(10.0, 10.0, 680.0, 160.0), Color("3a2b22"))
+	_add_branch_lane(Rect2(10.0, 190.0, 680.0, 90.0), Color("153442"))
+	_add_branch_lane(Rect2(10.0, 285.0, 840.0, 260.0), Color("1d392e"))
+	_add_branch_lane(Rect2(670.0, 10.0, 1_310.0, 535.0), Color("27233a"))
+	_add_branch_lane(Rect2(990.0, 10.0, 860.0, 170.0), Color("183b45"))
+	_add_branch_lane(Rect2(1_160.0, 190.0, 400.0, 350.0), Color("2c2841"))
+	_add_branch_label("CONTRATTI A PIEDI  /  RACCOLTA", Vector2(18.0, 13.0), Color("efc68e"))
+	_add_branch_label("ESPLORAZIONE  /  MAPPA", Vector2(18.0, 193.0), Color("81d8ff"))
+	_add_branch_label("SOPRAVVIVENZA  /  HABITAT", Vector2(18.0, 288.0), Color("9ce66f"))
+	_add_branch_label("RICERCA  /  CONTRATTI TERRA", Vector2(682.0, 13.0), Color("d4b6ff"))
+	_add_branch_label("CRIOSFERA  /  VITA ANTICA", Vector2(998.0, 13.0), Color("a8f3ff"))
+	_add_branch_label("STRUMENTI  /  BREVETTI", Vector2(1_168.0, 193.0), Color("d48cff"))
 
 	var definitions := AchievementManager.get_ordered_definitions()
 	var links := GraphLinks.new()

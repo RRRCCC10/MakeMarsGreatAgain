@@ -69,12 +69,18 @@ func _run() -> void:
 	var expected_rares := ["shoshonite_olivinica", "goethite_idrata", "impactite_vetrosa", "sali_solfati_idrati", "ghiaccio_salmastro", "olivina_ferrifera"]
 	for source_id in expected_rares.size():
 		var rare_variant := str(ROCK_RESOURCE.drill_variant_for_biome(source_id, 0.049, 0.1))
-		var common_variant := str(ROCK_RESOURCE.drill_variant_for_biome(source_id, 0.05, 0.1))
-		_expect(rare_variant == expected_rares[source_id], "Ogni bioma deve avere la propria scoperta rara al 5%%")
+		var common_roll := 0.10 if source_id == 4 else 0.05
+		var common_variant := str(ROCK_RESOURCE.drill_variant_for_biome(source_id, common_roll, 0.1))
+		var expected_variant: String = "ghiaccio_profondo_primordiale" if source_id == 4 else str(expected_rares[source_id])
+		_expect(rare_variant == expected_variant, "Ogni bioma deve avere una scoperta speciale e il polo privilegia il ghiaccio primordiale")
 		_expect(str(ROCK_RESOURCE.definition_for(common_variant).get("rarity", "")) == "common", "Fuori dal 5%% la trivella deve trovare campioni comuni")
+		_expect(str(ROCK_RESOURCE.drill_variant_for_biome(source_id, 0.009, 0.1)) == "ghiaccio_profondo_primordiale", "Il ghiaccio profondo primordiale deve essere raro ma possibile in ogni bioma")
+	_expect(is_equal_approx(ROCK_RESOURCE.deep_ice_probability_for_biome(0), 0.01) and is_equal_approx(ROCK_RESOURCE.deep_ice_probability_for_biome(4), 0.10), "Il ghiaccio primordiale deve salire dall'1%% al 10%% nel polo")
 	var rare_definition: Dictionary = ROCK_RESOURCE.definition_for("olivina_ferrifera")
+	var deep_ice_definition: Dictionary = ROCK_RESOURCE.definition_for("ghiaccio_profondo_primordiale")
 	var common_definition: Dictionary = ROCK_RESOURCE.definition_for("roccia_base")
 	_expect(float(rare_definition.get("research_multiplier", 0.0)) > float(common_definition.get("research_multiplier", 0.0)), "Un campione raro e remoto deve valere più della pietra iniziale")
+	_expect(bool(deep_ice_definition.get("deep_ice", false)) and float(deep_ice_definition.get("research_multiplier", 0.0)) > float(rare_definition.get("research_multiplier", 0.0)), "Il ghiaccio primordiale deve essere un campione eccezionale per la ricerca")
 	var catalog: Dictionary = shop.call("get_definition", "rock_drill")
 	_expect(bool(catalog.get("placeable", false)) and str(catalog.get("category", "")) == "extraction", "La trivella mineraria deve essere acquistabile nello shop estrazione")
 	var registry := root.get_node("BuildableRegistry")

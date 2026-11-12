@@ -12,6 +12,7 @@ const REPORT_TRANSMISSION_SECONDS := 4.0
 const MAX_UPGRADE_LEVEL := 5
 const FINAL_UPGRADED_ANALYSIS_SECONDS := 40.0
 const ANALYSIS_POWER_DEMAND_KW := 240.0
+const ANCIENT_LIFE_REPORT_BONUS := 10_000_000_000
 const UPGRADE_COSTS: Array[int] = [175_000_000, 250_000_000, 350_000_000, 500_000_000, 700_000_000]
 
 const DEFINITIONS := {
@@ -21,6 +22,7 @@ const DEFINITIONS := {
 		"size": Vector2i(32, 16),
 		"seconds": 150.0,
 		"reward": 450_000_000,
+		"biosignature_chance": 0.20,
 		"principle": "La diffrazione dei raggi X identifica le fasi cristalline del campione dalla geometria del reticolo atomico.",
 	},
 	"raman_spectrometer": {
@@ -29,6 +31,7 @@ const DEFINITIONS := {
 		"size": Vector2i(32, 16),
 		"seconds": 180.0,
 		"reward": 600_000_000,
+		"biosignature_chance": 0.35,
 		"principle": "Lo scattering Raman del laser rivela i legami molecolari e la composizione mineralogica senza distruggere il campione.",
 	},
 	"icp_ms": {
@@ -37,6 +40,7 @@ const DEFINITIONS := {
 		"size": Vector2i(48, 16),
 		"seconds": 240.0,
 		"reward": 900_000_000,
+		"biosignature_chance": 0.55,
 		"principle": "Il plasma accoppiato induttivamente ionizza il campione; lo spettrometro di massa misura gli elementi e le loro abbondanze.",
 	},
 }
@@ -61,10 +65,14 @@ var sample_id := ""
 var sample_biome := ""
 var sample_rarity := ""
 var sample_research_multiplier := 1.0
+var sample_is_primordial_ice := false
+var biosignature_chance := 0.0
+var ancient_life_detected := false
 var last_report_reward := 0
 var sprite: Sprite2D
 var physics_body: StaticBody2D
 var interaction_label: Label
+var _life_rng := RandomNumberGenerator.new()
 
 
 func setup(new_machine_id: String, preview: bool = false, new_placement_rotation: int = 0) -> void:
@@ -209,6 +217,7 @@ static func place(parent: Node, new_machine_id: String, cell: Vector2i, new_plac
 
 func _ready() -> void:
 	z_index = 3
+	_life_rng.randomize()
 	sprite = Sprite2D.new()
 	sprite.name = "ResearchSprite"
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -398,10 +407,17 @@ func get_reward() -> int:
 	var multiplier := 1.0
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null and achievements.has_method("get_research_reward_multiplier"):
-		multiplier = float(achievements.call("get_research_reward_multiplier"))
+		multiplier = float(achievements.call("get_research_reward_multiplier", machine_id, sample_rarity))
 	# Il valore della ricerca appartiene al campione, non soltanto alla macchina:
 	# una scoperta rara estratta in un bioma remoto genera un rapporto più utile.
-	return roundi(float(get_definition(machine_id).get("reward", 0)) * sample_research_multiplier * multiplier)
+	var reward := roundi(float(get_definition(machine_id).get("reward", 0)) * sample_research_multiplier * multiplier)
+	if sample_is_primordial_ice and ancient_life_detected:
+		reward += ANCIENT_LIFE_REPORT_BONUS
+	return reward
+
+
+func get_biosignature_chance() -> float:
+	return float(get_definition(machine_id).get("biosignature_chance", 0.20)) if sample_is_primordial_ice else 0.0
 
 
 func get_remaining_seconds() -> float:
@@ -411,9 +427,12 @@ func get_remaining_seconds() -> float:
 func get_prompt_for_player(_player: Node2D) -> String:
 	if state == State.ANALYZING:
 		var analysis_status := "%s · analisi %s" % [str(get_definition(machine_id).get("short_name", "RICERCA")), _format_time(get_remaining_seconds())]
+		if sample_is_primordial_ice:
+			analysis_status += "\nSCANSIONE BIOSIGNATURE · probabilità %.0f%%" % (biosignature_chance * 100.0)
 		return analysis_status if powered else analysis_status + "\nIN PAUSA · COLLEGA 240 kW"
 	if state == State.COMPLETE:
-		return "RAPPORTO PRONTO · invio Terra %s\nE · INVIA ORA · %s" % [_format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
+		var report_header := "BIOSIGNATURA RILEVATA" if sample_is_primordial_ice and ancient_life_detected else "RAPPORTO PRONTO"
+		return "%s · invio Terra %s\nE · INVIA ORA · %s" % [report_header, _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
 	if upgrade_level >= MAX_UPGRADE_LEVEL:
 		return "E · ANALIZZA UNA PIETRA\nUPGRADE MASSIMO · 40 s"
 	var inventory := get_node_or_null("/root/Inventory")
@@ -445,6 +464,13 @@ func try_interact(player: Node2D) -> bool:
 	sample_biome = str(sample_definition.get("biome", "Provenienza non catalogata"))
 	sample_rarity = str(sample_definition.get("rarity", "common"))
 	sample_research_multiplier = maxf(0.1, float(sample_definition.get("research_multiplier", 1.0)))
+	sample_is_primordial_ice = bool(sample_definition.get("deep_ice", false))
+	biosignature_chance = get_biosignature_chance()
+	ancient_life_detected = sample_is_primordial_ice and _life_rng.randf() < biosignature_chance
+	if sample_is_primordial_ice:
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null and achievements.has_method("record_deep_ice_study"):
+			achievements.call("record_deep_ice_study")
 	state = State.ANALYZING
 	study_elapsed = 0.0
 	animation_elapsed = 0.0
@@ -494,7 +520,14 @@ func _deliver_report() -> void:
 	last_report_reward = report_reward
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null:
-		achievements.call("record", "first_report")
+		# Un rapporto non è solo una vendita: alimenta le campagne scientifiche
+		# della tavola obiettivi (biomi, rarità, strumenti e trasmissioni).
+		if achievements.has_method("record_research_report"):
+			achievements.call("record_research_report", machine_id, sample_id, sample_biome, sample_rarity)
+		else:
+			achievements.call("record", "first_report")
+		if ancient_life_detected and achievements.has_method("record_ancient_life_discovery"):
+			achievements.call("record_ancient_life_discovery")
 	state = State.IDLE
 	study_elapsed = 0.0
 	report_elapsed = 0.0
@@ -505,6 +538,9 @@ func _deliver_report() -> void:
 	sample_biome = ""
 	sample_rarity = ""
 	sample_research_multiplier = 1.0
+	sample_is_primordial_ice = false
+	biosignature_chance = 0.0
+	ancient_life_detected = false
 	_refresh_visual()
 	_register_power_consumer()
 
@@ -526,22 +562,34 @@ func get_machine_specs() -> Dictionary:
 	if state == State.ANALYZING:
 		status = "ANALISI IN CORSO" if powered else "ANALISI IN PAUSA · RETE ASSENTE"
 		detail = "%s · %s · %s · restano %s" % [sample_name, sample_biome, _rarity_label(), _format_time(get_remaining_seconds())]
+		if sample_is_primordial_ice:
+			detail += " · biosignature %.0f%%" % (biosignature_chance * 100.0)
 		color = Color("ffe38a")
 	elif state == State.COMPLETE:
-		status = "RAPPORTO PRONTO"
+		status = "BIOSIGNATURA RILEVATA" if ancient_life_detected else "RAPPORTO PRONTO"
 		detail = "%s · %s · %s · invio Terra tra %s · %s" % [sample_name, sample_biome, _rarity_label(), _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
-		color = Color("72eda0")
+		color = Color("7fffd4") if ancient_life_detected else Color("72eda0")
+	var research_multiplier := 1.0
+	var contracts := "in attesa del primo rapporto"
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null:
+		if achievements.has_method("get_research_reward_multiplier"):
+			research_multiplier = float(achievements.call("get_research_reward_multiplier", machine_id, sample_rarity))
+		if achievements.has_method("get_research_contract_summary"):
+			contracts = str(achievements.call("get_research_contract_summary", machine_id))
 	return {
 		"title": get_display_name().to_upper(),
 		"category": "RICERCA SCIENTIFICA · CUPOLA ABITATIVA",
 		"status": status,
 		"status_color": color,
 		"principle": str(get_definition(machine_id).get("principle", "")),
-		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f" % sample_research_multiplier, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
+		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f · contratti: ×%.2f" % [sample_research_multiplier, research_multiplier], "Biosignature: %s" % ("RILEVATA · bonus %s" % _format_money(ANCIENT_LIFE_REPORT_BONUS) if ancient_life_detected else ("possibilità %.0f%%" % (biosignature_chance * 100.0) if sample_is_primordial_ice else "non applicabile")), "Contratti Terra: %s" % contracts, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
 	}
 
 
 func _rarity_label() -> String:
+	if sample_rarity == "ultra_rare":
+		return "ULTRA RARO"
 	return "RARO" if sample_rarity == "rare" else "COMUNE"
 
 

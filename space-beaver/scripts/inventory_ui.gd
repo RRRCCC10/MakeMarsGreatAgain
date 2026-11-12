@@ -12,6 +12,7 @@ const ROCK_ICONS: Dictionary = {
 	"rock_basalto": preload("res://sprites/rocks/basalto.png"),
 	"rock_roccia_ghiacciata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
 	"rock_ghiaccio_profondo": preload("res://sprites/rocks/ghiaccio_profondo.png"),
+	"rock_ghiaccio_profondo_primordiale": preload("res://sprites/rocks/ghiaccio_profondo.png"),
 	"rock_andesite_marziana": preload("res://sprites/rocks/roccia_grigia.png"),
 	"rock_shoshonite_olivinica": preload("res://sprites/rocks/basalto.png"),
 	"rock_ematite_nodulare": preload("res://sprites/rocks/pietra_rossastra.png"),

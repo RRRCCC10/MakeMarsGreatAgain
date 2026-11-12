@@ -9,6 +9,62 @@ signal achievement_claimable(achievement_id: String)
 signal achievement_claimed(achievement_id: String, reward_label: String)
 
 const ACHIEVEMENTS := [
+	# Contratti scientifici eseguibili a piedi: danno capitale fin dal primo
+	# minuto, senza cupola, macchinari o rete elettrica.
+	{
+		"id": "first_field_sample", "title": "PRIMA PIETRA", "icon": "●", "color": Color("e9b57b"),
+		"description": "Raccogli a piedi il primo campione dalla superficie.", "target": 1,
+		"prerequisites": [],
+		"reward": {"funds": 120_000_000, "label": "+ $120 MLN · borsa di ricognizione"},
+	},
+	{
+		"id": "field_notes", "title": "TACCUINO DI CAMPO", "icon": "≣", "color": Color("e7c489"),
+		"description": "Raccogli 3 campioni a piedi.", "target": 3,
+		"prerequisites": ["first_field_sample"],
+		"reward": {"funds": 220_000_000, "label": "+ $220 MLN · note di terreno"},
+	},
+	{
+		"id": "sample_satchel", "title": "SACCA CAMPIONI", "icon": "▰", "color": Color("d7a96d"),
+		"description": "Raccogli 8 campioni a piedi.", "target": 8,
+		"prerequisites": ["field_notes"],
+		"reward": {"funds": 420_000_000, "label": "+ $420 MLN · contratto di raccolta"},
+	},
+	{
+		"id": "surface_catalog", "title": "CATALOGO DI SUPERFICIE", "icon": "◫", "color": Color("f1cd91"),
+		"description": "Raccogli 3 tipi differenti di roccia a piedi.", "target": 3,
+		"prerequisites": ["field_notes"],
+		"reward": {"funds": 600_000_000, "label": "+ $600 MLN · catalogo minerale"},
+	},
+	{
+		"id": "surface_anomaly", "title": "LUCE NELLA POLVERE", "icon": "✧", "color": Color("ffcf6e"),
+		"description": "Raccogli a piedi un campione raro in superficie.", "target": 1,
+		"prerequisites": ["field_notes"],
+		"reward": {"funds": 900_000_000, "label": "+ $900 MLN · premio anomalia"},
+	},
+	{
+		"id": "first_horizon", "title": "ORIZZONTE APERTO", "icon": "⌁", "color": Color("81d8ff"),
+		"description": "Esplora il primo bioma marziano.", "target": 1,
+		"prerequisites": [],
+		"reward": {"funds": 100_000_000, "label": "+ $100 MLN · telemetria iniziale"},
+	},
+	{
+		"id": "biome_survey", "title": "TRE COLORI DI MARTE", "icon": "◌", "color": Color("8ecfff"),
+		"description": "Esplora 3 biomi distinti.", "target": 3,
+		"prerequisites": ["first_horizon"],
+		"reward": {"funds": 350_000_000, "label": "+ $350 MLN · rilievo regionale"},
+	},
+	{
+		"id": "long_range_survey", "title": "LINEA DI ORIZZONTE", "icon": "⇢", "color": Color("87b8f8"),
+		"description": "Esplora 5 biomi distinti.", "target": 5,
+		"prerequisites": ["biome_survey"],
+		"reward": {"funds": 800_000_000, "label": "+ $800 MLN · rotta di esplorazione"},
+	},
+	{
+		"id": "polar_expedition", "title": "SPEDIZIONE POLARE", "icon": "❄", "color": Color("a8f3ff"),
+		"description": "Raggiungi ed esplora il ghiaccio polare.", "target": 1,
+		"prerequisites": ["biome_survey"],
+		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · mandato criosfera"},
+	},
 	{
 		"id": "first_base", "title": "PRIMA BASE", "icon": "⌂", "color": Color("70c8ff"),
 		"description": "Posiziona la prima cupola abitativa.", "target": 1,
@@ -57,41 +113,146 @@ const ACHIEVEMENTS := [
 		"prerequisites": ["first_planting"],
 		"reward": {"funds": 300_000_000, "label": "+ $300 MLN"},
 	},
+	# La ricerca non è un traguardo decorativo: è il principale programma di
+	# finanziamento della prima metà della missione. I rapporti pagano ogni volta;
+	# questi contratti una tantum premiano invece la qualità e la varietà dei dati.
 	{
 		"id": "first_lab", "title": "PRIMO LABORATORIO", "icon": "⚗", "color": Color("a4baff"),
 		"description": "Installa il primo strumento scientifico in una cupola abitativa.", "target": 1,
 		"prerequisites": ["stable_grid"],
-		"reward": {"funds": 250_000_000, "label": "+ $250 MLN"},
+		"reward": {"funds": 250_000_000, "label": "+ $250 MLN · borsa di avvio"},
 	},
 	{
-		"id": "first_report", "title": "PRIMO RAPPORTO", "icon": "▤", "color": Color("79d9ff"),
+		"id": "first_extraction", "title": "CAROTA GEOLOGICA", "icon": "⧁", "color": Color("e8aa65"),
+		"description": "Metti in funzione la prima trivella per rocce.", "target": 1,
+		"prerequisites": ["ice_drill", "first_lab"],
+		"reward": {"funds": 350_000_000, "label": "+ $350 MLN · mandato geologico"},
+	},
+	{
+		"id": "polar_drill", "title": "CAROTA POLARE", "icon": "❄", "color": Color("a8f3ff"),
+		"description": "Posiziona una trivella mineraria nel bioma del ghiaccio polare.", "target": 1,
+		"prerequisites": ["polar_expedition", "first_extraction"],
+		"reward": {"funds": 1_800_000_000, "label": "+ $1,8 MLD · sovvenzione polare"},
+	},
+	{
+		"id": "primordial_ice", "title": "GHIACCIO PRIMORDIALE", "icon": "◆", "color": Color("b7f4ff"),
+		"description": "Trova con la trivella un raro campione di ghiaccio profondo primordiale.", "target": 1,
+		"prerequisites": ["polar_drill"],
+		"reward": {"funds": 3_000_000_000, "label": "+ $3 MLD · custodia criogenica"},
+	},
+	{
+		"id": "deep_ice_study", "title": "STRATI DEL TEMPO", "icon": "◈", "color": Color("bde8ff"),
+		"description": "Avvia lo studio di un ghiaccio profondo primordiale in un laboratorio.", "target": 1,
+		"prerequisites": ["primordial_ice", "first_lab"],
+		"reward": {"funds": 4_500_000_000, "label": "+ $4,5 MLD · protocollo di bioscavo"},
+	},
+	{
+		"id": "ancient_life", "title": "VITA ANTICA", "icon": "✺", "color": Color("7fffd4"),
+		"description": "Rileva una biosignatura nel ghiaccio profondo. XRD 20%, Raman 35%, ICP-MS 55%.", "target": 1,
+		"prerequisites": ["deep_ice_study"],
+		"reward": {"funds": 15_000_000_000, "badge": "SCOPRITORE DI VITA", "label": "+ $15 MLD · scopritore di vita"},
+	},
+	{
+		"id": "life_relay", "title": "MESSAGGIO VIVENTE", "icon": "✦", "color": Color("f6ffad"),
+		"description": "Trasmetti alla Terra la prima prova di vita antica marziana.", "target": 1,
+		"prerequisites": ["ancient_life"],
+		"reward": {"funds": 25_000_000_000, "effect": "life_patent", "badge": "MESSAGGERO DI MARTE", "label": "+ $25 MLD · messaggero di Marte"},
+	},
+	{
+		"id": "first_report", "title": "SEGNALE DA MARTE", "icon": "▤", "color": Color("79d9ff"),
 		"description": "Trasmetti alla Terra il primo rapporto scientifico.", "target": 1,
 		"prerequisites": ["first_lab"],
-		"reward": {"effect": "research_bonus", "label": "Ricavi ricerca +5%"},
+		"reward": {"funds": 400_000_000, "effect": "research_bonus", "label": "+ $400 MLN · ricavi ricerca +10%"},
 	},
 	{
-		"id": "xrd_master", "title": "XRD CALIBRATO", "icon": "X", "color": Color("ffaf73"),
+		"id": "chain_of_custody", "title": "CATENA DI CUSTODIA", "icon": "≡", "color": Color("7ebde9"),
+		"description": "Invia 3 rapporti verificati alla Terra.", "target": 3,
+		"prerequisites": ["first_report"],
+		"reward": {"funds": 550_000_000, "label": "+ $550 MLN · contratto di analisi"},
+	},
+	{
+		"id": "xrd_fieldwork", "title": "RETICOLI RIVELATI", "icon": "X", "color": Color("ffaf73"),
+		"description": "Completa 3 rapporti con il diffrattometro XRD.", "target": 3,
+		"prerequisites": ["first_report"],
+		"reward": {"funds": 650_000_000, "effect": "xrd_precision", "label": "+ $650 MLN · valore XRD +15%"},
+	},
+	{
+		"id": "raman_fieldwork", "title": "IMPRONTE LUMINOSE", "icon": "R", "color": Color("d48cff"),
+		"description": "Completa 3 rapporti con lo spettrometro Raman.", "target": 3,
+		"prerequisites": ["first_report"],
+		"reward": {"funds": 800_000_000, "effect": "raman_precision", "label": "+ $800 MLN · valore Raman +15%"},
+	},
+	{
+		"id": "icp_fieldwork", "title": "TRACCE NEL PLASMA", "icon": "I", "color": Color("72efd3"),
+		"description": "Completa 3 rapporti con l'ICP-MS.", "target": 3,
+		"prerequisites": ["chain_of_custody"],
+		"reward": {"funds": 1_000_000_000, "effect": "icp_precision", "label": "+ $1 MLD · valore ICP-MS +15%"},
+	},
+	{
+		"id": "rare_signal", "title": "SEGNALE ANOMALO", "icon": "✦", "color": Color("ffe079"),
+		"description": "Analizza e trasmetti il primo campione raro.", "target": 1,
+		"prerequisites": ["first_extraction", "first_report"],
+		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · premio per anomalia"},
+	},
+	{
+		"id": "regional_atlas", "title": "ATLANTE DI ARES", "icon": "⊕", "color": Color("9ed6ff"),
+		"description": "Consegna dati da 3 biomi marziani distinti.", "target": 3,
+		"prerequisites": ["first_extraction", "chain_of_custody"],
+		"reward": {"funds": 1_250_000_000, "effect": "diversity_bonus", "label": "+ $1,25 MLD · dati multi-bioma +10%"},
+	},
+	{
+		"id": "data_convoy", "title": "CONVOGLIO DATI", "icon": "⇑", "color": Color("8be5ff"),
+		"description": "Trasmetti 8 rapporti scientifici in totale.", "target": 8,
+		"prerequisites": ["chain_of_custody"],
+		"reward": {"funds": 1_400_000_000, "label": "+ $1,4 MLD · patrocinio Terra"},
+	},
+	{
+		"id": "xrd_master", "title": "XRD DI PRECISIONE", "icon": "X+", "color": Color("ffaf73"),
 		"description": "Porta il diffrattometro XRD al livello 5.", "target": 1,
-		"prerequisites": ["first_lab"],
-		"reward": {"funds": 300_000_000, "label": "+ $300 MLN"},
+		"prerequisites": ["xrd_fieldwork"],
+		"reward": {"funds": 1_000_000_000, "label": "+ $1 MLD · brevetto cristallografico"},
 	},
 	{
-		"id": "raman_master", "title": "RAMAN CALIBRATO", "icon": "R", "color": Color("d48cff"),
+		"id": "raman_master", "title": "RAMAN DI PRECISIONE", "icon": "R+", "color": Color("d48cff"),
 		"description": "Porta lo spettrometro Raman al livello 5.", "target": 1,
-		"prerequisites": ["first_lab"],
-		"reward": {"funds": 350_000_000, "label": "+ $350 MLN"},
+		"prerequisites": ["raman_fieldwork"],
+		"reward": {"funds": 1_250_000_000, "label": "+ $1,25 MLD · brevetto spettroscopico"},
 	},
 	{
-		"id": "icp_master", "title": "ICP-MS CALIBRATO", "icon": "I", "color": Color("72efd3"),
+		"id": "icp_master", "title": "ICP-MS DI PRECISIONE", "icon": "I+", "color": Color("72efd3"),
 		"description": "Porta l'ICP-MS al livello 5.", "target": 1,
-		"prerequisites": ["first_lab"],
-		"reward": {"funds": 450_000_000, "label": "+ $450 MLN"},
+		"prerequisites": ["icp_fieldwork"],
+		"reward": {"funds": 1_600_000_000, "label": "+ $1,6 MLD · brevetto elementare"},
 	},
 	{
-		"id": "science_center", "title": "CENTRO SCIENTIFICO", "icon": "★", "color": Color("ffe36e"),
-		"description": "Completa la calibrazione massima dei tre laboratori.", "target": 1,
-		"prerequisites": ["xrd_master", "raman_master", "icp_master"],
-		"reward": {"funds": 1_000_000_000, "badge": "DIRETTORE SCIENTIFICO", "label": "+ $1 MLD · Direttore scientifico"},
+		"id": "rare_constellation", "title": "COSTELLAZIONE RARA", "icon": "★", "color": Color("ffd86b"),
+		"description": "Trasmetti 3 campioni rari, anche da biomi diversi.", "target": 3,
+		"prerequisites": ["rare_signal", "raman_fieldwork"],
+		"reward": {"funds": 1_900_000_000, "effect": "rare_premium", "label": "+ $1,9 MLD · campioni rari +25%"},
+	},
+	{
+		"id": "earth_relay", "title": "PONTE TERRA", "icon": "⇈", "color": Color("76e7d0"),
+		"description": "Trasmetti 15 rapporti scientifici in totale.", "target": 15,
+		"prerequisites": ["data_convoy", "icp_fieldwork"],
+		"reward": {"funds": 2_500_000_000, "effect": "transmission_priority", "label": "+ $2,5 MLD · valore rapporti +15%"},
+	},
+	{
+		"id": "planetary_archive", "title": "ARCHIVIO PLANETARIO", "icon": "◉", "color": Color("b5a0ff"),
+		"description": "Completa l'atlante con dati da tutti e 6 i biomi.", "target": 6,
+		"prerequisites": ["regional_atlas", "rare_signal"],
+		"reward": {"funds": 3_000_000_000, "label": "+ $3 MLD · mandato di cartografia"},
+	},
+	{
+		"id": "science_center", "title": "DIRETTORATO SCIENTIFICO", "icon": "★", "color": Color("ffe36e"),
+		"description": "Unisci tre laboratori calibrati, il ponte Terra e l'archivio planetario.", "target": 1,
+		"prerequisites": ["xrd_master", "raman_master", "icp_master", "earth_relay", "planetary_archive"],
+		"reward": {"funds": 4_000_000_000, "effect": "scientific_director", "badge": "DIRETTORE SCIENTIFICO", "label": "+ $4 MLD · direttore scientifico"},
+	},
+	{
+		"id": "martian_dividend", "title": "DIVIDENDO MARZIANO", "icon": "✦", "color": Color("fff0a2"),
+		"description": "Consegna 24 rapporti: la ricerca finanzia la nuova economia della colonia.", "target": 24,
+		"prerequisites": ["science_center", "rare_constellation"],
+		"reward": {"funds": 6_000_000_000, "badge": "PIONIERE DEL VALORE", "label": "+ $6 MLD · pioniere del valore"},
 	},
 ]
 
@@ -99,6 +260,9 @@ var _progress: Dictionary = {}
 var _claimed: Dictionary = {}
 var _badges: Dictionary = {}
 var _effects: Dictionary = {}
+var _reported_biomes: Dictionary = {}
+var _field_rock_variants: Dictionary = {}
+var _explored_sources: Dictionary = {}
 var is_board_open := false
 
 
@@ -233,8 +397,120 @@ func get_crop_growth_multiplier() -> float:
 	return 1.05 if has_effect("crop_efficiency") else 1.0
 
 
-func get_research_reward_multiplier() -> float:
-	return 1.05 if has_effect("research_bonus") else 1.0
+func get_research_reward_multiplier(machine_id: String = "", rarity: String = "") -> float:
+	var multiplier := 1.0
+	if has_effect("research_bonus"):
+		multiplier *= 1.10
+	if has_effect("diversity_bonus"):
+		multiplier *= 1.10
+	if has_effect("transmission_priority"):
+		multiplier *= 1.15
+	if has_effect("scientific_director"):
+		multiplier *= 1.20
+	if has_effect("life_patent"):
+		multiplier *= 1.25
+	if rarity in ["rare", "ultra_rare"] and has_effect("rare_premium"):
+		multiplier *= 1.25
+	match machine_id:
+		"xrd_diffractometer":
+			if has_effect("xrd_precision"):
+				multiplier *= 1.15
+		"raman_spectrometer":
+			if has_effect("raman_precision"):
+				multiplier *= 1.15
+		"icp_ms":
+			if has_effect("icp_precision"):
+				multiplier *= 1.15
+	return multiplier
+
+
+func record_research_report(machine_id: String, _sample_id: String, biome: String, rarity: String) -> void:
+	# Ogni rapporto alimenta più contratti in parallelo. Anche quando un contratto
+	# è ancora bloccato il suo avanzamento resta visibile nel grafo.
+	record("first_report")
+	record("chain_of_custody")
+	record("data_convoy")
+	record("earth_relay")
+	record("martian_dividend")
+	match machine_id:
+		"xrd_diffractometer":
+			record("xrd_fieldwork")
+		"raman_spectrometer":
+			record("raman_fieldwork")
+		"icp_ms":
+			record("icp_fieldwork")
+	if rarity in ["rare", "ultra_rare"]:
+		record("rare_signal")
+		record("rare_constellation")
+	var cleaned_biome := biome.strip_edges()
+	if not cleaned_biome.is_empty() and not _reported_biomes.has(cleaned_biome):
+		_reported_biomes[cleaned_biome] = true
+		record("regional_atlas")
+		record("planetary_archive")
+
+
+func record_field_sample(rock_variant: String, rarity: String = "common") -> void:
+	# Questi sono contratti senza infrastruttura: una roccia raccolta a piedi vale
+	# già dati per Terra e permette di finanziare il primo vero impianto.
+	record("first_field_sample")
+	record("field_notes")
+	record("sample_satchel")
+	var cleaned_variant := rock_variant.strip_edges()
+	if not cleaned_variant.is_empty() and not _field_rock_variants.has(cleaned_variant):
+		_field_rock_variants[cleaned_variant] = true
+		record("surface_catalog")
+	if rarity == "rare" or rarity == "ultra_rare":
+		record("surface_anomaly")
+
+
+func record_exploration_source(source_id: int) -> void:
+	if source_id < 0 or _explored_sources.has(source_id):
+		return
+	_explored_sources[source_id] = true
+	record("first_horizon")
+	record("biome_survey")
+	record("long_range_survey")
+	if source_id == 4:
+		record("polar_expedition")
+
+
+func record_polar_drill() -> void:
+	record("polar_drill")
+
+
+func record_primordial_ice_found() -> void:
+	record("primordial_ice")
+
+
+func record_deep_ice_study() -> void:
+	record("deep_ice_study")
+
+
+func record_ancient_life_discovery() -> void:
+	# La prova viene scoperta e trasmessa dal medesimo rapporto. La seconda
+	# ricompensa resta incatenata: appare pronta, ma richiede prima il claim
+	# della scoperta scientifica.
+	record("ancient_life")
+	record("life_relay")
+
+
+func get_research_contract_summary(machine_id: String) -> String:
+	# Sintesi breve per il pannello vicino al laboratorio: mostra al giocatore
+	# quale contratto economico sta finanziando prima di consegnare un campione.
+	var contract_ids: Array[String] = ["chain_of_custody", "data_convoy", "earth_relay"]
+	match machine_id:
+		"xrd_diffractometer":
+			contract_ids.push_front("xrd_fieldwork")
+		"raman_spectrometer":
+			contract_ids.push_front("raman_fieldwork")
+		"icp_ms":
+			contract_ids.push_front("icp_fieldwork")
+	var parts: Array[String] = []
+	for contract_id in contract_ids:
+		var definition := get_definition(contract_id)
+		var short_title := str(definition.get("title", contract_id)).capitalize()
+		parts.append("%s %d/%d" % [short_title, get_progress(contract_id), get_target(contract_id)])
+	return " · ".join(parts)
 
 
 func has_effect(effect_id: String) -> bool:
@@ -261,11 +537,14 @@ func _reset_session_state() -> void:
 	_claimed.clear()
 	_badges.clear()
 	_effects.clear()
+	_reported_biomes.clear()
+	_field_rock_variants.clear()
+	_explored_sources.clear()
 	is_board_open = false
 
 
 func _refresh_composite_achievements() -> void:
-	if is_reached("xrd_master") and is_reached("raman_master") and is_reached("icp_master"):
+	if is_reached("xrd_master") and is_reached("raman_master") and is_reached("icp_master") and is_reached("earth_relay") and is_reached("planetary_archive"):
 		var center_old := get_progress("science_center")
 		if center_old < get_target("science_center"):
 			_progress["science_center"] = get_target("science_center")

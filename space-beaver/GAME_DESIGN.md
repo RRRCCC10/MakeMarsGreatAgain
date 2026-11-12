@@ -513,6 +513,31 @@ Raccogli una pietra → Portala a un laboratorio → E per caricarla
 
 Ogni analisi consuma un solo campione. Durante l'analisi il macchinario assorbe una grande quantità di energia; senza alimentazione il tempo non deve progredire. Il ricavo base dello strumento viene moltiplicato dal valore geologico del campione: una pietra comune vicina vale meno di una scoperta rara ottenuta con trivella in un bioma remoto.
 
+### Economia della ricerca: rapporti e contratti
+
+La prima metà della partita è sostenuta dalla ricerca, non dalla vendita passiva di risorse. Ogni pietra consegnata genera un **rapporto pagato immediatamente**; in parallelo il rapporto alimenta contratti scientifici visibili nella tavola `J`. Questi contratti sono grandi borse una tantum: danno il capitale necessario per acquistare il laboratorio successivo, gli upgrade, la logistica o l'espansione della base.
+
+Un rapporto registra quattro dati: laboratorio usato, bioma di provenienza, rarità e quantità totale di trasmissioni. Per questo il giocatore ha una ragione concreta per spostare la trivella mineraria, esplorare fonti diverse e scegliere quale strumento specializzare. I progressi vengono registrati anche se il contratto è ancora bloccato; la borsa si può però riscuotere soltanto quando sono stati riscossi i contratti collegati.
+
+```text
+Campione → analisi energivora → pagamento del rapporto
+         └→ contatore strumento / bioma / rarità / trasmissioni
+            └→ contratto pronto → clic sul nodo dorato → grande finanziamento
+```
+
+I bonus riscossi si sommano: Segnale da Marte aumenta tutti i rapporti del 10%; Atlante di Ares aggiunge il 10%; Ponte Terra il 15%; le tre discipline aggiungono il 15% ai loro rispettivi strumenti; Costellazione rara aggiunge il 25% ai soli campioni rari; Direttorato scientifico aggiunge il 20% globale. La ricerca diventa quindi più redditizia proprio quando il giocatore affronta campioni e biomi più difficili.
+
+### Contratti a piedi: capitale prima della rete
+
+Prima di avere una cupola, una batteria o un laboratorio, l'astronauta può già finanziare la missione con due filoni autonomi:
+
+| Filone | Azione reale | Premi progressivi |
+|---|---|---|
+| Raccolta | Raccogliere rocce fisiche della mappa con `E` | Prima pietra, Taccuino di campo, Sacca campioni, Catalogo di superficie, Luce nella polvere per una rara naturale. |
+| Esplorazione | Rivelare biomi distinti camminando sulla mappa | Orizzonte aperto, Tre colori di Marte, Linea di orizzonte, Spedizione polare. |
+
+Queste attività non richiedono corrente, macchinari o una base. I loro premi vanno da **$100 MLN** a **$1,1 MLD** e coprono il primo acquisto strutturale. La raccolta conta solo campioni presi fisicamente dalla superficie: trasferire materiale dalla trivella non falsa i contratti a piedi.
+
 | Strumento | Prezzo | Tempo base | Ricavo base | Dimensione |
 |---|---:|---:|---:|---|
 | Diffrattometro a raggi X (XRD) | $1,6 MLD | 2 min 30 s | $450 MLN | 32×16 px |
@@ -534,6 +559,20 @@ Da vicino, `U` acquista un upgrade se ci sono fondi. Ogni laboratorio può arriv
 | 5 | $700 MLN |
 
 Gli upgrade riducono gradualmente il tempo di analisi. Al massimo livello, qualunque macchina arriva a **40 secondi** di analisi. Il pannello del laboratorio mostra campione, livello, durata attuale, prossimo costo, assorbimento, stato della rete e ricavo del rapporto.
+
+### Ghiaccio profondo primordiale e vita antica
+
+La trivella mineraria può trovare il **ghiaccio profondo primordiale** in ogni bioma con probabilità dell'**1%** per estrazione. Sul bioma del ghiaccio polare la probabilità sale al **10%**: è il posto da cui parte la spedizione più rischiosa e redditizia.
+
+Il campione si può inserire in qualunque laboratorio. Durante lo studio viene mostrata la probabilità di rilevare una biosignatura; il risultato è deciso una volta, all'avvio della scansione, e non cambia con blackout o salvataggi.
+
+| Strumento | Probabilità di vita antica | Perché |
+|---|---:|---|
+| XRD | 20% (1 su 5) | Può distinguere microstrutture minerali compatibili con attività biologica. |
+| Raman | 35% | Riconosce meglio composti organici intrappolati nel ghiaccio. |
+| ICP-MS | 55% | Misura firme isotopiche e tracce organiche con maggiore sensibilità. |
+
+Una biosignatura aggiunge **$10 MLD** al pagamento immediato del rapporto, oltre al valore normale del campione e ai bonus attivi. Attiva anche la sequenza a catena: **Carota polare → Ghiaccio primordiale → Strati del tempo → Vita antica → Messaggio vivente**, con borse da $1,8 a $25 MLD. La ricompensa più alta resta sempre incatenata: non può essere riscossa prima della scoperta di vita.
 
 ---
 
@@ -587,26 +626,38 @@ La tavola degli obiettivi è una progressione a grafo, non una lista lineare. Si
 | Raggiunto e da riscattare | Colore del ramo, luccicante | Il traguardo è completo; cliccare il nodo per ricevere la ricompensa. |
 | Riscattato | Colorato | Ricompensa già ottenuta; apre i nodi successivi. |
 
-I collegamenti scorrono orizzontalmente e si diramano per acqua/sopravvivenza, habitat/cibo e ricerca/trasmissione. Una ricompensa è riscattabile solo dopo che tutti i prerequisiti sono stati riscattati, anche se il suo contatore è già completo.
+I collegamenti scorrono orizzontalmente e si diramano per raccolta, esplorazione, acqua/sopravvivenza, habitat/cibo, ricerca industriale e biologia polare. Una ricompensa è riscattabile solo dopo che tutti i prerequisiti sono stati riscattati, anche se il suo contatore è già completo. La rete contiene **40 nodi**: i 9 contratti iniziali rendono possibile guadagnare senza infrastruttura, mentre i rami successivi trasformano la ricerca nella fonte principale di capitale.
 
 ### Grafo attuale
 
 ```text
-PRIMA BASE
- ├─ ACCESSO SICURO ── RETE ELETTRICA ── PRIMA TRIVELLA ── BORRACCIA RICARICATA
- │                         │
- │                         ├─ SERRA OPERATIVA ── PRIMA PIANTAGIONE ── PRIMO RACCOLTO
- │                         │
- │                         └─ PRIMO LABORATORIO ──┬─ PRIMO RAPPORTO
- │                                                ├─ XRD CALIBRATO ─┐
- │                                                ├─ RAMAN CALIBRATO ├─ CENTRO SCIENTIFICO
- │                                                └─ ICP-MS CALIBRATO┘
+PRIMA PIETRA ── TACCUINO ── SACCA CAMPIONI ── CATALOGO DI SUPERFICIE
+                       └────────────────────── LUCE NELLA POLVERE
+ORIZZONTE APERTO ── TRE COLORI ── LINEA DI ORIZZONTE ── SPEDIZIONE POLARE
+                                                                    │
+PRIMA BASE ── ACCESSO SICURO ── PRIMA TRIVELLA ── BORRACCIA RICARICATA
+    └─ RETE ELETTRICA ── SERRA ── PIANTAGIONE ── RACCOLTO
+                     └─ PRIMO LAB ── SEGNALE DA MARTE ── CATENA DI CUSTODIA
+                          ├─ CAROTA GEOLOGICA ── CAROTA POLARE ── GHIACCIO PRIMORDIALE
+                          │                                      └─ STRATI DEL TEMPO ── VITA ANTICA ── MESSAGGIO VIVENTE
+                          └─ RAPPORTI ── XRD / RAMAN / ICP-MS ── BREVETTI ─┐
+                                       ├─ ATLANTE ── ARCHIVIO PLANETARIO ─┤─ DIRETTORATO ── DIVIDENDO MARZIANO
+                                       └─ CONVOGLIO DATI ── PONTE TERRA ──┘
 ```
 
 La sequenza esatta dei prerequisiti principali è:
 
 | Obiettivo | Condizione | Prerequisiti | Ricompensa |
 |---|---|---|---|
+| Prima pietra | Raccogli una roccia fisica a piedi | — | +$120 MLN |
+| Taccuino di campo | Raccogli 3 rocce a piedi | Prima pietra | +$220 MLN |
+| Sacca campioni | Raccogli 8 rocce a piedi | Taccuino | +$420 MLN |
+| Catalogo di superficie | Raccogli 3 tipi differenti a piedi | Taccuino | +$600 MLN |
+| Luce nella polvere | Raccogli una rara naturale a piedi | Taccuino | +$900 MLN |
+| Orizzonte aperto | Esplora il primo bioma | — | +$100 MLN |
+| Tre colori di Marte | Esplora 3 biomi | Orizzonte aperto | +$350 MLN |
+| Linea di orizzonte | Esplora 5 biomi | Tre colori | +$800 MLN |
+| Spedizione polare | Raggiungi il ghiaccio polare | Tre colori | +$1,1 MLD |
 | Prima base | Posiziona una cupola abitativa | — | +$150 MLN |
 | Accesso sicuro | Completa un ciclo airlock | Prima base | Badge Colono marziano |
 | Rete elettrica | Rendi operativa rete con pannelli, trasformatore e batteria | Prima base | +$150 MLN |
@@ -616,9 +667,26 @@ La sequenza esatta dei prerequisiti principali è:
 | Prima piantagione | Semina il primo lotto | Serra operativa | Crescita colture +5% |
 | Primo raccolto | Raccogli 16 patate | Prima piantagione | +$300 MLN |
 | Primo laboratorio | Installa uno strumento scientifico | Rete elettrica | +$250 MLN |
-| Primo rapporto | Trasmetti un rapporto alla Terra | Primo laboratorio | Ricavi ricerca +5% |
-| XRD / Raman / ICP-MS calibrato | Porta lo strumento al livello 5 | Primo laboratorio | $300 / $350 / $450 MLN |
-| Centro scientifico | Completa i tre upgrade massimi | Tre calibrature | +$1 MLD + Badge Direttore scientifico |
+| Carota geologica | Posiziona la trivella mineraria | Prima trivella + Primo laboratorio | +$350 MLN |
+| Carota polare | Posiziona la trivella mineraria sul ghiaccio polare | Spedizione polare + Carota geologica | +$1,8 MLD |
+| Ghiaccio primordiale | Estrai il ghiaccio profondo primordiale | Carota polare | +$3 MLD |
+| Strati del tempo | Avvia lo studio del ghiaccio primordiale | Ghiaccio primordiale + Primo laboratorio | +$4,5 MLD |
+| Vita antica | Rileva una biosignatura nel ghiaccio | Strati del tempo | +$15 MLD + Badge Scopritore di vita |
+| Messaggio vivente | Trasmetti la prova alla Terra | Vita antica | +$25 MLD, rapporti +25% |
+| Segnale da Marte | Primo rapporto trasmesso | Primo laboratorio | +$400 MLN, ricavi ricerca +10% |
+| Catena di custodia | 3 rapporti | Segnale da Marte | +$550 MLN |
+| Reticoli rivelati | 3 rapporti XRD | Segnale da Marte | +$650 MLN, valore XRD +15% |
+| Impronte luminose | 3 rapporti Raman | Segnale da Marte | +$800 MLN, valore Raman +15% |
+| Tracce nel plasma | 3 rapporti ICP-MS | Catena di custodia | +$1 MLD, valore ICP-MS +15% |
+| Segnale anomalo | Primo campione raro trasmesso | Carota geologica + Segnale da Marte | +$1,1 MLD |
+| Atlante di Ares | 3 biomi distinti | Carota geologica + Catena di custodia | +$1,25 MLD, dati multi-bioma +10% |
+| Convoglio dati | 8 rapporti | Catena di custodia | +$1,4 MLD |
+| XRD / Raman / ICP-MS di precisione | Porta il relativo strumento al livello 5 | Contratto della disciplina | +$1 / $1,25 / $1,6 MLD |
+| Costellazione rara | 3 campioni rari trasmessi | Segnale anomalo + Raman | +$1,9 MLD, rari +25% |
+| Ponte Terra | 15 rapporti | Convoglio dati + ICP-MS | +$2,5 MLD, rapporti +15% |
+| Archivio planetario | 6 biomi distinti | Atlante di Ares + Segnale anomalo | +$3 MLD |
+| Direttorato scientifico | Tre strumenti al massimo, Ponte Terra e Archivio | Cinque contratti finali | +$4 MLD, rapporti +20%, Badge Direttore scientifico |
+| Dividendo marziano | 24 rapporti | Direttorato + Costellazione rara | +$6 MLD, Badge Pioniere del valore |
 
 **Persistenza:** gli obiettivi sono volutamente legati alla singola missione. Non vengono salvati su disco; avviare di nuovo il gioco o ricominciare la missione parte sempre con nodi, premi e bonus a zero.
 
@@ -628,14 +696,15 @@ La sequenza esatta dei prerequisiti principali è:
 
 Il giocatore è libero di sperimentare, ma il percorso didattico naturale è:
 
-1. Posizionare la prima cupola e imparare la camera di decompressione.
-2. Stabilire rete solare, trasformatore e batteria.
-3. Costruire trivella, ricaricare la borraccia e distribuire acqua.
-4. Installare l'elettrolizzatore per creare una linea O₂ per la cupola e una linea H₂ per il Sabatier.
-5. Scegliere se investire in una serra per autonomia alimentare o in un laboratorio per ricavi più rapidi.
-6. Ampliare la cupola e aggiungere protezioni contro radiazioni.
-7. Aggiungere un dock e un rover per esplorare biomi rischiosi.
-8. Portare gli strumenti scientifici al livello massimo e completare il Centro Scientifico.
+1. Camminare, raccogliere rocce e rivelare biomi: i contratti a piedi finanziano il primo investimento senza corrente.
+2. Posizionare la prima cupola e imparare la camera di decompressione.
+3. Stabilire rete solare, trasformatore e batteria.
+4. Costruire trivella, ricaricare la borraccia e distribuire acqua.
+5. Installare l'elettrolizzatore per creare una linea O₂ per la cupola e una linea H₂ per il Sabatier.
+6. Scegliere se investire in una serra per autonomia alimentare o in un laboratorio per ricavi più rapidi.
+7. Spostare la trivella mineraria tra biomi e usare i rapporti per finanziare gli upgrade.
+8. Raggiungere il polo: la trivella lì ha il 10% di trovare ghiaccio profondo primordiale; scegliere ICP-MS massimizza la probabilità della biosignatura.
+9. Portare gli strumenti scientifici al livello massimo e completare il Direttorato scientifico.
 
 Questa sequenza evita che il giocatore senta il bisogno di comprare tutto insieme: ogni nuovo sistema risolve un problema concreto e introduce il successivo.
 

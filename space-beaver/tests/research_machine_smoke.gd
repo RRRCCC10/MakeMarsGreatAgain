@@ -81,6 +81,24 @@ func _run() -> void:
 	var balance_before := int(economy.get("balance"))
 	_expect(bool(machine.call("try_interact", player)), "E deve inviare il rapporto finito alla Terra")
 	_expect(int(machine.get("state")) == 0 and int(economy.get("balance")) == balance_before + int(machine.call("get_reward")), "La consegna alla Terra deve pagare la ricompensa scientifica")
+	# Il ghiaccio profondo primordiale può essere analizzato da qualsiasi
+	# laboratorio. Forziamo il risultato raro per verificare il ramo economico
+	# della vita antica senza rendere il test dipendente dal caso.
+	inventory.reset_for_new_mission()
+	_expect(inventory.add_rock("ghiaccio_profondo_primordiale"), "Il ghiaccio profondo primordiale deve entrare nell'inventario")
+	_expect(bool(machine.call("try_interact", player)), "Il laboratorio deve accettare il ghiaccio primordiale")
+	_expect(bool(machine.get("sample_is_primordial_ice")) and is_equal_approx(float(machine.call("get_biosignature_chance")), 0.20), "XRD deve offrire il 20%% di probabilità per una biosignatura")
+	machine.set("ancient_life_detected", true)
+	machine.call("set_powered", true)
+	machine.set("study_elapsed", float(machine.call("get_analysis_seconds")))
+	machine.call("_process", 0.01)
+	_expect(int(machine.get("state")) == 2 and int(machine.call("get_reward")) >= 10_000_000_000, "Una biosignatura deve rendere il rapporto eccezionalmente remunerativo")
+	var life_balance_before := int(economy.get("balance"))
+	_expect(bool(machine.call("try_interact", player)), "Il rapporto di vita antica deve poter essere consegnato alla Terra")
+	_expect(int(economy.get("balance")) == life_balance_before + int(machine.call("get_reward")), "La prova di vita deve includere il bonus economico straordinario")
+	var achievements := root.get_node("AchievementManager")
+	_expect(int(achievements.call("get_progress", "deep_ice_study")) == 1 and int(achievements.call("get_progress", "ancient_life")) == 1 and int(achievements.call("get_progress", "life_relay")) == 1, "Il rapporto biologico deve avanzare l'intero ramo della vita antica")
+	_expect(is_equal_approx(float(RESEARCH_SCRIPT.get_definition("raman_spectrometer").get("biosignature_chance", 0.0)), 0.35) and is_equal_approx(float(RESEARCH_SCRIPT.get_definition("icp_ms").get("biosignature_chance", 0.0)), 0.55), "Laboratori più avanzati devono avere una probabilità di rilevamento maggiore")
 	for item_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
 		var definition: Dictionary = shop.call("get_definition", item_id)
 		_expect(bool(definition.get("placeable", false)) and str(definition.get("category", "")) == "research", "%s deve essere acquistabile nello shop ricerca" % item_id)

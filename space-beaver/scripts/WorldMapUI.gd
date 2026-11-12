@@ -146,6 +146,9 @@ func _reveal_around_player() -> void:
 				if source_id < 0:
 					continue
 				explored_blocks[block] = TERRAIN_COLORS.get(source_id, Color("46525a"))
+				var achievements := get_node_or_null("/root/AchievementManager")
+				if achievements != null and achievements.has_method("record_exploration_source"):
+					achievements.call("record_exploration_source", source_id)
 				changed = true
 	if changed and map_canvas != null:
 		map_canvas.queue_redraw()

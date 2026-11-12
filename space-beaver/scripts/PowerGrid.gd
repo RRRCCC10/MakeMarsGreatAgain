@@ -167,6 +167,9 @@ func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotat
 			"attach_direction": rock_drill.get_power_attach_direction(),
 		})
 		BuildableRegistry.register_buildable(rock_drill, rock_drill.get_display_name(), "machine", pickup_rock_drill.bind(rock_drill))
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null:
+			achievements.call("record", "first_extraction")
 		rebuild_network()
 		return rock_drill
 	var device := POWER_DEVICE_SCRIPT.new() as PowerDevice

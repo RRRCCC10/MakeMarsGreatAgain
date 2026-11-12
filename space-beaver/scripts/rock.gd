@@ -29,6 +29,7 @@ const ROCK_TEXTURE_VARIANTS: Dictionary = {
 	"sali_solfati_idrati": "ghiaccio_profondo",
 	"ghiaccio_laminato": "ghiaccio_leggero",
 	"ghiaccio_salmastro": "ghiaccio_blu",
+	"ghiaccio_profondo_primordiale": "ghiaccio_profondo",
 	"basalto_vescicolare": "roccia_basaltica",
 	"olivina_ferrifera": "basalto",
 }
@@ -71,6 +72,9 @@ const ROCK_DEFINITIONS: Dictionary = {
 	"ghiaccio_profondo": {
 		"item_id": "rock_ghiaccio_profondo", "name": "Ghiaccio profondo", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 1.90,
 	},
+	"ghiaccio_profondo_primordiale": {
+		"item_id": "rock_ghiaccio_profondo_primordiale", "name": "Ghiaccio profondo primordiale", "biome": "Strati profondi marziani", "rarity": "ultra_rare", "research_multiplier": 4.50, "deep_ice": true,
+	},
 	# Nuovi campioni della trivella mineraria: due comuni e una scoperta al 5%
 	# per ciascuno dei sei biomi della mappa.
 	"andesite_marziana": {
@@ -111,7 +115,7 @@ const ROCK_DEFINITIONS: Dictionary = {
 	},
 }
 
-@export_enum("roccia_base", "roccia_ghiacciata", "roccia_scura", "roccia_basaltica", "roccia_grigia", "ghiaccio_profondo", "roccia_rossa", "pietra_rossastra", "ghiaccio_leggero", "ghiaccio_blu", "basalto", "andesite_marziana", "shoshonite_olivinica", "ematite_nodulare", "goethite_idrata", "breccia_da_impatto", "impactite_vetrosa", "regolite_perclorata", "sali_solfati_idrati", "ghiaccio_laminato", "ghiaccio_salmastro", "basalto_vescicolare", "olivina_ferrifera") var rock_variant := "roccia_rossa"
+@export_enum("roccia_base", "roccia_ghiacciata", "roccia_scura", "roccia_basaltica", "roccia_grigia", "ghiaccio_profondo", "ghiaccio_profondo_primordiale", "roccia_rossa", "pietra_rossastra", "ghiaccio_leggero", "ghiaccio_blu", "basalto", "andesite_marziana", "shoshonite_olivinica", "ematite_nodulare", "goethite_idrata", "breccia_da_impatto", "impactite_vetrosa", "regolite_perclorata", "sali_solfati_idrati", "ghiaccio_laminato", "ghiaccio_salmastro", "basalto_vescicolare", "olivina_ferrifera") var rock_variant := "roccia_rossa"
 @export var is_authored := true
 var resource_key := ""
 
@@ -143,9 +147,14 @@ static func definition_for_item_id(item_id: String) -> Dictionary:
 
 
 static func drill_variant_for_biome(source_id: int, roll_percent: float, common_roll: float) -> String:
-	## Ogni bioma possiede esattamente un campione raro al 5%. I due campioni
-	## comuni dividono il restante 95%, così la trivella comunica chiaramente
-	## al giocatore dove è stata posata e mantiene la scoperta speciale rara.
+	## Il ghiaccio profondo primordiale è una carota che può comparire ovunque
+	## (1%), ma sui poli sale al 10%. Viene controllato prima del raro locale:
+	## nella calotta il giocatore rinuncia a un po' di varietà in cambio della
+	## migliore probabilità di una scoperta biologica straordinaria.
+	if roll_percent < deep_ice_probability_for_biome(source_id):
+		return "ghiaccio_profondo_primordiale"
+	## Ogni altro bioma possiede il proprio campione raro al 5%. I due campioni
+	## comuni dividono il resto della produzione.
 	var common_variants: Array[String] = []
 	var rare_variant := ""
 	for variant in ROCK_DEFINITIONS:
@@ -163,6 +172,10 @@ static func drill_variant_for_biome(source_id: int, roll_percent: float, common_
 	return common_variants[0] if common_variants.size() == 1 or common_roll < 0.5 else common_variants[1]
 
 
+static func deep_ice_probability_for_biome(source_id: int) -> float:
+	return 0.10 if source_id == 4 else 0.01
+
+
 func resource_definition() -> Dictionary:
 	return definition_for(rock_variant)
 
@@ -175,6 +188,10 @@ func collect() -> bool:
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory == null or not bool(inventory.call("add_rock", rock_variant)):
 		return false
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null and achievements.has_method("record_field_sample"):
+		var definition := resource_definition()
+		achievements.call("record_field_sample", rock_variant, str(definition.get("rarity", "common")))
 	if not resource_key.is_empty():
 		var scatter := get_tree().get_first_node_in_group("rock_scatter")
 		if scatter != null:

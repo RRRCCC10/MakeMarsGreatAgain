@@ -70,6 +70,10 @@ func _ready() -> void:
 		return
 	add_to_group("rock_drills")
 	_resolve_biome()
+	if biome_source_id == 4:
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null and achievements.has_method("record_polar_drill"):
+			achievements.call("record_polar_drill")
 	_setup_collision()
 	_setup_status_light()
 	_build_storage_ui()
@@ -170,6 +174,10 @@ func _resolve_biome() -> void:
 func _extract_sample() -> void:
 	var variant := str(ROCK_RESOURCE.drill_variant_for_biome(biome_source_id, _rng.randf(), _rng.randf()))
 	var definition: Dictionary = ROCK_RESOURCE.definition_for(variant)
+	if bool(definition.get("deep_ice", false)):
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null and achievements.has_method("record_primordial_ice_found"):
+			achievements.call("record_primordial_ice_found")
 	for stock in sample_stock:
 		if str(stock.get("variant", "")) == variant:
 			stock["count"] = int(stock.get("count", 0)) + 1
@@ -356,15 +364,16 @@ func get_inventory_output_label() -> String:
 func get_machine_specs() -> Dictionary:
 	var rare_count := 0
 	for stock in sample_stock:
-		if str(stock.get("rarity", "")) == "rare":
+		if str(stock.get("rarity", "")) in ["rare", "ultra_rare"]:
 			rare_count += int(stock.get("count", 0))
+	var deep_ice_percent := ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0
 	return {
 		"title": "TRIVELLA MINERARIA",
 		"category": "PROSPEZIONE GEOLOGICA IN SITU",
 		"status": "ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else get_connection_label()),
 		"status_color": Color("72eda0") if powered and get_stock_count() < STORAGE_CAPACITY else Color("ffb45d"),
 		"principle": "Una testa rotativa preleva carote dal regolite locale, le vaglia per composizione e conserva i campioni fisici. Il bioma di posa decide quali minerali può trovare.",
-		"specs": ["Bioma di posa: %s" % biome_label, "Assorbimento: %.0f kW" % POWER_DEMAND_KW, "Cadenza: 1 campione ogni %.0f s" % EXTRACTION_INTERVAL_SECONDS, "Riserva: %d / %d campioni" % [get_stock_count(), STORAGE_CAPACITY], "Campioni rari in riserva: %d" % rare_count, "Scoperta rara: 5%% per estrazione", "Totale estratto: %d" % total_samples_extracted, "E: apri riserva · V: rete"],
+		"specs": ["Bioma di posa: %s" % biome_label, "Assorbimento: %.0f kW" % POWER_DEMAND_KW, "Cadenza: 1 campione ogni %.0f s" % EXTRACTION_INTERVAL_SECONDS, "Riserva: %d / %d campioni" % [get_stock_count(), STORAGE_CAPACITY], "Campioni rari in riserva: %d" % rare_count, "Raro locale: 5%% · ghiaccio profondo primordiale: %.0f%%" % deep_ice_percent, "Totale estratto: %d" % total_samples_extracted, "E: apri riserva · V: rete"],
 	}
 
 
@@ -453,7 +462,7 @@ func _build_storage_ui() -> void:
 func _refresh_storage_ui() -> void:
 	if storage_root == null or storage_rows == null:
 		return
-	storage_summary.text = "%s · alimentazione %s · riserva %d/%d · raro al 5%%" % [biome_label, "ATTIVA" if powered else "NON ATTIVA", get_stock_count(), STORAGE_CAPACITY]
+	storage_summary.text = "%s · alimentazione %s · riserva %d/%d · ghiaccio primordiale %.0f%%" % [biome_label, "ATTIVA" if powered else "NON ATTIVA", get_stock_count(), STORAGE_CAPACITY, ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0]
 	for child in storage_rows.get_children():
 		child.queue_free()
 	if sample_stock.is_empty():
@@ -468,7 +477,7 @@ func _refresh_storage_ui() -> void:
 	for index in sample_stock.size():
 		var stock: Dictionary = sample_stock[index]
 		var row := PanelContainer.new()
-		row.add_theme_stylebox_override("panel", _stock_row_style(str(stock.get("rarity", "common")) == "rare"))
+		row.add_theme_stylebox_override("panel", _stock_row_style(str(stock.get("rarity", "common")) in ["rare", "ultra_rare"]))
 		storage_rows.add_child(row)
 		var content := HBoxContainer.new()
 		content.add_theme_constant_override("separation", 8)
@@ -477,10 +486,11 @@ func _refresh_storage_ui() -> void:
 		info.custom_minimum_size = Vector2(455, 46)
 		info.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		var rarity := "RARO · 5%" if str(stock.get("rarity", "common")) == "rare" else "COMUNE"
+		var stock_rarity := str(stock.get("rarity", "common"))
+		var rarity := "ULTRA RARO · GHIACCIO PRIMORDIALE" if stock_rarity == "ultra_rare" else ("RARO · 5%" if stock_rarity == "rare" else "COMUNE")
 		info.text = "%s x%d\n%s · %s · valore ricerca ×%.2f" % [str(stock.get("name", "Campione")).to_upper(), int(stock.get("count", 0)), str(stock.get("biome", biome_label)), rarity, float(stock.get("research_multiplier", 1.0))]
 		info.add_theme_font_size_override("font_size", 11)
-		info.add_theme_color_override("font_color", Color("ffe18b") if rarity.begins_with("RARO") else Color("d3e3e6"))
+		info.add_theme_color_override("font_color", Color("a8fff0") if rarity.begins_with("ULTRA") else (Color("ffe18b") if rarity.begins_with("RARO") else Color("d3e3e6")))
 		content.add_child(info)
 		var take := Button.new()
 		take.text = "PRENDI\nPILA"
