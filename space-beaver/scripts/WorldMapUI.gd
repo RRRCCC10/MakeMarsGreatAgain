@@ -163,14 +163,17 @@ func _build_ui() -> void:
 	add_child(map_root)
 
 	var panel := Panel.new()
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -370
-	panel.offset_top = -330
-	panel.offset_right = 370
-	panel.offset_bottom = 330
+	panel.name = "ResponsiveMapPanel"
+	# Carta elastica: i margini percentuali mantengono leggibile la mappa sia
+	# nella finestra iniziale sia dopo un ingrandimento libero della finestra.
+	panel.anchor_left = 0.05
+	panel.anchor_top = 0.05
+	panel.anchor_right = 0.95
+	panel.anchor_bottom = 0.95
+	panel.offset_left = 0.0
+	panel.offset_top = 0.0
+	panel.offset_right = 0.0
+	panel.offset_bottom = 0.0
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color("091218f4")
@@ -201,8 +204,11 @@ func _build_ui() -> void:
 	var hint := Label.new()
 	hint.text = "M · chiudi     Rotella · zoom     Trascina rotella · sposta"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hint.position = Vector2(370, 13)
-	hint.size = Vector2(345, 20)
+	hint.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	hint.offset_left = -365.0
+	hint.offset_top = 13.0
+	hint.offset_right = -18.0
+	hint.offset_bottom = 33.0
 	hint.add_theme_color_override("font_color", Color("c3ccd2"))
 	hint.add_theme_font_size_override("font_size", 11)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE

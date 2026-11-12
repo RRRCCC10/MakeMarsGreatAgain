@@ -14,7 +14,7 @@ func _run() -> void:
 	manager.set_persistence_enabled_for_test(false)
 	manager.reset_runtime_for_test()
 	var definitions: Array = manager.get_ordered_definitions()
-	_expect(definitions.size() >= 40, "La tavola deve ospitare contratti a piedi, ricerca industriale e il ramo della vita antica")
+	_expect(definitions.size() >= 55, "La tavola deve ospitare contratti a piedi, fotografia, ricerca industriale e il ramo della vita antica")
 	_expect(manager.is_unlocked("first_base"), "La prima tappa deve essere disponibile dall'inizio")
 	_expect(manager.is_unlocked("first_field_sample") and manager.is_unlocked("first_horizon"), "Raccolta ed esplorazione devono essere disponibili senza rete o macchinari")
 	_expect(not manager.is_unlocked("airlock_cycle"), "Il ramo sopravvivenza deve restare bloccato finché non viene riscattata la radice")
@@ -41,6 +41,11 @@ func _run() -> void:
 	manager.record_exploration_source(1)
 	manager.record_exploration_source(4)
 	_expect(manager.is_reached("biome_survey") and manager.is_reached("polar_expedition"), "L'esplorazione del polo deve avanzare i contratti senza richiedere una rete")
+	manager.record_photo_transmission({"source_id": 0, "tags": ["panorama"]})
+	manager.record_photo_transmission({"source_id": 3, "tags": ["rock", "dawn_ice"]})
+	manager.record_photo_transmission({"source_id": 4, "tags": ["polar", "rare_rock", "night_sky"]})
+	_expect(manager.is_reached("contact_sheet") and manager.is_reached("biome_gallery"), "Tre foto inviate da biomi distinti devono avanzare provino e galleria senza rete")
+	_expect(manager.is_reached("field_portrait") and manager.is_reached("rare_lens") and manager.is_reached("dawn_ice") and manager.is_reached("polar_light"), "I tag fotografici devono alimentare i contratti speciali corretti")
 	manager.record_polar_drill()
 	manager.record_primordial_ice_found()
 	manager.record_deep_ice_study()
@@ -63,16 +68,32 @@ func _run() -> void:
 	_expect(manager.get_prerequisites("first_extraction").size() == 2, "La trivella mineraria deve richiedere logistica d'acqua e laboratorio")
 	_expect(manager.get_prerequisites("science_center").size() == 5, "Il direttorato deve richiedere i tre laboratori, ponte Terra e atlante")
 
+	# Il catalogo è ordinato per ramo visivo, non necessariamente in ordine
+	# topologico: un obiettivo fotografico può dipendere da una serra dichiarata
+	# più avanti. Il test deve quindi riscuotere tutti i nodi disponibili a onde.
+	var pending_ids: Array[String] = []
 	for definition in definitions:
 		var achievement_id := str(definition.get("id", ""))
-		if manager.is_claimed(achievement_id):
+		if not manager.is_claimed(achievement_id):
+			pending_ids.append(achievement_id)
+	while not pending_ids.is_empty():
+		var claimed_this_pass := false
+		for index in range(pending_ids.size() - 1, -1, -1):
+			var pending_id := pending_ids[index]
+			if not manager.is_reached(pending_id):
+				manager.set_reached(pending_id)
+			if not manager.is_unlocked(pending_id):
+				continue
+			_expect(manager.is_claimable(pending_id), "%s deve luccicare/riscattarsi una volta raggiunto" % pending_id)
+			_expect(manager.claim(pending_id), "La ricompensa di %s deve poter essere riscattata" % pending_id)
+			_expect(manager.is_claimed(pending_id), "%s deve risultare colorato e riscosso dopo il click" % pending_id)
+			pending_ids.remove_at(index)
+			claimed_this_pass = true
+		if claimed_this_pass:
 			continue
-		if not manager.is_reached(achievement_id):
-			manager.set_reached(achievement_id)
-		_expect(manager.is_unlocked(achievement_id), "%s deve sbloccarsi dopo la riscossione dei suoi prerequisiti" % achievement_id)
-		_expect(manager.is_claimable(achievement_id), "%s deve luccicare/riscattarsi una volta raggiunto" % achievement_id)
-		_expect(manager.claim(achievement_id), "La ricompensa di %s deve poter essere riscattata" % achievement_id)
-		_expect(manager.is_claimed(achievement_id), "%s deve risultare colorato e riscosso dopo il click" % achievement_id)
+		for blocked_id in pending_ids:
+			_expect(false, "%s deve avere una catena di prerequisiti riscattabile" % blocked_id)
+		break
 
 	_expect(manager.has_effect("water_efficiency") and is_equal_approx(manager.get_water_loss_multiplier(), 0.90), "La ricompensa borraccia deve ridurre il consumo d'acqua del 10%")
 	_expect(manager.has_effect("crop_efficiency") and is_equal_approx(manager.get_crop_growth_multiplier(), 1.05), "La ricompensa piantagione deve velocizzare le colture del 5%")

@@ -538,6 +538,20 @@ Prima di avere una cupola, una batteria o un laboratorio, l'astronauta può già
 
 Queste attività non richiedono corrente, macchinari o una base. I loro premi vanno da **$100 MLN** a **$1,1 MLD** e coprono il primo acquisto strutturale. La raccolta conta solo campioni presi fisicamente dalla superficie: trasferire materiale dalla trivella non falsa i contratti a piedi.
 
+### Telecamera scientifica e contratti fotografici
+
+Riscattare **Sacca campioni** consegna, oltre ai $420 MLN, una **telecamera scientifica** gratuita. Non è acquistabile: è il premio per avere dimostrato di saper raccogliere e catalogare la superficie. Va spostata in uno slot rapido dell'hotbar, come lo strumento tubi.
+
+| Comando con telecamera equipaggiata | Azione |
+|---|---|
+| `P` | Scatta: identifica automaticamente bioma, fase del sol, rocce o struttura vicina e salva un PNG locale nel rullino. |
+| `O` | Trasmette alla Terra il più vecchio scatto non inviato. Solo la trasmissione avanza i contratti e paga i premi. |
+| `C` | Apre l'archivio fotografico con soggetto, bioma, sol, fase e stato di invio di ogni foto. |
+
+La fotografia è un secondo percorso economico early game: non richiede rete, cupola, laboratorio né consumi energetici. I soggetti speciali riconosciuti sono roccia normale/rara, sei biomi, notte, alba polare, cupola, serra, laboratorio, ghiaccio profondo nell'inventario e laboratorio dopo la scoperta della vita. I contratti pagano da $150 MLN a $4 MLD e premiano il giocatore che si sposta nel mondo invece di restare vicino alla base.
+
+L'archivio conserva fino a 36 scatti. Un effetto lampo dà conferma immediata dello scatto; un messaggio separato conferma l'invio, così “foto fatta” e “foto pagata” non vengono mai confuse.
+
 | Strumento | Prezzo | Tempo base | Ricavo base | Dimensione |
 |---|---:|---:|---:|---|
 | Diffrattometro a raggi X (XRD) | $1,6 MLD | 2 min 30 s | $450 MLN | 32×16 px |
@@ -626,13 +640,18 @@ La tavola degli obiettivi è una progressione a grafo, non una lista lineare. Si
 | Raggiunto e da riscattare | Colore del ramo, luccicante | Il traguardo è completo; cliccare il nodo per ricevere la ricompensa. |
 | Riscattato | Colorato | Ricompensa già ottenuta; apre i nodi successivi. |
 
-I collegamenti scorrono orizzontalmente e si diramano per raccolta, esplorazione, acqua/sopravvivenza, habitat/cibo, ricerca industriale e biologia polare. Una ricompensa è riscattabile solo dopo che tutti i prerequisiti sono stati riscattati, anche se il suo contatore è già completo. La rete contiene **40 nodi**: i 9 contratti iniziali rendono possibile guadagnare senza infrastruttura, mentre i rami successivi trasformano la ricerca nella fonte principale di capitale.
+I collegamenti scorrono orizzontalmente e si diramano per raccolta, esplorazione, fotografia, acqua/sopravvivenza, habitat/cibo, ricerca industriale e biologia polare. Una ricompensa è riscattabile solo dopo che tutti i prerequisiti sono stati riscattati, anche se il suo contatore è già completo. La rete contiene **55 nodi**: i 9 contratti iniziali e i 15 contratti fotografici rendono possibile guadagnare senza infrastruttura, mentre i rami successivi trasformano la ricerca nella fonte principale di capitale.
 
 ### Grafo attuale
 
 ```text
 PRIMA PIETRA ── TACCUINO ── SACCA CAMPIONI ── CATALOGO DI SUPERFICIE
                        └────────────────────── LUCE NELLA POLVERE
+                       └─ TELECAMERA ── PRIMO SCATTO ── PROVINO ── CARTOLINE DA MARTE
+                                          ├─ RITRATTO MINERALE ── LENTE SULL'ANOMALIA
+                                          ├─ GALLERIA BIOMI ── SEI ORIZZONTI ── LUCE POLARE
+                                          │                    └─ GHIACCIO ALL'ALBA
+                                          └─ CIELO NOTTURNO / AVAMPOSTO / SERRA / LABORATORIO
 ORIZZONTE APERTO ── TRE COLORI ── LINEA DI ORIZZONTE ── SPEDIZIONE POLARE
                                                                     │
 PRIMA BASE ── ACCESSO SICURO ── PRIMA TRIVELLA ── BORRACCIA RICARICATA
@@ -652,6 +671,17 @@ La sequenza esatta dei prerequisiti principali è:
 | Prima pietra | Raccogli una roccia fisica a piedi | — | +$120 MLN |
 | Taccuino di campo | Raccogli 3 rocce a piedi | Prima pietra | +$220 MLN |
 | Sacca campioni | Raccogli 8 rocce a piedi | Taccuino | +$420 MLN |
+| Primo scatto | Trasmetti 1 fotografia | Sacca campioni | +$150 MLN |
+| Provino marziano | Trasmetti 3 fotografie | Primo scatto | +$260 MLN |
+| Cartoline da Marte | Trasmetti 8 fotografie | Provino | +$720 MLN |
+| Ritratto minerale / Lente sull'anomalia | Foto di roccia / di roccia rara | Primo scatto / Ritratto | +$240 / $750 MLN |
+| Galleria di biomi / Sei orizzonti | Foto da 3 / 6 biomi | Primo scatto / Galleria | +$360 MLN / $1,2 MLD |
+| Ghiaccio all'alba / Luce polare | Foto criosfera all'alba / dal polo | Galleria / Spedizione polare + Galleria | +$520 MLN / $1,05 MLD |
+| Cielo senza atmosfera | Foto notturna | Primo scatto | +$430 MLN |
+| Primo avamposto | Foto esterna della cupola | Prima base + Primo scatto | +$610 MLN |
+| Vetro e clorofilla / Scienza in campo | Foto serra / laboratorio | Serra o laboratorio + Primo scatto | +$800 / $950 MLN |
+| Tempo nel ghiaccio | Foto con ghiaccio primordiale custodito | Ghiaccio primordiale + Primo scatto | +$2 MLD |
+| Testimone della vita | Foto laboratorio dopo biosignatura | Vita antica + Scienza in campo | +$4 MLD + Badge Occhio di Marte |
 | Catalogo di superficie | Raccogli 3 tipi differenti a piedi | Taccuino | +$600 MLN |
 | Luce nella polvere | Raccogli una rara naturale a piedi | Taccuino | +$900 MLN |
 | Orizzonte aperto | Esplora il primo bioma | — | +$100 MLN |
@@ -696,7 +726,7 @@ La sequenza esatta dei prerequisiti principali è:
 
 Il giocatore è libero di sperimentare, ma il percorso didattico naturale è:
 
-1. Camminare, raccogliere rocce e rivelare biomi: i contratti a piedi finanziano il primo investimento senza corrente.
+1. Camminare, raccogliere rocce, rivelare biomi e trasmettere le prime fotografie: i contratti a piedi e l'archivio visivo finanziano il primo investimento senza corrente.
 2. Posizionare la prima cupola e imparare la camera di decompressione.
 3. Stabilire rete solare, trasformatore e batteria.
 4. Costruire trivella, ricaricare la borraccia e distribuire acqua.
@@ -723,6 +753,9 @@ Questa sequenza evita che il giocatore senta il bisogno di comprare tutto insiem
 | `1`–`5` | Seleziona slot hotbar. |
 | `B` | Apri/chiudi shop. |
 | `J` | Apri/chiudi tavola obiettivi. |
+| `P` | Con telecamera equipaggiata, scatta una foto scientifica. |
+| `O` | Con telecamera equipaggiata, trasmetti alla Terra lo scatto più vecchio non inviato. |
+| `C` | Con telecamera equipaggiata, apri/chiudi archivio fotografico. |
 | `Esc` | Chiude pannelli/modal aperti. |
 | Click sinistro | Usa l'oggetto selezionato, piazza o ispeziona una struttura. |
 | Click destro | Demolisce/recupera l'oggetto bersagliato; sul raccordo O₂ della cupola apre la diagnostica. |
@@ -780,6 +813,7 @@ Il progetto è realizzato in Godot. I sistemi principali sono separati in manage
 | `Oxygen`, `Hydration`, `Hunger`, `Temperature`, `Radiation` | Simulazione delle necessità e dei rischi dell'astronauta. |
 | `SuitSystem` | Proprietà, possesso ed equipaggiamento delle tute. |
 | `AchievementManager` | Grafo missione, premi e bonus non persistenti. |
+| `FieldCamera` | Rullino, cattura locale, identificazione del soggetto, invio alla Terra e UI archivio. |
 | `WorldMapUI` | Esplorazione rivelata, zoom, pan e marcatori. |
 
 ### Principi tecnici da preservare
@@ -790,6 +824,7 @@ Il progetto è realizzato in Godot. I sistemi principali sono separati in manage
 4. **Collisione e grafica separate ma coerenti.** Gli sprite possono avere trasparenze e layer diversi, ma la hitbox deve rappresentare le parti solide e lo spazio percorribile.
 5. **Piazzamento validato prima del consumo.** L'oggetto viene rimosso dall'inventario soltanto dopo un piazzamento valido.
 6. **Riavvio deterministico.** Una nuova missione resetta manager, mondo, inventario, ordini e achievement senza ereditare dati di test precedenti.
+7. **Interfaccia adattiva.** Finestra liberamente ridimensionabile; shop, inventario, mappa, archivio e tavola usano ancoraggi percentuali e mantengono margini leggibili invece di una risoluzione rigida.
 
 ---
 

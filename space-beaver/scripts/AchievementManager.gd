@@ -27,7 +27,7 @@ const ACHIEVEMENTS := [
 		"id": "sample_satchel", "title": "SACCA CAMPIONI", "icon": "▰", "color": Color("d7a96d"),
 		"description": "Raccogli 8 campioni a piedi.", "target": 8,
 		"prerequisites": ["field_notes"],
-		"reward": {"funds": 420_000_000, "label": "+ $420 MLN · contratto di raccolta"},
+		"reward": {"funds": 420_000_000, "item_id": "field_camera", "label": "+ $420 MLN · contratto di raccolta + telecamera"},
 	},
 	{
 		"id": "surface_catalog", "title": "CATALOGO DI SUPERFICIE", "icon": "◫", "color": Color("f1cd91"),
@@ -64,6 +64,98 @@ const ACHIEVEMENTS := [
 		"description": "Raggiungi ed esplora il ghiaccio polare.", "target": 1,
 		"prerequisites": ["biome_survey"],
 		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · mandato criosfera"},
+	},
+	# Archivio fotografico: sono contratti civili e scientifici eseguibili già
+	# con la telecamera di campo. Nessuno richiede una rete elettrica.
+	{
+		"id": "first_photo", "title": "PRIMO SCATTO", "icon": "▣", "color": Color("86e6f7"),
+		"description": "Trasmetti alla Terra la prima fotografia scientifica.", "target": 1,
+		"prerequisites": ["sample_satchel"],
+		"reward": {"funds": 150_000_000, "label": "+ $150 MLN · primo segnale visivo"},
+	},
+	{
+		"id": "contact_sheet", "title": "PROVINO MARZIANO", "icon": "▤", "color": Color("9adcf0"),
+		"description": "Trasmetti 3 fotografie di campo.", "target": 3,
+		"prerequisites": ["first_photo"],
+		"reward": {"funds": 260_000_000, "label": "+ $260 MLN · rivista esplorativa"},
+	},
+	{
+		"id": "mars_postcard", "title": "CARTOLINE DA MARTE", "icon": "✉", "color": Color("b4f1ff"),
+		"description": "Trasmetti 8 fotografie al centro missione.", "target": 8,
+		"prerequisites": ["contact_sheet"],
+		"reward": {"funds": 720_000_000, "label": "+ $720 MLN · licenza archivio immagini"},
+	},
+	{
+		"id": "field_portrait", "title": "RITRATTO MINERALE", "icon": "◆", "color": Color("efc58e"),
+		"description": "Fotografa e trasmetti una roccia raccolta sul terreno.", "target": 1,
+		"prerequisites": ["first_photo"],
+		"reward": {"funds": 240_000_000, "label": "+ $240 MLN · catalogo di superficie"},
+	},
+	{
+		"id": "rare_lens", "title": "LENTE SULL'ANOMALIA", "icon": "✧", "color": Color("ffe379"),
+		"description": "Trasmetti il ritratto di un campione raro o ultra-raro.", "target": 1,
+		"prerequisites": ["field_portrait"],
+		"reward": {"funds": 750_000_000, "label": "+ $750 MLN · premio immagine anomala"},
+	},
+	{
+		"id": "biome_gallery", "title": "GALLERIA DI BIOMI", "icon": "◌", "color": Color("83d5ff"),
+		"description": "Invia fotografie da 3 biomi differenti.", "target": 3,
+		"prerequisites": ["first_photo"],
+		"reward": {"funds": 360_000_000, "label": "+ $360 MLN · atlante fotografico"},
+	},
+	{
+		"id": "six_horizons", "title": "SEI ORIZZONTI", "icon": "⌁", "color": Color("77c9ff"),
+		"description": "Invia almeno una fotografia da tutti e 6 i biomi.", "target": 6,
+		"prerequisites": ["biome_gallery"],
+		"reward": {"funds": 1_200_000_000, "label": "+ $1,2 MLD · atlante visivo di Marte"},
+	},
+	{
+		"id": "dawn_ice", "title": "GHIACCIO ALL'ALBA", "icon": "☼", "color": Color("d3f7ff"),
+		"description": "Fotografa il bordo o il nucleo polare durante l'alba.", "target": 1,
+		"prerequisites": ["biome_gallery"],
+		"reward": {"funds": 520_000_000, "label": "+ $520 MLN · osservazione criosferica"},
+	},
+	{
+		"id": "polar_light", "title": "LUCE POLARE", "icon": "❄", "color": Color("b5f5ff"),
+		"description": "Trasmetti una fotografia dal nucleo polare.", "target": 1,
+		"prerequisites": ["polar_expedition", "biome_gallery"],
+		"reward": {"funds": 1_050_000_000, "label": "+ $1,05 MLD · dossier calotta"},
+	},
+	{
+		"id": "night_sky", "title": "CIELO SENZA ATMOSFERA", "icon": "✦", "color": Color("c7b4ff"),
+		"description": "Trasmetti una fotografia notturna dalla superficie.", "target": 1,
+		"prerequisites": ["first_photo"],
+		"reward": {"funds": 430_000_000, "label": "+ $430 MLN · osservazione astronomica"},
+	},
+	{
+		"id": "outpost_portrait", "title": "PRIMO AVAMPOSTO", "icon": "⌂", "color": Color("a5e4e9"),
+		"description": "Fotografa una cupola abitativa dall'esterno.", "target": 1,
+		"prerequisites": ["first_base", "first_photo"],
+		"reward": {"funds": 610_000_000, "label": "+ $610 MLN · cronaca della colonia"},
+	},
+	{
+		"id": "greenhouse_window", "title": "VETRO E CLOROFILLA", "icon": "♧", "color": Color("a4ec9d"),
+		"description": "Trasmetti una fotografia della serra operativa.", "target": 1,
+		"prerequisites": ["greenhouse", "first_photo"],
+		"reward": {"funds": 800_000_000, "label": "+ $800 MLN · programma agricoltura visiva"},
+	},
+	{
+		"id": "lab_in_frame", "title": "SCIENZA IN CAMPO", "icon": "⚗", "color": Color("c7cbff"),
+		"description": "Trasmetti la fotografia di un laboratorio installato.", "target": 1,
+		"prerequisites": ["first_lab", "first_photo"],
+		"reward": {"funds": 950_000_000, "label": "+ $950 MLN · documentazione strumentale"},
+	},
+	{
+		"id": "primordial_frost_photo", "title": "TEMPO NEL GHIACCIO", "icon": "◈", "color": Color("c5f4ff"),
+		"description": "Trasmetti una foto mentre custodisci il ghiaccio profondo primordiale.", "target": 1,
+		"prerequisites": ["primordial_ice", "first_photo"],
+		"reward": {"funds": 2_000_000_000, "label": "+ $2 MLD · archivio criogenico"},
+	},
+	{
+		"id": "life_witness_image", "title": "TESTIMONE DELLA VITA", "icon": "✺", "color": Color("84ffd2"),
+		"description": "Fotografa il laboratorio dopo aver rilevato la vita antica.", "target": 1,
+		"prerequisites": ["ancient_life", "lab_in_frame"],
+		"reward": {"funds": 4_000_000_000, "badge": "OCCHIO DI MARTE", "label": "+ $4 MLD · immagine storica"},
 	},
 	{
 		"id": "first_base", "title": "PRIMA BASE", "icon": "⌂", "color": Color("70c8ff"),
@@ -263,6 +355,7 @@ var _effects: Dictionary = {}
 var _reported_biomes: Dictionary = {}
 var _field_rock_variants: Dictionary = {}
 var _explored_sources: Dictionary = {}
+var _photographed_sources: Dictionary = {}
 var is_board_open := false
 
 
@@ -379,6 +472,12 @@ func claim(achievement_id: String) -> bool:
 	var effect := str(reward.get("effect", ""))
 	if not effect.is_empty():
 		_effects[effect] = true
+	var item_id := str(reward.get("item_id", ""))
+	if item_id == "field_camera" and is_inside_tree():
+		var inventory := get_node_or_null("/root/Inventory")
+		if inventory != null and inventory.has_method("grant_field_camera"):
+			if not bool(inventory.call("grant_field_camera")):
+				push_warning("Ricompensa telecamera in attesa: libera uno slot dello zaino.")
 	_save_progress()
 	achievement_updated.emit(achievement_id)
 	for child_id in get_dependent_ids(achievement_id):
@@ -474,6 +573,43 @@ func record_exploration_source(source_id: int) -> void:
 		record("polar_expedition")
 
 
+func record_photo_transmission(photo: Dictionary) -> void:
+	## I contratti fotografici avanzano soltanto quando lo scatto parte davvero
+	## verso la Terra. Scattare senza inviare riempie il rullino, ma non genera
+	## denaro né progresso fittizio.
+	if photo.is_empty():
+		return
+	record("first_photo")
+	record("contact_sheet")
+	record("mars_postcard")
+	var source_id := int(photo.get("source_id", -1))
+	if source_id >= 0 and not _photographed_sources.has(source_id):
+		_photographed_sources[source_id] = true
+		record("biome_gallery")
+		record("six_horizons")
+	var tags: Array = photo.get("tags", [])
+	if "rock" in tags:
+		record("field_portrait")
+	if "rare_rock" in tags:
+		record("rare_lens")
+	if "dawn_ice" in tags:
+		record("dawn_ice")
+	if "polar" in tags:
+		record("polar_light")
+	if "night_sky" in tags:
+		record("night_sky")
+	if "base" in tags:
+		record("outpost_portrait")
+	if "greenhouse" in tags:
+		record("greenhouse_window")
+	if "laboratory" in tags:
+		record("lab_in_frame")
+	if "primordial_ice" in tags:
+		record("primordial_frost_photo")
+	if "life_evidence" in tags:
+		record("life_witness_image")
+
+
 func record_polar_drill() -> void:
 	record("polar_drill")
 
@@ -532,6 +668,10 @@ func reset_runtime_for_test() -> void:
 	_reset_session_state()
 
 
+func reset_for_new_mission() -> void:
+	_reset_session_state()
+
+
 func _reset_session_state() -> void:
 	_progress.clear()
 	_claimed.clear()
@@ -540,6 +680,7 @@ func _reset_session_state() -> void:
 	_reported_biomes.clear()
 	_field_rock_variants.clear()
 	_explored_sources.clear()
+	_photographed_sources.clear()
 	is_board_open = false
 
 

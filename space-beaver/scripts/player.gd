@@ -32,7 +32,7 @@ func _physics_process(_delta: float) -> void:
 	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
 	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
 	_clamp_to_world_bounds()
-	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
+	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
 		velocity = Vector2.ZERO
 		_update_animation(Vector2.ZERO)
 		return
@@ -195,7 +195,7 @@ func is_driving_rover() -> bool:
 
 
 func _try_board_nearby_rover() -> bool:
-	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
+	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
 		return false
 	var nearby_rover := nearest_rover()
 	return nearby_rover != null and bool(nearby_rover.call("board", self))
@@ -236,7 +236,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_camera_zoom(camera.zoom.x / ZOOM_FACTOR)
 			get_viewport().set_input_as_handled()
 			return
-	if not Inventory.is_open and not Shop.is_open and not AchievementManager.is_board_open and event is InputEventKey and event.pressed and not event.echo:
+	if not Inventory.is_open and not Shop.is_open and not AchievementManager.is_board_open and not FieldCamera.is_archive_open and event is InputEventKey and event.pressed and not event.echo:
 		var control_key := _get_control_key(event)
 		if control_key in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D] and not is_driving_rover():
 			for dome in get_tree().get_nodes_in_group("base_domes"):

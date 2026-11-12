@@ -40,7 +40,7 @@ func _run() -> void:
 			if str(child.name).begins_with("AchievementNode_"):
 				node_count += 1
 		_expect(node_count == definitions.size(), "Ogni obiettivo deve diventare un nodo del grafo")
-		_expect(graph.get_node_or_null("AchievementNode_first_base") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_large_dome") == null, "Il grafo deve avere radice, nodo finale e nessuna missione cupola grande")
+		_expect(graph.get_node_or_null("AchievementNode_first_base") != null and graph.get_node_or_null("AchievementNode_first_photo") != null and graph.get_node_or_null("AchievementNode_life_witness_image") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_large_dome") == null, "Il grafo deve includere ramo fotografico, nodo finale e nessuna missione cupola grande")
 	board.call("close")
 	_expect((achievements == null or not bool(achievements.get("is_board_open"))) and not root_ui.visible, "Chiudere la tavola deve riattivare il gioco")
 	_expect(survival_ui != null and survival_ui.visible and power_ui != null and power_ui.visible, "Chiudere la tavola deve ripristinare gli HUD")

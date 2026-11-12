@@ -5,7 +5,7 @@ extends CanvasLayer
 ## ricompensa richiede che i suoi predecessori siano stati riscossi.
 
 const CARD_SIZE := Vector2(130.0, 70.0)
-const GRAPH_SIZE := Vector2(2_000.0, 550.0)
+const GRAPH_SIZE := Vector2(2_200.0, 800.0)
 
 # Due contratti sul campo partono subito, senza rete o macchinari. Da qui il
 # grafo si divide in sopravvivenza, habitat, laboratorio e biologia polare.
@@ -20,6 +20,22 @@ const GRAPH_POSITIONS := {
 	"biome_survey": Vector2(190.0, 210.0),
 	"long_range_survey": Vector2(356.0, 210.0),
 	"polar_expedition": Vector2(522.0, 210.0),
+	# Fotografia: missioni civili e scientifiche eseguibili senza rete.
+	"first_photo": Vector2(24.0, 610.0),
+	"contact_sheet": Vector2(190.0, 610.0),
+	"mars_postcard": Vector2(356.0, 610.0),
+	"field_portrait": Vector2(522.0, 610.0),
+	"rare_lens": Vector2(688.0, 610.0),
+	"biome_gallery": Vector2(522.0, 710.0),
+	"six_horizons": Vector2(688.0, 710.0),
+	"dawn_ice": Vector2(854.0, 710.0),
+	"polar_light": Vector2(1_020.0, 710.0),
+	"night_sky": Vector2(1_186.0, 710.0),
+	"outpost_portrait": Vector2(1_352.0, 610.0),
+	"greenhouse_window": Vector2(1_518.0, 610.0),
+	"lab_in_frame": Vector2(1_684.0, 610.0),
+	"primordial_frost_photo": Vector2(1_850.0, 610.0),
+	"life_witness_image": Vector2(2_016.0, 610.0),
 	# Sopravvivenza e habitat.
 	"first_base": Vector2(24.0, 400.0),
 	"airlock_cycle": Vector2(190.0, 300.0),
@@ -213,7 +229,7 @@ func _build_ui() -> void:
 	scroll.name = "AchievementGraphScroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll.custom_minimum_size = Vector2(0.0, 460.0)
+	scroll.custom_minimum_size = Vector2(0.0, 240.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(scroll)
 	_graph = Control.new()
@@ -267,12 +283,14 @@ func _rebuild_graph() -> void:
 	_add_branch_lane(Rect2(670.0, 10.0, 1_310.0, 535.0), Color("27233a"))
 	_add_branch_lane(Rect2(990.0, 10.0, 860.0, 170.0), Color("183b45"))
 	_add_branch_lane(Rect2(1_160.0, 190.0, 400.0, 350.0), Color("2c2841"))
+	_add_branch_lane(Rect2(10.0, 560.0, 2_180.0, 230.0), Color("163543"))
 	_add_branch_label("CONTRATTI A PIEDI  /  RACCOLTA", Vector2(18.0, 13.0), Color("efc68e"))
 	_add_branch_label("ESPLORAZIONE  /  MAPPA", Vector2(18.0, 193.0), Color("81d8ff"))
 	_add_branch_label("SOPRAVVIVENZA  /  HABITAT", Vector2(18.0, 288.0), Color("9ce66f"))
 	_add_branch_label("RICERCA  /  CONTRATTI TERRA", Vector2(682.0, 13.0), Color("d4b6ff"))
 	_add_branch_label("CRIOSFERA  /  VITA ANTICA", Vector2(998.0, 13.0), Color("a8f3ff"))
 	_add_branch_label("STRUMENTI  /  BREVETTI", Vector2(1_168.0, 193.0), Color("d48cff"))
+	_add_branch_label("ARCHIVIO FOTOGRAFICO  /  CONTRATTI SENZA RETE", Vector2(18.0, 573.0), Color("93e8f6"))
 
 	var definitions := AchievementManager.get_ordered_definitions()
 	var links := GraphLinks.new()

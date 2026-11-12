@@ -55,17 +55,20 @@ func _build_ui() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(overlay)
 	var panel := PanelContainer.new()
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
+	panel.name = "ResponsiveShopPanel"
+	# Lo shop non usa più un rettangolo fisso: in una finestra più ampia le
+	# sezioni e le card ricevono spazio reale, senza tagliare il contenuto.
+	panel.anchor_left = 0.04
+	panel.anchor_top = 0.04
+	panel.anchor_right = 0.96
+	panel.anchor_bottom = 0.96
 	var viewport_size := get_viewport().get_visible_rect().size
-	var panel_width := minf(940.0, viewport_size.x - 24.0)
-	var panel_height := minf(600.0, viewport_size.y - 20.0)
-	panel.offset_left = -panel_width * 0.5
-	panel.offset_top = -panel_height * 0.5
-	panel.offset_right = panel_width * 0.5
-	panel.offset_bottom = panel_height * 0.5
+	var panel_width := maxf(640.0, viewport_size.x * 0.92)
+	var panel_height := maxf(440.0, viewport_size.y * 0.92)
+	panel.offset_left = 0.0
+	panel.offset_top = 0.0
+	panel.offset_right = 0.0
+	panel.offset_bottom = 0.0
 	panel.add_theme_stylebox_override("panel", _panel_style())
 	overlay.add_child(panel)
 	var rows := VBoxContainer.new()
@@ -79,8 +82,8 @@ func _build_ui() -> void:
 	rows.add_child(subtitle)
 	rows.add_child(HSeparator.new())
 	var tabs := TabContainer.new()
-	var content_width := minf(890.0, panel_width - 54.0)
-	var content_height := maxf(180.0, minf(330.0, viewport_size.y - 320.0))
+	var content_width := maxf(590.0, panel_width - 54.0)
+	var content_height := maxf(180.0, panel_height - 230.0)
 	tabs.custom_minimum_size = Vector2(content_width, content_height)
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	rows.add_child(tabs)

@@ -5,6 +5,7 @@ signal changed
 const HOTBAR_SIZE := 5
 const BACKPACK_SIZE := 20
 const ROVER_ITEM_ID := "rover"
+const FIELD_CAMERA_ITEM_ID := "field_camera"
 const ROVER_STARTING_BATTERY_KWH := 72.0
 const RockResource = preload("res://scripts/rock.gd")
 
@@ -120,6 +121,39 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 func add_rover(battery_energy_kwh: float) -> bool:
 	"""Aggiunge un rover mantenendo la carica effettiva del suo pacco batteria."""
 	return _add_rover_units(1, battery_energy_kwh, "Rover esplorativo", true)
+
+
+func grant_field_camera() -> bool:
+	## Ricompensa fisica della Sacca campioni. La telecamera viene consegnata
+	## nello zaino, non comprata nello shop; il giocatore la puo' poi equipaggiare
+	## in uno dei due slot rapidi centrali come qualunque altro strumento.
+	if count_item(FIELD_CAMERA_ITEM_ID) > 0:
+		return true
+	for index in BACKPACK_SIZE:
+		if backpack[index].is_empty():
+			backpack[index] = {
+				"id": FIELD_CAMERA_ITEM_ID,
+				"name": "Telecamera scientifica",
+				"count": 1,
+				"placeable": false,
+				"tool": true,
+			}
+			changed.emit()
+			return true
+	# Otto campioni non possono realisticamente saturare i venti slot iniziali,
+	# ma in caso di partita modificata proviamo anche gli slot rapidi liberi.
+	for index in [1, 2]:
+		if hotbar[index].is_empty():
+			hotbar[index] = {
+				"id": FIELD_CAMERA_ITEM_ID,
+				"name": "Telecamera scientifica",
+				"count": 1,
+				"placeable": false,
+				"tool": true,
+			}
+			changed.emit()
+			return true
+	return false
 
 
 func peek_selected_rover_battery() -> float:
@@ -248,7 +282,7 @@ func move_selected_to_hotbar(index: int) -> bool:
 	if index == 0 or index >= 3:
 		return false
 	var item := backpack[selected_backpack_index]
-	if item.is_empty() or not item.get("placeable", false):
+	if item.is_empty() or (not bool(item.get("placeable", false)) and not bool(item.get("tool", false))):
 		return false
 	var previous := hotbar[index]
 	hotbar[index] = item
@@ -263,7 +297,7 @@ func can_move_hotbar_to_backpack(index: int) -> bool:
 	if index < 0 or index >= HOTBAR_SIZE:
 		return false
 	var item := hotbar[index]
-	if item.is_empty() or not bool(item.get("placeable", false)):
+	if item.is_empty() or (not bool(item.get("placeable", false)) and not bool(item.get("tool", false))):
 		return false
 	for slot in backpack:
 		if slot.is_empty():

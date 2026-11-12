@@ -34,6 +34,7 @@ const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spriteshe
 const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
 const ROCK_DRILL_SHEET := preload("res://assets/rock_drill/rock_drill_spritesheet.png")
+const FIELD_CAMERA_ICON_PATH := "res://assets/camera/field_camera.png"
 const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
 const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
@@ -50,6 +51,7 @@ var hotbar_icons: Array[TextureRect] = []
 var hotbar_number_labels: Array[Label] = []
 var hotbar_name_labels: Array[Label] = []
 var hotbar_amount_labels: Array[Label] = []
+var field_camera_icon: Texture2D
 var backpack_buttons: Array[Button] = []
 var backpack_icons: Array[TextureRect] = []
 var backpack_name_labels: Array[Label] = []
@@ -165,14 +167,17 @@ func _build_ui() -> void:
 	root.add_child(overlay)
 
 	var panel := PanelContainer.new()
-	panel.anchor_left = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -380
-	panel.offset_right = 380
-	panel.offset_top = -290
-	panel.offset_bottom = 290
+	panel.name = "ResponsiveInventoryPanel"
+	# Pannello fluido: evita la vecchia finestra 760×580 fissa e sfrutta lo
+	# spazio aggiuntivo quando il giocatore amplia la finestra del gioco.
+	panel.anchor_left = 0.06
+	panel.anchor_right = 0.94
+	panel.anchor_top = 0.07
+	panel.anchor_bottom = 0.93
+	panel.offset_left = 0.0
+	panel.offset_right = 0.0
+	panel.offset_top = 0.0
+	panel.offset_bottom = 0.0
 	overlay.add_child(panel)
 
 	var contents := VBoxContainer.new()
@@ -312,7 +317,9 @@ func _process(_delta: float) -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
-	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
+	if selected_id == "field_camera":
+		pickup_label.text = "TELECAMERA: P · scatta     O · invia alla Terra     C · archivio"
+	elif selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
@@ -415,6 +422,8 @@ func _update_hotbar_labels(index: int, item: Dictionary) -> void:
 			hotbar_name_labels[index].text = "Sabatier x" + str(item.get("count", 0))
 		"rover":
 			hotbar_name_labels[index].text = "Rover x" + str(item.get("count", 0))
+		"field_camera":
+			hotbar_name_labels[index].text = "Camera"
 		_:
 			hotbar_name_labels[index].text = str(item.get("name", ""))
 
@@ -426,6 +435,8 @@ func _item_icon(item: Dictionary) -> Texture2D:
 	match item_id:
 		"pipe_hammer":
 			return HAMMER_ICON
+		"field_camera":
+			return _get_field_camera_icon()
 		"water_bottle":
 			return WATER_ICON
 		"food_ration":
@@ -471,6 +482,17 @@ func _first_frame(sheet: Texture2D, frame_size: Vector2i = Vector2i(16, 16)) -> 
 	atlas.atlas = sheet
 	atlas.region = Rect2(Vector2.ZERO, frame_size)
 	return atlas
+
+
+func _get_field_camera_icon() -> Texture2D:
+	if field_camera_icon != null:
+		return field_camera_icon
+	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(FIELD_CAMERA_ICON_PATH))
+	if image == null or image.is_empty():
+		push_error("Impossibile caricare l'icona della telecamera: %s" % FIELD_CAMERA_ICON_PATH)
+		return null
+	field_camera_icon = ImageTexture.create_from_image(image)
+	return field_camera_icon
 
 
 func _on_hotbar_pressed(index: int) -> void:

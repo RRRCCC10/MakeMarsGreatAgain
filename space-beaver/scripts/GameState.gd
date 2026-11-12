@@ -37,6 +37,8 @@ func restart_from_scratch() -> void:
 	PipeManager.reset_for_new_mission()
 	PowerGrid.reset_for_new_mission()
 	BuildableRegistry.reset_for_new_mission()
+	AchievementManager.reset_for_new_mission()
+	FieldCamera.reset_for_new_mission()
 	get_tree().reload_current_scene()
 
 

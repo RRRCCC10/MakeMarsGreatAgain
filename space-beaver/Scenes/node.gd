@@ -122,7 +122,7 @@ func _process(_delta: float) -> void:
 	if machine_info_root != null and machine_info_root.visible:
 		_refresh_machine_info()
 	_update_nearby_machine_ui()
-	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open
+	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if pipe_preview != null:
 		var pipe_active: bool = not blocked and selected_id == "pipe_hammer"
@@ -200,7 +200,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		return
 		return
-	if Inventory.is_open or Shop.is_open or AchievementManager.is_board_open:
+	if Inventory.is_open or Shop.is_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and nearby_machine != null:
 		if event.keycode == KEY_V:
