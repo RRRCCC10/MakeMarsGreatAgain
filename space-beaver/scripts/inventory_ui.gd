@@ -12,6 +12,18 @@ const ROCK_ICONS: Dictionary = {
 	"rock_basalto": preload("res://sprites/rocks/basalto.png"),
 	"rock_roccia_ghiacciata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
 	"rock_ghiaccio_profondo": preload("res://sprites/rocks/ghiaccio_profondo.png"),
+	"rock_andesite_marziana": preload("res://sprites/rocks/roccia_grigia.png"),
+	"rock_shoshonite_olivinica": preload("res://sprites/rocks/basalto.png"),
+	"rock_ematite_nodulare": preload("res://sprites/rocks/pietra_rossastra.png"),
+	"rock_goethite_idrata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
+	"rock_breccia_da_impatto": preload("res://sprites/rocks/roccia_grigia.png"),
+	"rock_impactite_vetrosa": preload("res://sprites/rocks/roccia_scura.png"),
+	"rock_regolite_perclorata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
+	"rock_sali_solfati_idrati": preload("res://sprites/rocks/ghiaccio_profondo.png"),
+	"rock_ghiaccio_laminato": preload("res://sprites/rocks/ghiaccio_leggero.png"),
+	"rock_ghiaccio_salmastro": preload("res://sprites/rocks/ghiaccio_blu.png"),
+	"rock_basalto_vescicolare": preload("res://sprites/rocks/roccia_basaltica.png"),
+	"rock_olivina_ferrifera": preload("res://sprites/rocks/basalto.png"),
 }
 const WATER_ICON := preload("res://sprites/water-bottle.jpg")
 const RATION_ICON := preload("res://sprites/food-ration.jpg")
@@ -20,6 +32,7 @@ const SOLAR_ICON := preload("res://sprites/machines/solar-panel-spritesheet.png"
 const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
 const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const ROCK_DRILL_SHEET := preload("res://assets/rock_drill/rock_drill_spritesheet.png")
 const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
 const SABATIER_SHEET := preload("res://assets/sabatier.png")
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
@@ -298,7 +311,7 @@ func _process(_delta: float) -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
-	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
+	if selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
@@ -318,7 +331,10 @@ func _process(_delta: float) -> void:
 		elif player != null and player.has_method("is_driving_rover") and bool(player.call("is_driving_rover")):
 			pickup_label.text = "E  ·  Scendi dal rover     ·     Raccolta rocce disponibile solo a piedi"
 		else:
-			pickup_label.text = "E  ·  Raccogli pietra" if player != null and player.nearest_rock() != null else "TAB  ·  Inventario     B  ·  Emporio"
+			if player != null and player.has_method("nearest_rock_drill") and player.nearest_rock_drill() != null:
+				pickup_label.text = "E  ·  APRI RISERVA TRIVELLA MINERARIA"
+			else:
+				pickup_label.text = "E  ·  Raccogli pietra" if player != null and player.nearest_rock() != null else "TAB  ·  Inventario     B  ·  Emporio"
 
 
 func _refresh() -> void:
@@ -390,6 +406,8 @@ func _update_hotbar_labels(index: int, item: Dictionary) -> void:
 			hotbar_name_labels[index].text = "Batteria x" + str(item.get("count", 0))
 		"ice_drill":
 			hotbar_name_labels[index].text = "Trivella x" + str(item.get("count", 0))
+		"rock_drill":
+			hotbar_name_labels[index].text = "Triv. rocce x" + str(item.get("count", 0))
 		"electrolyzer":
 			hotbar_name_labels[index].text = "Elettrolizz. x" + str(item.get("count", 0))
 		"sabatier":
@@ -419,6 +437,8 @@ func _item_icon(item: Dictionary) -> Texture2D:
 			return _first_frame(BATTERY_SHEET)
 		"ice_drill":
 			return _first_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
+		"rock_drill":
+			return _first_frame(ROCK_DRILL_SHEET, Vector2i(16, 48))
 		"electrolyzer":
 			return _first_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
 		"sabatier":

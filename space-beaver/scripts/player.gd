@@ -156,6 +156,20 @@ func nearest_ice_drill() -> Node2D:
 	return closest
 
 
+func nearest_rock_drill() -> Node2D:
+	var closest: Node2D = null
+	var closest_distance := PICKUP_DISTANCE
+	for drill in get_tree().get_nodes_in_group("rock_drills"):
+		if not drill is Node2D or not drill.has_method("open_storage"):
+			continue
+		var drill_node := drill as Node2D
+		var distance := global_position.distance_to(drill_node.global_position)
+		if distance < closest_distance:
+			closest = drill_node
+			closest_distance = distance
+	return closest
+
+
 func mount_rover(rover: Node2D) -> void:
 	mounted_rover = rover
 	velocity = Vector2.ZERO
@@ -249,6 +263,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if bool(drill.call("try_refill_selected_bottle", self)):
 				get_viewport().set_input_as_handled()
 				return
+		var rock_drill := nearest_rock_drill()
+		if rock_drill != null and bool(rock_drill.call("open_storage", self)):
+			get_viewport().set_input_as_handled()
+			return
 		var research_machine := nearest_research_machine()
 		if research_machine != null and bool(research_machine.call("try_interact", self)):
 			get_viewport().set_input_as_handled()

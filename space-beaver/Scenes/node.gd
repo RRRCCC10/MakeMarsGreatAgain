@@ -2,6 +2,7 @@ extends Node
 
 const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
+const ROCK_DRILL_SCRIPT := preload("res://scripts/RockDrill.gd")
 const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const BASE_DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
@@ -17,6 +18,7 @@ var pipe_shape := PipeSegment.ShapeType.STRAIGHT
 var pipe_vertical := false
 var pipe_preview: PipeSegment
 var power_preview: PowerDevice
+var rock_drill_preview: RockDrill
 var process_preview: ProcessMachine
 var rover_preview: Rover
 var dome_preview: BaseDome
@@ -47,6 +49,7 @@ var nearby_machine: Node
 func _ready() -> void:
 	call_deferred("_create_pipe_preview")
 	call_deferred("_create_power_preview")
+	call_deferred("_create_rock_drill_preview")
 	call_deferred("_create_process_preview")
 	call_deferred("_create_rover_preview")
 	call_deferred("_create_dome_preview")
@@ -70,6 +73,13 @@ func _create_power_preview() -> void:
 	power_preview.is_preview = true
 	get_tree().current_scene.add_child(power_preview)
 	power_preview.visible = false
+
+
+func _create_rock_drill_preview() -> void:
+	rock_drill_preview = ROCK_DRILL_SCRIPT.new() as RockDrill
+	rock_drill_preview.setup(Vector2i.ZERO, true)
+	get_tree().current_scene.add_child(rock_drill_preview)
+	rock_drill_preview.visible = false
 
 
 func _create_rover_preview() -> void:
@@ -130,6 +140,14 @@ func _process(_delta: float) -> void:
 			power_preview.setup(selected_id, power_cell, true, machine_placement_rotation)
 			power_preview.global_position = PowerGrid.device_world_position(selected_id, power_cell, machine_placement_rotation)
 			power_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device(selected_id, power_cell, machine_placement_rotation) else Color(1.0, 0.28, 0.24, 0.72)
+	if rock_drill_preview != null:
+		var rock_drill_active: bool = not blocked and selected_id == "rock_drill"
+		rock_drill_preview.visible = rock_drill_active
+		if rock_drill_active:
+			var rock_drill_cell := PowerGrid.get_mouse_cell(camera)
+			rock_drill_preview.setup(rock_drill_cell, true, machine_placement_rotation)
+			rock_drill_preview.global_position = PowerGrid.device_world_position("rock_drill", rock_drill_cell, machine_placement_rotation)
+			rock_drill_preview.modulate = Color(0.55, 1.0, 0.62, 0.72) if PowerGrid.can_place_device("rock_drill", rock_drill_cell, machine_placement_rotation) else Color(1.0, 0.28, 0.24, 0.72)
 	if process_preview != null:
 		var process_active := not blocked and selected_id in ["electrolyzer", "sabatier"]
 		process_preview.visible = process_active
@@ -189,7 +207,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_nearby_network()
 			get_viewport().set_input_as_handled()
 			return
-		if event.keycode == KEY_E and _nearby_has_stock():
+		# La trivella mineraria usa E per aprire il proprio deposito a due colonne:
+		# non deve essere trattata come uno stock generico da ritirare un pezzo alla
+		# volta, altrimenti il giocatore non può scegliere le pile da trasferire.
+		if event.keycode == KEY_E and _nearby_has_stock() and not nearby_machine.is_in_group("rock_drills"):
 			nearby_machine.call("take_stock_item", 0)
 			_update_nearby_machine_ui()
 			get_viewport().set_input_as_handled()
@@ -217,7 +238,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		dome_entrance_direction = posmod(dome_entrance_direction + 1, 4)
 		get_viewport().set_input_as_handled()
 		return
-	if item.get("id", "") in ["solar_panel", "transformer", "battery", "ice_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
+	if item.get("id", "") in ["solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms"] and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		machine_placement_rotation = posmod(machine_placement_rotation + 1, 4)
 		get_viewport().set_input_as_handled()
 		return
@@ -240,7 +261,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		"pipe_hammer":
 			var cell := PipeManager.get_mouse_cell(camera)
 			PipeManager.place_pipe(get_tree().current_scene, cell, pipe_shape, pipe_vertical)
-		"solar_panel", "transformer", "battery", "ice_drill":
+		"solar_panel", "transformer", "battery", "ice_drill", "rock_drill":
 			var cell := PowerGrid.get_mouse_cell(camera)
 			if PowerGrid.place_device(get_tree().current_scene, str(item.get("id", "")), cell, machine_placement_rotation) != null:
 				Inventory.consume_selected_item()
@@ -292,6 +313,8 @@ func get_build_help_text() -> String:
 		return "BATTERIA: Click posiziona  ·  R ruota (%s)  ·  500 kWh  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "ice_drill":
 		return "TRIVELLA: Click posiziona  ·  R ruota (%s)  ·  60 kW  ·  Dx rimuove" % _machine_rotation_label()
+	if selected_id == "rock_drill":
+		return "TRIVELLA ROCCE: Click posiziona  ·  R ruota (%s)  ·  85 kW  ·  E apre riserva  ·  Dx rimuove" % _machine_rotation_label()
 	if selected_id == "electrolyzer":
 		return "ELETTROLIZZATORE: Click posiziona  ·  R ruota (%s)  ·  65 kW + acqua e uscite H₂/O₂  ·  Dx rimuove" % _machine_rotation_label()
 	if selected_id == "sabatier":
@@ -495,7 +518,11 @@ func _update_nearby_machine_ui() -> void:
 		nearby_machine_stock.text = str(nearby_machine.call("get_inventory_output_label")) if nearby_machine.has_method("get_inventory_output_label") else "STOCK  ·  nessun output disponibile"
 	else:
 		var first: Dictionary = stock[0]
-		nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]
+		if nearby_machine.is_in_group("rock_drills"):
+			var sample_count := int(nearby_machine.call("get_stock_count")) if nearby_machine.has_method("get_stock_count") else stock.size()
+			nearby_machine_stock.text = "RISERVA  ·  %d campioni  ·  E apri deposito" % sample_count
+		else:
+			nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]
 	nearby_machine_prompt.text = "V  ·  DISCONNETTI DALLA RETE" if enabled else "V  ·  CONNETTI ALLA RETE"
 
 

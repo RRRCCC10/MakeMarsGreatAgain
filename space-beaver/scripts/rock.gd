@@ -14,6 +14,24 @@ const ROCK_TEXTURES: Dictionary = {
 	"ghiaccio_blu": preload("res://sprites/rocks/ghiaccio_blu.png"),
 	"basalto": preload("res://sprites/rocks/basalto.png"),
 }
+
+## I nuovi minerali riutilizzano volutamente le silhouette già presenti: nella
+## pixel art a questa scala la provenienza geologica è comunicata da nome,
+## rarità e valore scientifico, senza introdurre sprite incoerenti.
+const ROCK_TEXTURE_VARIANTS: Dictionary = {
+	"andesite_marziana": "roccia_grigia",
+	"shoshonite_olivinica": "basalto",
+	"ematite_nodulare": "pietra_rossastra",
+	"goethite_idrata": "roccia_ghiacciata",
+	"breccia_da_impatto": "roccia_grigia",
+	"impactite_vetrosa": "roccia_scura",
+	"regolite_perclorata": "roccia_ghiacciata",
+	"sali_solfati_idrati": "ghiaccio_profondo",
+	"ghiaccio_laminato": "ghiaccio_leggero",
+	"ghiaccio_salmastro": "ghiaccio_blu",
+	"basalto_vescicolare": "roccia_basaltica",
+	"olivina_ferrifera": "basalto",
+}
 static var base_rock_material: ShaderMaterial
 
 ## Ogni coppia e' legata a una formazione geologica concreta della mappa.
@@ -21,41 +39,79 @@ static var base_rock_material: ShaderMaterial
 ## mentre un campione raro non si confonde con quello comune.
 const ROCK_DEFINITIONS: Dictionary = {
 	"roccia_base": {
-		"item_id": "rock", "name": "Pietra marziana", "biome": "Sabbia di atterraggio", "rarity": "common",
+		"item_id": "rock", "name": "Pietra marziana", "biome": "Sabbia di atterraggio", "rarity": "common", "research_multiplier": 0.55, "drill_biome": 0,
 	},
 	"roccia_rossa": {
-		"item_id": "rock_roccia_rossa", "name": "Regolite rossa", "biome": "Pianura di Ares", "rarity": "common",
+		"item_id": "rock_roccia_rossa", "name": "Regolite rossa", "biome": "Pianura di Ares", "rarity": "common", "research_multiplier": 0.80, "drill_biome": 1,
 	},
 	"pietra_rossastra": {
-		"item_id": "rock_pietra_rossastra", "name": "Pietra ferrica", "biome": "Pianura di Ares", "rarity": "rare",
+		"item_id": "rock_pietra_rossastra", "name": "Pietra ferrica", "biome": "Pianura di Ares", "rarity": "rare", "research_multiplier": 1.35,
 	},
 	"ghiaccio_leggero": {
-		"item_id": "rock_ghiaccio_leggero", "name": "Ghiaccio polveroso", "biome": "Nucleo polare", "rarity": "common",
+		"item_id": "rock_ghiaccio_leggero", "name": "Ghiaccio polveroso", "biome": "Nucleo polare", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 4,
 	},
 	"ghiaccio_blu": {
-		"item_id": "rock_ghiaccio_blu", "name": "Ghiaccio blu compatto", "biome": "Nucleo polare", "rarity": "rare",
+		"item_id": "rock_ghiaccio_blu", "name": "Ghiaccio blu compatto", "biome": "Nucleo polare", "rarity": "rare", "research_multiplier": 1.70,
 	},
 	"roccia_grigia": {
-		"item_id": "rock_roccia_grigia", "name": "Pietra da cratere", "biome": "Crateri d'impatto", "rarity": "common",
+		"item_id": "rock_roccia_grigia", "name": "Pietra da cratere", "biome": "Crateri d'impatto", "rarity": "common", "research_multiplier": 0.95, "drill_biome": 2,
 	},
 	"roccia_scura": {
-		"item_id": "rock_roccia_scura", "name": "Vetro d'impatto", "biome": "Crateri d'impatto", "rarity": "rare",
+		"item_id": "rock_roccia_scura", "name": "Vetro d'impatto", "biome": "Crateri d'impatto", "rarity": "rare", "research_multiplier": 1.85,
 	},
 	"roccia_basaltica": {
-		"item_id": "rock_roccia_basaltica", "name": "Roccia basaltica", "biome": "Formazione basaltica", "rarity": "common",
+		"item_id": "rock_roccia_basaltica", "name": "Roccia basaltica", "biome": "Formazione basaltica", "rarity": "common", "research_multiplier": 1.10, "drill_biome": 5,
 	},
 	"basalto": {
-		"item_id": "rock_basalto", "name": "Basalto nero", "biome": "Formazione basaltica", "rarity": "rare",
+		"item_id": "rock_basalto", "name": "Basalto nero", "biome": "Formazione basaltica", "rarity": "rare", "research_multiplier": 1.65,
 	},
 	"roccia_ghiacciata": {
-		"item_id": "rock_roccia_ghiacciata", "name": "Roccia criogenica", "biome": "Bordo della calotta", "rarity": "common",
+		"item_id": "rock_roccia_ghiacciata", "name": "Roccia criogenica", "biome": "Bordo della calotta", "rarity": "common", "research_multiplier": 1.20, "drill_biome": 3,
 	},
 	"ghiaccio_profondo": {
-		"item_id": "rock_ghiaccio_profondo", "name": "Ghiaccio profondo", "biome": "Bordo della calotta", "rarity": "rare",
+		"item_id": "rock_ghiaccio_profondo", "name": "Ghiaccio profondo", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 1.90,
+	},
+	# Nuovi campioni della trivella mineraria: due comuni e una scoperta al 5%
+	# per ciascuno dei sei biomi della mappa.
+	"andesite_marziana": {
+		"item_id": "rock_andesite_marziana", "name": "Andesite marziana", "biome": "Pianura di atterraggio", "rarity": "common", "research_multiplier": 0.70, "drill_biome": 0,
+	},
+	"shoshonite_olivinica": {
+		"item_id": "rock_shoshonite_olivinica", "name": "Shoshonite olivinica", "biome": "Pianura di atterraggio", "rarity": "rare", "research_multiplier": 1.60, "drill_biome": 0,
+	},
+	"ematite_nodulare": {
+		"item_id": "rock_ematite_nodulare", "name": "Ematite nodulare", "biome": "Regolite scura", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 1,
+	},
+	"goethite_idrata": {
+		"item_id": "rock_goethite_idrata", "name": "Goethite idrata", "biome": "Regolite scura", "rarity": "rare", "research_multiplier": 1.95, "drill_biome": 1,
+	},
+	"breccia_da_impatto": {
+		"item_id": "rock_breccia_da_impatto", "name": "Breccia da impatto", "biome": "Cratere roccioso", "rarity": "common", "research_multiplier": 1.15, "drill_biome": 2,
+	},
+	"impactite_vetrosa": {
+		"item_id": "rock_impactite_vetrosa", "name": "Impactite vetrosa", "biome": "Cratere roccioso", "rarity": "rare", "research_multiplier": 2.15, "drill_biome": 2,
+	},
+	"regolite_perclorata": {
+		"item_id": "rock_regolite_perclorata", "name": "Regolite perclorata", "biome": "Bordo della calotta", "rarity": "common", "research_multiplier": 1.30, "drill_biome": 3,
+	},
+	"sali_solfati_idrati": {
+		"item_id": "rock_sali_solfati_idrati", "name": "Sali solfati idrati", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 2.25, "drill_biome": 3,
+	},
+	"ghiaccio_laminato": {
+		"item_id": "rock_ghiaccio_laminato", "name": "Ghiaccio laminato", "biome": "Ghiaccio polare", "rarity": "common", "research_multiplier": 1.45, "drill_biome": 4,
+	},
+	"ghiaccio_salmastro": {
+		"item_id": "rock_ghiaccio_salmastro", "name": "Ghiaccio salmastro", "biome": "Ghiaccio polare", "rarity": "rare", "research_multiplier": 2.45, "drill_biome": 4,
+	},
+	"basalto_vescicolare": {
+		"item_id": "rock_basalto_vescicolare", "name": "Basalto vescicolare", "biome": "Altopiano basaltico", "rarity": "common", "research_multiplier": 1.50, "drill_biome": 5,
+	},
+	"olivina_ferrifera": {
+		"item_id": "rock_olivina_ferrifera", "name": "Olivina ferrifera", "biome": "Altopiano basaltico", "rarity": "rare", "research_multiplier": 2.55, "drill_biome": 5,
 	},
 }
 
-@export_enum("roccia_base", "roccia_ghiacciata", "roccia_scura", "roccia_basaltica", "roccia_grigia", "ghiaccio_profondo", "roccia_rossa", "pietra_rossastra", "ghiaccio_leggero", "ghiaccio_blu", "basalto") var rock_variant := "roccia_rossa"
+@export_enum("roccia_base", "roccia_ghiacciata", "roccia_scura", "roccia_basaltica", "roccia_grigia", "ghiaccio_profondo", "roccia_rossa", "pietra_rossastra", "ghiaccio_leggero", "ghiaccio_blu", "basalto", "andesite_marziana", "shoshonite_olivinica", "ematite_nodulare", "goethite_idrata", "breccia_da_impatto", "impactite_vetrosa", "regolite_perclorata", "sali_solfati_idrati", "ghiaccio_laminato", "ghiaccio_salmastro", "basalto_vescicolare", "olivina_ferrifera") var rock_variant := "roccia_rossa"
 @export var is_authored := true
 var resource_key := ""
 
@@ -77,6 +133,34 @@ func _process(_delta: float) -> void:
 
 static func definition_for(variant: String) -> Dictionary:
 	return ROCK_DEFINITIONS.get(variant, ROCK_DEFINITIONS["roccia_rossa"]).duplicate(true)
+
+
+static func definition_for_item_id(item_id: String) -> Dictionary:
+	for definition in ROCK_DEFINITIONS.values():
+		if str(definition.get("item_id", "")) == item_id:
+			return definition.duplicate(true)
+	return {}
+
+
+static func drill_variant_for_biome(source_id: int, roll_percent: float, common_roll: float) -> String:
+	## Ogni bioma possiede esattamente un campione raro al 5%. I due campioni
+	## comuni dividono il restante 95%, così la trivella comunica chiaramente
+	## al giocatore dove è stata posata e mantiene la scoperta speciale rara.
+	var common_variants: Array[String] = []
+	var rare_variant := ""
+	for variant in ROCK_DEFINITIONS:
+		var definition: Dictionary = ROCK_DEFINITIONS[variant]
+		if int(definition.get("drill_biome", -1)) != source_id:
+			continue
+		if str(definition.get("rarity", "common")) == "rare":
+			rare_variant = str(variant)
+		else:
+			common_variants.append(str(variant))
+	if not rare_variant.is_empty() and roll_percent < 0.05:
+		return rare_variant
+	if common_variants.is_empty():
+		return "roccia_base"
+	return common_variants[0] if common_variants.size() == 1 or common_roll < 0.5 else common_variants[1]
 
 
 func resource_definition() -> Dictionary:
@@ -103,7 +187,8 @@ func collect() -> bool:
 
 
 func _apply_variant() -> void:
-	sprite.texture = ROCK_TEXTURES.get(rock_variant, ROCK_TEXTURES["roccia_rossa"])
+	var texture_variant := str(ROCK_TEXTURE_VARIANTS.get(rock_variant, rock_variant))
+	sprite.texture = ROCK_TEXTURES.get(texture_variant, ROCK_TEXTURES["roccia_rossa"])
 	if rock_variant == "roccia_base":
 		# La pietra originale ha un fondo bianco: lo stesso mascheramento della
 		# scena storica la conserva visivamente nella sabbia di atterraggio.

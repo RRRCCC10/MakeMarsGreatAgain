@@ -302,6 +302,29 @@ L'elettrolizzatore **non è un serbatoio**: nessun gas deve accumularsi al suo i
 
 Quando la trivella è alimentata estrae acqua. Se la sua uscita è collegata a una tubazione, l'acqua è disponibile ai consumatori. Con la borraccia selezionata, il giocatore può avvicinarsi e premere `E` per ricaricarla.
 
+### Trivella mineraria
+
+La trivella mineraria è una struttura elettrica senza uscita a tubo: perfora e vaglia il terreno locale, conservando carote geologiche in una riserva interna.
+
+| Caratteristica | Valore |
+|---|---:|
+| Prezzo | $1,55 MLD |
+| Assorbimento | 85 kW |
+| Cadenza | 1 campione ogni 12 s reali |
+| Capacità riserva | 32 campioni |
+| Rarità speciale | 5% per estrazione |
+
+Il bioma della cella di posa determina il catalogo estraibile. Ogni bioma offre due campioni comuni e una scoperta rara al 5%; i campioni dei biomi più remoti hanno moltiplicatori di ricavo scientifico maggiori. Avvicinandosi e premendo `E` si apre la riserva: il giocatore può trasferire una pila specifica nello zaino, prendere tutto o scartare l'intera riserva. Una riserva piena ferma la trivella finché non viene svuotata.
+
+| Bioma | Campioni comuni | Scoperta rara al 5% |
+|---|---|---|
+| Pianura di atterraggio | Pietra marziana, Andesite marziana | Shoshonite olivinica |
+| Regolite scura | Regolite rossa, Ematite nodulare | Goethite idrata |
+| Cratere roccioso | Pietra da cratere, Breccia da impatto | Impactite vetrosa |
+| Bordo della calotta | Roccia criogenica, Regolite perclorata | Sali solfati idrati |
+| Ghiaccio polare | Ghiaccio polveroso, Ghiaccio laminato | Ghiaccio salmastro |
+| Altopiano basaltico | Roccia basaltica, Basalto vescicolare | Olivina ferrifera |
+
 ### Elettrolizzatore
 
 | Caratteristica | Valore |
@@ -488,7 +511,7 @@ Raccogli una pietra → Portala a un laboratorio → E per caricarla
 → Fondo economico ricevuto
 ```
 
-Ogni analisi consuma un solo campione. Durante l'analisi il macchinario assorbe una grande quantità di energia; senza alimentazione il tempo non deve progredire.
+Ogni analisi consuma un solo campione. Durante l'analisi il macchinario assorbe una grande quantità di energia; senza alimentazione il tempo non deve progredire. Il ricavo base dello strumento viene moltiplicato dal valore geologico del campione: una pietra comune vicina vale meno di una scoperta rara ottenuta con trivella in un bioma remoto.
 
 | Strumento | Prezzo | Tempo base | Ricavo base | Dimensione |
 |---|---:|---:|---:|---|
@@ -540,7 +563,7 @@ Le cupole mostrano una miniatura e, prima dell'ordine, la pagina di configurazio
 | Energia | Pannello | $500 MLN |
 | Energia | Trasformatore | $1 MLD |
 | Energia | Batteria | $750 MLN |
-| Estrazione | Trivella di ghiaccio | $1,25 MLD |
+| Estrazione | Trivella di ghiaccio / trivella mineraria | $1,25 / $1,55 MLD |
 | Supporto vitale | Elettrolizzatore | $1,8 MLD |
 | Supporto vitale | Sabatier | $2,2 MLD |
 | Habitat | Cupola piccola / media / grande | $1,2 / $2,4 / $4,0 MLD |

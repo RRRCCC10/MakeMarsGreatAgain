@@ -271,7 +271,7 @@ static func footprint_cells_for(item_id: String, cell: Vector2i, new_placement_r
 	var native_cells: Array[Vector2i] = [cell]
 	if item_id == "solar_panel":
 		native_cells = [cell, cell + Vector2i.RIGHT]
-	elif item_id in ["transformer", "ice_drill"]:
+	elif item_id in ["transformer", "ice_drill", "rock_drill"]:
 		# Lo sprite occupa due colonne e tre righe attorno alla riga di aggancio.
 		native_cells = [cell + Vector2i.UP, cell + Vector2i.RIGHT + Vector2i.UP, cell, cell + Vector2i.RIGHT, cell + Vector2i.DOWN, cell + Vector2i.RIGHT + Vector2i.DOWN]
 	var rotated: Array[Vector2i] = []
@@ -297,7 +297,7 @@ static func rotate_direction(direction: Vector2i, new_placement_rotation: int = 
 
 
 static func _base_world_position_for(item_id: String, cell: Vector2i) -> Vector2:
-	if item_id in ["solar_panel", "transformer", "ice_drill"]:
+	if item_id in ["solar_panel", "transformer", "ice_drill", "rock_drill"]:
 		return Vector2(cell * TILE_SIZE) + Vector2(16.0, 8.0)
 	return Vector2(cell * TILE_SIZE) + Vector2.ONE * TILE_SIZE * 0.5
 

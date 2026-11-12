@@ -32,6 +32,13 @@ const CATALOG := {
 		"placeable": true,
 		"description": "Consuma 60 kW e produce 40 L/h. Uscita dell'acqua a destra, nella cella centrale.",
 	},
+	"rock_drill": {
+		"name": "Trivella mineraria",
+		"price": 1_550_000_000,
+		"category": "extraction",
+		"placeable": true,
+		"description": "Consuma 85 kW, estrae un campione ogni 12 s e conserva fino a 32 rocce. Il bioma di posa determina le scoperte, inclusa una rara al 5%.",
+	},
 	"electrolyzer": {
 		"name": "Elettrolizzatore",
 		"price": 1_800_000_000,

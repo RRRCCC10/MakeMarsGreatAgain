@@ -4,6 +4,7 @@ signal network_changed
 signal stats_changed(data: Dictionary)
 
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
+const ROCK_DRILL_SCRIPT := preload("res://scripts/RockDrill.gd")
 const CABLE_SEGMENT_SCRIPT := preload("res://scripts/CableSegment.gd")
 const CELL_SIZE := 16
 const PANEL_OUTPUT_KW := 100.0
@@ -74,7 +75,7 @@ func cell_to_world(cell: Vector2i) -> Vector2:
 func device_world_position(item_id: String, cell: Vector2i, _placement_rotation: int = 0) -> Vector2:
 	if item_id == "solar_panel":
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
-	if item_id in ["transformer", "ice_drill"]:
+	if item_id in ["transformer", "ice_drill", "rock_drill"]:
 		# Il frame reale e' 32x32. L'asse dei cavi resta allineato
 		# al centro della riga da 16px identificata da origin_cell.
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
@@ -84,7 +85,7 @@ func device_world_position(item_id: String, cell: Vector2i, _placement_rotation:
 func can_place_device(item_id: String, cell: Vector2i, placement_rotation: int = 0) -> bool:
 	if item_id in ["electrolyzer", "sabatier"]:
 		return can_place_process_machine(item_id, cell, placement_rotation)
-	if item_id not in ["solar_panel", "transformer", "battery", "ice_drill"]:
+	if item_id not in ["solar_panel", "transformer", "battery", "ice_drill", "rock_drill"]:
 		return false
 	if item_id == "transformer" and has_transformer():
 		return false
@@ -151,9 +152,23 @@ func pickup_process_machine(machine: ProcessMachine) -> bool:
 	return true
 
 
-func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotation: int = 0) -> PowerDevice:
+func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotation: int = 0) -> Node2D:
 	if not can_place_device(item_id, cell, placement_rotation):
 		return null
+	if item_id == "rock_drill":
+		var rock_drill := ROCK_DRILL_SCRIPT.new() as RockDrill
+		rock_drill.setup(cell, false, placement_rotation)
+		parent.add_child(rock_drill)
+		rock_drill.global_position = device_world_position(item_id, cell, placement_rotation)
+		consumers.append({
+			"node": rock_drill,
+			"connection_cell": rock_drill.get_power_connection_cell(),
+			"demand_kw": rock_drill.get_power_demand_kw(),
+			"attach_direction": rock_drill.get_power_attach_direction(),
+		})
+		BuildableRegistry.register_buildable(rock_drill, rock_drill.get_display_name(), "machine", pickup_rock_drill.bind(rock_drill))
+		rebuild_network()
+		return rock_drill
 	var device := POWER_DEVICE_SCRIPT.new() as PowerDevice
 	device.setup(item_id, cell, false, placement_rotation)
 	parent.add_child(device)
@@ -181,6 +196,19 @@ func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotat
 			achievements.call("record", "ice_drill")
 	rebuild_network()
 	return device
+
+
+func pickup_rock_drill(rock_drill: RockDrill) -> bool:
+	if not is_instance_valid(rock_drill) or not Inventory.can_add_item("rock_drill"):
+		return false
+	if not Inventory.add_item("rock_drill", "Trivella mineraria", 1, true):
+		return false
+	rock_drill.close_storage()
+	unregister_consumer(rock_drill)
+	BuildableRegistry.unregister_buildable(rock_drill)
+	rock_drill.queue_free()
+	call_deferred("rebuild_network")
+	return true
 
 
 func pickup_device(device: PowerDevice) -> bool:
@@ -753,6 +781,8 @@ func _display_name(item_id: String) -> String:
 			return "BATTERIA"
 		"ice_drill":
 			return "TRIVELLA DI GHIACCIO"
+		"rock_drill":
+			return "TRIVELLA MINERARIA"
 	return "DISPOSITIVO ELETTRICO"
 
 

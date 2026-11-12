@@ -5,6 +5,7 @@ extends Node2D
 ## un singolo campione di roccia e genera un rapporto da trasmettere alla Terra.
 
 const TILE_SIZE := 16
+const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 const INTERACTION_DISTANCE := 58.0
 const ANIMATION_FRAME_SECONDS := 0.16
 const REPORT_TRANSMISSION_SECONDS := 4.0
@@ -57,6 +58,10 @@ var animation_elapsed := 0.0
 var animation_frame := 0
 var sample_name := ""
 var sample_id := ""
+var sample_biome := ""
+var sample_rarity := ""
+var sample_research_multiplier := 1.0
+var last_report_reward := 0
 var sprite: Sprite2D
 var physics_body: StaticBody2D
 var interaction_label: Label
@@ -385,11 +390,18 @@ func get_power_connection_label() -> String:
 
 
 func get_reward() -> int:
+	# Dopo la consegna la UI e i chiamanti possono ancora chiedere quale fosse il
+	# valore del rapporto appena spedito: non perdiamo quel dato azzerando il
+	# campione nella transizione allo stato IDLE.
+	if state == State.IDLE and sample_id.is_empty() and last_report_reward > 0:
+		return last_report_reward
 	var multiplier := 1.0
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null and achievements.has_method("get_research_reward_multiplier"):
 		multiplier = float(achievements.call("get_research_reward_multiplier"))
-	return roundi(float(get_definition(machine_id).get("reward", 0)) * multiplier)
+	# Il valore della ricerca appartiene al campione, non soltanto alla macchina:
+	# una scoperta rara estratta in un bioma remoto genera un rapporto più utile.
+	return roundi(float(get_definition(machine_id).get("reward", 0)) * sample_research_multiplier * multiplier)
 
 
 func get_remaining_seconds() -> float:
@@ -429,6 +441,10 @@ func try_interact(player: Node2D) -> bool:
 		return false
 	sample_id = str(sample.get("id", ""))
 	sample_name = str(sample.get("name", "Pietra"))
+	var sample_definition: Dictionary = ROCK_RESOURCE.definition_for_item_id(sample_id)
+	sample_biome = str(sample_definition.get("biome", "Provenienza non catalogata"))
+	sample_rarity = str(sample_definition.get("rarity", "common"))
+	sample_research_multiplier = maxf(0.1, float(sample_definition.get("research_multiplier", 1.0)))
 	state = State.ANALYZING
 	study_elapsed = 0.0
 	animation_elapsed = 0.0
@@ -471,9 +487,11 @@ func try_upgrade(player: Node2D) -> bool:
 func _deliver_report() -> void:
 	if state != State.COMPLETE:
 		return
+	var report_reward := get_reward()
 	var economy := get_node_or_null("/root/Economy")
 	if economy != null:
-		economy.call("add_funds", get_reward())
+		economy.call("add_funds", report_reward)
+	last_report_reward = report_reward
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null:
 		achievements.call("record", "first_report")
@@ -484,6 +502,9 @@ func _deliver_report() -> void:
 	animation_frame = 0
 	sample_id = ""
 	sample_name = ""
+	sample_biome = ""
+	sample_rarity = ""
+	sample_research_multiplier = 1.0
 	_refresh_visual()
 	_register_power_consumer()
 
@@ -504,11 +525,11 @@ func get_machine_specs() -> Dictionary:
 	var color := Color("8cd9ff")
 	if state == State.ANALYZING:
 		status = "ANALISI IN CORSO" if powered else "ANALISI IN PAUSA · RETE ASSENTE"
-		detail = "%s · restano %s" % [sample_name, _format_time(get_remaining_seconds())]
+		detail = "%s · %s · %s · restano %s" % [sample_name, sample_biome, _rarity_label(), _format_time(get_remaining_seconds())]
 		color = Color("ffe38a")
 	elif state == State.COMPLETE:
 		status = "RAPPORTO PRONTO"
-		detail = "%s · invio Terra tra %s · %s" % [sample_name, _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
+		detail = "%s · %s · %s · invio Terra tra %s · %s" % [sample_name, sample_biome, _rarity_label(), _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
 		color = Color("72eda0")
 	return {
 		"title": get_display_name().to_upper(),
@@ -516,8 +537,12 @@ func get_machine_specs() -> Dictionary:
 		"status": status,
 		"status_color": color,
 		"principle": str(get_definition(machine_id).get("principle", "")),
-		"specs": ["Campione: %s" % detail, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
+		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f" % sample_research_multiplier, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
 	}
+
+
+func _rarity_label() -> String:
+	return "RARO" if sample_rarity == "rare" else "COMUNE"
 
 
 func _refresh_visual() -> void:
