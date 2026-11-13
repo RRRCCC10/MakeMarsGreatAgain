@@ -34,6 +34,7 @@ func reset_for_new_mission() -> void:
 	selected_hotbar_index = 0
 	selected_backpack_index = -1
 	is_open = false
+	_close_ui_modal()
 	changed.emit()
 
 
@@ -343,7 +344,40 @@ func consume_selected_item() -> bool:
 	return true
 
 
-func toggle_open() -> void:
-	is_open = not is_open
+func open() -> bool:
+	if is_open:
+		return true
+	if not _try_open_ui_modal():
+		return false
+	is_open = true
 	selected_backpack_index = -1
 	changed.emit()
+	return true
+
+
+func close() -> void:
+	if not is_open:
+		_close_ui_modal()
+		return
+	is_open = false
+	selected_backpack_index = -1
+	_close_ui_modal()
+	changed.emit()
+
+
+func toggle_open() -> bool:
+	if is_open:
+		close()
+		return false
+	return open()
+
+
+func _try_open_ui_modal() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("try_open_modal", &"inventory"))
+
+
+func _close_ui_modal() -> void:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", &"inventory")

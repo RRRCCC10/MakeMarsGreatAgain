@@ -630,6 +630,9 @@ func _format_money(amount: int) -> String:
 
 
 func _is_modal_ui_open() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null and bool(ui_state.call("blocks_world_actions")):
+		return true
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory != null and bool(inventory.get("is_open")):
 		return true

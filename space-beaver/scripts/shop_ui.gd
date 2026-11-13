@@ -308,9 +308,7 @@ func _refresh_dome_config_price(_toggled: bool = false) -> void:
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
-	if event.keycode == KEY_B and not BuildableRegistry.is_modal_open:
-		if Inventory.is_open:
-			Inventory.toggle_open()
+	if event.keycode == KEY_B:
 		Shop.toggle()
 		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_ESCAPE and Shop.is_open:

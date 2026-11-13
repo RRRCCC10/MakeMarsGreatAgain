@@ -125,7 +125,7 @@ func _physics_process(delta: float) -> void:
 	if is_preview:
 		return
 	var moving := false
-	if is_instance_valid(driver) and panel_state == PanelState.CLOSED and not _input_blocked():
+	if is_instance_valid(driver) and panel_state == PanelState.CLOSED and not _movement_blocked():
 		var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if battery_energy_kwh > 0.01:
 			velocity = direction * ROVER_SPEED
@@ -496,10 +496,21 @@ func _consume_driving_energy(delta: float) -> void:
 
 
 func _input_blocked() -> bool:
-	var inventory := _service("Inventory")
-	var shop := _service("Shop")
-	var registry := _service("BuildableRegistry")
-	return (inventory != null and bool(inventory.get("is_open"))) or (shop != null and bool(shop.get("is_open"))) or (registry != null and bool(registry.get("is_modal_open"))) or get_tree().paused
+	return _ui_blocks_world_actions() or get_tree().paused
+
+
+func _movement_blocked() -> bool:
+	return (_ui_blocks_world_actions() and not _ui_allows_world_movement()) or get_tree().paused
+
+
+func _ui_blocks_world_actions() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state != null and bool(ui_state.call("blocks_world_actions"))
+
+
+func _ui_allows_world_movement() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state != null and bool(ui_state.call("allows_world_movement"))
 
 
 func _is_control_key(event: InputEventKey, keycode: Key) -> bool:

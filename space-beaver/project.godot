@@ -16,6 +16,7 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
+UIState="*res://scripts/UIState.gd"
 GridManager="*uid://c7ecvjanc0yhn"
 Inventory="*res://scripts/Inventory.gd"
 Oxygen="*res://scripts/Oxygen.gd"
@@ -42,7 +43,6 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
-window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

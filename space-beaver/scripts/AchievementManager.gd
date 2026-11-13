@@ -5,6 +5,9 @@ extends Node
 ## riscattano rispettando il grafo dei prerequisiti.
 
 signal achievement_updated(achievement_id: String)
+## Emesso una sola volta quando il progresso raggiunge il bersaglio, anche
+## se la ricompensa e' ancora dietro a un prerequisito della rete.
+signal achievement_reached(achievement_id: String, claimable_now: bool)
 signal achievement_claimable(achievement_id: String)
 signal achievement_claimed(achievement_id: String, reward_label: String)
 
@@ -437,13 +440,16 @@ func record(achievement_id: String, amount: int = 1) -> bool:
 	if definition.is_empty() or amount <= 0:
 		return false
 	var old_progress := get_progress(achievement_id)
-	var new_progress := mini(get_target(achievement_id), old_progress + amount)
+	var target := get_target(achievement_id)
+	var new_progress := mini(target, old_progress + amount)
 	if new_progress == old_progress:
 		return false
 	_progress[achievement_id] = new_progress
 	_refresh_composite_achievements()
 	_save_progress()
 	achievement_updated.emit(achievement_id)
+	if old_progress < target and new_progress >= target:
+		achievement_reached.emit(achievement_id, is_claimable(achievement_id))
 	if is_claimable(achievement_id):
 		achievement_claimable.emit(achievement_id)
 	return true
@@ -456,6 +462,9 @@ func set_reached(achievement_id: String) -> bool:
 
 
 func claim(achievement_id: String) -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null and bool(ui_state.call("has_open_modal")) and not bool(ui_state.call("is_modal_active", &"achievements")):
+		return false
 	if not is_claimable(achievement_id):
 		return false
 	var definition := get_definition(achievement_id)
@@ -690,6 +699,7 @@ func _refresh_composite_achievements() -> void:
 		if center_old < get_target("science_center"):
 			_progress["science_center"] = get_target("science_center")
 			achievement_updated.emit("science_center")
+			achievement_reached.emit("science_center", is_claimable("science_center"))
 			if is_claimable("science_center"):
 				achievement_claimable.emit("science_center")
 

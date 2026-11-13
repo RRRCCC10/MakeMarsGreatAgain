@@ -146,15 +146,29 @@ const CATEGORY_LABELS := {
 var is_open := false
 
 
-func toggle() -> void:
-	is_open = not is_open
+func open() -> bool:
+	if is_open:
+		return true
+	if not _try_open_ui_modal():
+		return false
+	is_open = true
 	state_changed.emit()
+	return true
+
+
+func toggle() -> bool:
+	if is_open:
+		close()
+		return false
+	return open()
 
 
 func close() -> void:
 	if not is_open:
+		_close_ui_modal()
 		return
 	is_open = false
+	_close_ui_modal()
 	state_changed.emit()
 
 
@@ -269,7 +283,19 @@ func get_category_label(category: String) -> String:
 
 func reset_for_new_mission() -> void:
 	is_open = false
+	_close_ui_modal()
 	state_changed.emit()
+
+
+func _try_open_ui_modal() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("try_open_modal", &"shop"))
+
+
+func _close_ui_modal() -> void:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", &"shop")
 
 
 func _transformer_already_owned() -> bool:

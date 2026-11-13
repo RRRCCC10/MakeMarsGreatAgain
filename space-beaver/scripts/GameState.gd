@@ -23,6 +23,9 @@ func _process(_delta: float) -> void:
 func restart_from_scratch() -> void:
 	get_tree().paused = false
 	has_failed = false
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("reset_for_new_mission")
 	Inventory.reset_for_new_mission()
 	Economy.reset_for_new_mission()
 	Oxygen.reset_for_new_mission()

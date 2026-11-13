@@ -9,6 +9,36 @@ var is_modal_open := false
 var _entries: Array[Dictionary] = []
 
 
+func open_modal() -> bool:
+	if is_modal_open:
+		return _is_own_modal_active()
+	if not _try_open_ui_modal():
+		return false
+	is_modal_open = true
+	return true
+
+
+func close_modal() -> void:
+	is_modal_open = false
+	_close_ui_modal()
+
+
+func _try_open_ui_modal() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("try_open_modal", &"world_panel"))
+
+
+func _close_ui_modal() -> void:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", &"world_panel")
+
+
+func _is_own_modal_active() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("is_modal_active", &"world_panel"))
+
+
 func register_buildable(node: Node2D, display_name: String, kind: String, destroy_action: Callable) -> void:
 	unregister_buildable(node, false)
 	_entries.append({
@@ -74,7 +104,7 @@ func _cleanup_invalid_entries() -> void:
 
 
 func reset_for_new_mission() -> void:
-	is_modal_open = false
+	close_modal()
 	var had_entries := not _entries.is_empty()
 	_entries.clear()
 	if had_entries:

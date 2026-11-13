@@ -83,7 +83,7 @@ func _exit_tree() -> void:
 	if storage_layer != null and is_instance_valid(storage_layer):
 		storage_layer.queue_free()
 	if storage_root != null and storage_root.visible:
-		BuildableRegistry.is_modal_open = false
+		BuildableRegistry.close_modal()
 
 
 func _process(delta: float) -> void:
@@ -283,8 +283,9 @@ func open_storage(player: Node2D) -> bool:
 		return false
 	if storage_root == null:
 		return false
+	if not BuildableRegistry.open_modal():
+		return false
 	storage_root.visible = true
-	BuildableRegistry.is_modal_open = true
 	_refresh_storage_ui()
 	return true
 
@@ -292,7 +293,7 @@ func open_storage(player: Node2D) -> bool:
 func close_storage() -> void:
 	if storage_root != null:
 		storage_root.visible = false
-	BuildableRegistry.is_modal_open = false
+	BuildableRegistry.close_modal()
 
 
 func is_storage_open() -> bool:

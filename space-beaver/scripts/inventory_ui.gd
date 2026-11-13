@@ -563,14 +563,16 @@ func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	if event.keycode == KEY_TAB:
-		if Shop.is_open:
-			Shop.close()
-		else:
-			Inventory.toggle_open()
-		get_viewport().set_input_as_handled()
-	elif event.keycode == KEY_ESCAPE and Inventory.is_open:
 		Inventory.toggle_open()
 		get_viewport().set_input_as_handled()
-	elif event.keycode >= KEY_1 and event.keycode <= KEY_5:
+	elif event.keycode == KEY_ESCAPE and Inventory.is_open:
+		Inventory.close()
+		get_viewport().set_input_as_handled()
+	elif not _ui_blocks_world_actions() and event.keycode >= KEY_1 and event.keycode <= KEY_5:
 		Inventory.select_hotbar(event.keycode - KEY_1)
 		get_viewport().set_input_as_handled()
+
+
+func _ui_blocks_world_actions() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state != null and bool(ui_state.call("blocks_world_actions"))

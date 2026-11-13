@@ -15,7 +15,8 @@
 [ext_resource type="Script" path="res://scripts/RockScatter.gd" id="15_scatter"]
 [ext_resource type="Script" path="res://scripts/WorldMapUI.gd" id="16_worldmap"]
 [ext_resource type="Script" path="res://scripts/temperature_ui.gd" id="17_temperature"]
-[ext_resource type="Script" path="res://scripts/achievement_graph_board.gd" id="18_achievements"]
+[ext_resource type="Script" path="res://scripts/achievement_graph_board_v2.gd" id="18_achievements"]
+[ext_resource type="Script" path="res://scripts/achievement_success_ui.gd" id="19_achievement_success"]
 
 [node name="main" type="Node2D" unique_id=49560634]
 
@@ -58,6 +59,9 @@ script = ExtResource("17_temperature")
 
 [node name="WorldMapUI" type="CanvasLayer" parent="."]
 script = ExtResource("16_worldmap")
+
+[node name="AchievementSuccessUI" type="CanvasLayer" parent="."]
+script = ExtResource("19_achievement_success")
 
 [node name="AchievementBoard" type="CanvasLayer" parent="."]
 script = ExtResource("18_achievements")

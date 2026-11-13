@@ -3,6 +3,7 @@ extends SceneTree
 const ACHIEVEMENT_MANAGER := preload("res://scripts/AchievementManager.gd")
 
 var failures: Array[String] = []
+var reached_events: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -13,6 +14,7 @@ func _run() -> void:
 	var manager := ACHIEVEMENT_MANAGER.new()
 	manager.set_persistence_enabled_for_test(false)
 	manager.reset_runtime_for_test()
+	manager.achievement_reached.connect(_on_achievement_reached)
 	var definitions: Array = manager.get_ordered_definitions()
 	_expect(definitions.size() >= 55, "La tavola deve ospitare contratti a piedi, fotografia, ricerca industriale e il ramo della vita antica")
 	_expect(manager.is_unlocked("first_base"), "La prima tappa deve essere disponibile dall'inizio")
@@ -26,6 +28,7 @@ func _run() -> void:
 	manager.record("first_report")
 	_expect(manager.is_reached("first_report"), "Un obiettivo futuro deve registrare il progresso anche da bloccato")
 	_expect(not manager.is_claimable("first_report"), "Una ricompensa futura non deve essere riscattabile fuori ordine")
+	_expect(reached_events.size() == 1 and str(reached_events[0].get("id", "")) == "first_report" and not bool(reached_events[0].get("claimable", true)), "Il raggiungimento di un nodo bloccato deve emettere una notifica senza renderlo riscattabile")
 	manager.record_research_report("xrd_diffractometer", "sample_a", "Pianura di atterraggio", "rare")
 	manager.record_research_report("xrd_diffractometer", "sample_b", "Pianura di atterraggio", "common")
 	manager.record_research_report("xrd_diffractometer", "sample_c", "Cratere roccioso", "common")
@@ -55,6 +58,7 @@ func _run() -> void:
 	# Dopo la radice i tre rami sono indipendenti: si può avanzare nell'habitat
 	# anche se il ciclo airlock non è stato ancora riscattato.
 	manager.record("first_base")
+	_expect(reached_events.any(func(event: Dictionary) -> bool: return str(event.get("id", "")) == "first_base" and bool(event.get("claimable", false))), "Un nodo radice raggiunto deve emettere una notifica di ricompensa pronta")
 	_expect(manager.claim("first_base"), "La radice deve poter essere riscossa")
 	_expect(manager.is_unlocked("airlock_cycle") and manager.is_unlocked("stable_grid"), "La radice deve aprire i rami airlock e rete elettrica")
 	manager.record("stable_grid")
@@ -113,6 +117,10 @@ func _run() -> void:
 	_expect(is_equal_approx(bonus_manager.get_research_reward_multiplier(), 1.10), "Il primo segnale deve aumentare del 10% il valore di ogni rapporto")
 	bonus_manager.free()
 	_finish()
+
+
+func _on_achievement_reached(achievement_id: String, claimable_now: bool) -> void:
+	reached_events.append({"id": achievement_id, "claimable": claimable_now})
 
 
 func _expect(condition: bool, message: String) -> void:

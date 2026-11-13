@@ -15,7 +15,9 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	var board := current_scene.get_node_or_null("AchievementBoard")
+	var success_ui := current_scene.get_node_or_null("AchievementSuccessUI")
 	_expect(board != null, "La scena principale deve contenere la tavola achievement")
+	_expect(success_ui != null and success_ui.get_node_or_null("AchievementSuccessRoot") != null, "La scena principale deve contenere la schermata celebrativa dei traguardi")
 	if board == null:
 		_finish()
 		return
@@ -39,11 +41,20 @@ func _run() -> void:
 		for child in graph.get_children():
 			if str(child.name).begins_with("AchievementNode_"):
 				node_count += 1
-		_expect(node_count == definitions.size(), "Ogni obiettivo deve diventare un nodo del grafo")
-		_expect(graph.get_node_or_null("AchievementNode_first_base") != null and graph.get_node_or_null("AchievementNode_first_photo") != null and graph.get_node_or_null("AchievementNode_life_witness_image") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_large_dome") == null, "Il grafo deve includere ramo fotografico, nodo finale e nessuna missione cupola grande")
+		_expect(node_count > 0 and node_count < definitions.size(), "Ogni scheda deve mostrare una mappa leggibile del proprio ramo, non tutti i nodi sovrapposti")
+		_expect(graph.get_node_or_null("AchievementNode_first_field_sample") != null and graph.get_node_or_null("AchievementNode_first_base") == null, "La scheda campo deve mostrare raccolta ed esplorazione")
+		board.call("_select_category", "science")
+		await process_frame
+		graph = _find_named(root_ui, "MissionGraph") as Control
+		_expect(graph != null and graph.get_node_or_null("AchievementNode_first_lab") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_first_field_sample") == null, "La scheda ricerca deve mostrare laboratori e nodo finale senza mescolare gli altri rami")
 	board.call("close")
 	_expect((achievements == null or not bool(achievements.get("is_board_open"))) and not root_ui.visible, "Chiudere la tavola deve riattivare il gioco")
 	_expect(survival_ui != null and survival_ui.visible and power_ui != null and power_ui.visible, "Chiudere la tavola deve ripristinare gli HUD")
+	if achievements != null and success_ui != null:
+		achievements.call("record", "first_base")
+		await process_frame
+		var success_root := success_ui.get_node_or_null("AchievementSuccessRoot") as Control
+		_expect(success_root != null and success_root.visible, "Quando un obiettivo raggiunge il bersaglio deve comparire la schermata celebrativa")
 	_finish()
 
 

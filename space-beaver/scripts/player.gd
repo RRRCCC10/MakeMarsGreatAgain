@@ -32,7 +32,7 @@ func _physics_process(_delta: float) -> void:
 	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
 	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
 	_clamp_to_world_bounds()
-	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
+	if _ui_blocks_world_actions() and not _ui_allows_world_movement():
 		velocity = Vector2.ZERO
 		_update_animation(Vector2.ZERO)
 		return
@@ -195,7 +195,7 @@ func is_driving_rover() -> bool:
 
 
 func _try_board_nearby_rover() -> bool:
-	if is_driving_rover() or Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
+	if is_driving_rover() or _ui_blocks_world_actions():
 		return false
 	var nearby_rover := nearest_rover()
 	return nearby_rover != null and bool(nearby_rover.call("board", self))
@@ -223,6 +223,14 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _ui_is_minimap_active():
+		if event is InputEventMouseButton and event.pressed:
+			var active_map_ui := get_tree().get_first_node_in_group("world_map_ui")
+			if active_map_ui != null and active_map_ui.has_method("handle_mouse_wheel") and bool(active_map_ui.call("handle_mouse_wheel", event)):
+				get_viewport().set_input_as_handled()
+		return
+	if _ui_blocks_world_actions():
+		return
 	if event is InputEventMouseButton and event.pressed:
 		var map_ui := get_tree().get_first_node_in_group("world_map_ui")
 		if map_ui != null and map_ui.has_method("handle_mouse_wheel") and bool(map_ui.call("handle_mouse_wheel", event)):
@@ -236,7 +244,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_set_camera_zoom(camera.zoom.x / ZOOM_FACTOR)
 			get_viewport().set_input_as_handled()
 			return
-	if not Inventory.is_open and not Shop.is_open and not AchievementManager.is_board_open and not FieldCamera.is_archive_open and event is InputEventKey and event.pressed and not event.echo:
+	if event is InputEventKey and event.pressed and not event.echo:
 		var control_key := _get_control_key(event)
 		if control_key in [KEY_E, KEY_F, KEY_W, KEY_A, KEY_S, KEY_D] and not is_driving_rover():
 			for dome in get_tree().get_nodes_in_group("base_domes"):
@@ -290,6 +298,25 @@ func _get_control_key(event: InputEventKey) -> Key:
 		if event.physical_keycode == keycode:
 			return keycode
 	return event.keycode
+
+
+func _ui_state() -> Node:
+	return get_node_or_null("/root/UIState")
+
+
+func _ui_blocks_world_actions() -> bool:
+	var ui_state := _ui_state()
+	return ui_state != null and bool(ui_state.call("blocks_world_actions"))
+
+
+func _ui_allows_world_movement() -> bool:
+	var ui_state := _ui_state()
+	return ui_state != null and bool(ui_state.call("allows_world_movement"))
+
+
+func _ui_is_minimap_active() -> bool:
+	var ui_state := _ui_state()
+	return ui_state != null and bool(ui_state.call("is_modal_active", &"minimap"))
 
 
 func _on_suit_equipped(_suit_id: String, definition: Dictionary) -> void:

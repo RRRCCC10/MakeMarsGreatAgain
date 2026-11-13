@@ -50,10 +50,5 @@ func _find_boardable_rover(player: Node2D) -> Node:
 
 
 func _is_input_blocked() -> bool:
-	var inventory := get_node_or_null("/root/Inventory")
-	var shop := get_node_or_null("/root/Shop")
-	var registry := get_node_or_null("/root/BuildableRegistry")
-	return (inventory != null and bool(inventory.get("is_open"))) \
-		or (shop != null and bool(shop.get("is_open"))) \
-		or (registry != null and bool(registry.get("is_modal_open"))) \
-		or get_tree().paused
+	var ui_state := get_node_or_null("/root/UIState")
+	return (ui_state != null and bool(ui_state.call("blocks_world_actions"))) or get_tree().paused

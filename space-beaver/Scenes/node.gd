@@ -122,7 +122,7 @@ func _process(_delta: float) -> void:
 	if machine_info_root != null and machine_info_root.visible:
 		_refresh_machine_info()
 	_update_nearby_machine_ui()
-	var blocked := Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open or FieldCamera.is_archive_open
+	var blocked := _ui_blocks_world_actions()
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if pipe_preview != null:
 		var pipe_active: bool = not blocked and selected_id == "pipe_hammer"
@@ -199,8 +199,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_close_demolition_ui()
 			get_viewport().set_input_as_handled()
 		return
-		return
-	if Inventory.is_open or Shop.is_open or AchievementManager.is_board_open or FieldCamera.is_archive_open:
+	if _ui_blocks_world_actions():
 		return
 	if event is InputEventKey and event.pressed and not event.echo and nearby_machine != null:
 		if event.keycode == KEY_V:
@@ -419,10 +418,11 @@ func _create_demolition_ui() -> void:
 
 
 func _show_demolition_ui(entry: Dictionary) -> void:
+	if not BuildableRegistry.open_modal():
+		return
 	pending_demolition = entry
 	demolition_question.text = "Vuoi rimuovere:  %s ?" % entry.get("display_name", "OGGETTO")
 	demolition_root.visible = true
-	BuildableRegistry.is_modal_open = true
 
 
 func _confirm_demolition() -> void:
@@ -434,7 +434,7 @@ func _confirm_demolition() -> void:
 
 func _close_demolition_ui() -> void:
 	pending_demolition = {}
-	BuildableRegistry.is_modal_open = false
+	BuildableRegistry.close_modal()
 	if demolition_root != null:
 		demolition_root.visible = false
 
@@ -488,7 +488,7 @@ func _create_nearby_machine_ui() -> void:
 func _update_nearby_machine_ui() -> void:
 	if nearby_machine_root == null:
 		return
-	if Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open:
+	if _ui_blocks_world_actions():
 		nearby_machine = null
 		nearby_machine_root.visible = false
 		return
@@ -662,8 +662,10 @@ func _show_machine_info(entry: Dictionary) -> void:
 	inspected_machine = entry.get("node") as Node
 	if not is_instance_valid(inspected_machine) or not inspected_machine.has_method("get_machine_specs"):
 		return
+	if not BuildableRegistry.open_modal():
+		inspected_machine = null
+		return
 	machine_info_root.visible = true
-	BuildableRegistry.is_modal_open = true
 	_refresh_machine_info()
 
 
@@ -699,9 +701,14 @@ func _toggle_inspected_network() -> void:
 
 func _close_machine_info() -> void:
 	inspected_machine = null
-	BuildableRegistry.is_modal_open = false
+	BuildableRegistry.close_modal()
 	if machine_info_root != null:
 		machine_info_root.visible = false
+
+
+func _ui_blocks_world_actions() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state != null and bool(ui_state.call("blocks_world_actions"))
 
 
 func _machine_panel_style() -> StyleBoxFlat:

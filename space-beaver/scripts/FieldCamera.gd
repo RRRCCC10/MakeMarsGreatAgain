@@ -75,6 +75,7 @@ func reset_for_new_mission() -> void:
 	photo_roll.clear()
 	next_photo_id = 1
 	is_archive_open = false
+	_close_ui_modal()
 	if _archive_overlay != null:
 		_archive_overlay.visible = false
 	if _notice != null:
@@ -142,7 +143,7 @@ func _camera_is_equipped() -> bool:
 
 
 func _other_modal_is_open() -> bool:
-	return Inventory.is_open or Shop.is_open or BuildableRegistry.is_modal_open or AchievementManager.is_board_open
+	return _ui_blocks_world_actions()
 
 
 func _build_photo_context() -> Dictionary:
@@ -387,7 +388,9 @@ func _build_archive_ui() -> void:
 
 
 func open_archive() -> void:
-	if _other_modal_is_open() or is_archive_open:
+	if is_archive_open or _ui_has_open_modal():
+		return
+	if not _try_open_ui_modal():
 		return
 	is_archive_open = true
 	_archive_overlay.visible = true
@@ -396,8 +399,34 @@ func open_archive() -> void:
 
 func close_archive() -> void:
 	is_archive_open = false
+	_close_ui_modal()
 	if _archive_overlay != null:
 		_archive_overlay.visible = false
+
+
+func _ui_state() -> Node:
+	return get_node_or_null("/root/UIState")
+
+
+func _ui_blocks_world_actions() -> bool:
+	var ui_state := _ui_state()
+	return ui_state != null and bool(ui_state.call("blocks_world_actions"))
+
+
+func _ui_has_open_modal() -> bool:
+	var ui_state := _ui_state()
+	return ui_state != null and bool(ui_state.call("has_open_modal"))
+
+
+func _try_open_ui_modal() -> bool:
+	var ui_state := _ui_state()
+	return ui_state == null or bool(ui_state.call("try_open_modal", &"field_camera_archive"))
+
+
+func _close_ui_modal() -> void:
+	var ui_state := _ui_state()
+	if ui_state != null:
+		ui_state.call("close_modal", &"field_camera_archive")
 
 
 func _refresh_status() -> void:

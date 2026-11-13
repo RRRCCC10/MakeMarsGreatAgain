@@ -78,6 +78,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		toggle_map()
 		get_viewport().set_input_as_handled()
 		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE and is_open:
+		close_map()
+		get_viewport().set_input_as_handled()
+		return
 	if not is_open:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
@@ -111,18 +115,53 @@ func handle_mouse_wheel(event: InputEventMouseButton) -> bool:
 	return false
 
 
-func toggle_map() -> void:
-	is_open = not is_open
-	map_root.visible = is_open
+func toggle_map() -> bool:
 	if is_open:
-		_reveal_around_player()
-		map_was_panned = false
-		is_panning = false
-		if player != null and map_provider != null:
-			map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
-		map_canvas.queue_redraw()
-	else:
-		is_panning = false
+		close_map()
+		return false
+	return open_map()
+
+
+func open_map() -> bool:
+	if is_open:
+		return true
+	if not _try_open_ui_modal():
+		return false
+	is_open = true
+	map_root.visible = true
+	_reveal_around_player()
+	map_was_panned = false
+	is_panning = false
+	if player != null and map_provider != null:
+		map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
+	map_canvas.queue_redraw()
+	return true
+
+
+func close_map() -> void:
+	if not is_open:
+		_close_ui_modal()
+		return
+	is_open = false
+	map_root.visible = false
+	is_panning = false
+	_close_ui_modal()
+
+
+func _exit_tree() -> void:
+	if is_open:
+		_close_ui_modal()
+
+
+func _try_open_ui_modal() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("try_open_modal", &"minimap"))
+
+
+func _close_ui_modal() -> void:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", &"minimap")
 
 
 func _reveal_around_player() -> void:
