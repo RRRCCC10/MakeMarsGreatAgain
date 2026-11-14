@@ -16,6 +16,11 @@ const WARNING_SECONDS := 45.0
 const MIN_STORM_SECONDS := 75.0
 const MAX_STORM_SECONDS := 120.0
 const SAND_STEP_SECONDS := 36.0
+# La tempesta ha piu' finestre in cui puo' depositare sabbia, ma non tutte
+# colpiscono ogni oggetto. Il terzo livello resta possibile solo come evento
+# raro: nella pratica il risultato normale e' uno o due livelli per tempesta.
+const SAND_DEPOSIT_CHANCE := 0.72
+const SAND_THIRD_LEVEL_CHANCE := 0.12
 const CLEAN_DISTANCE := 94.0
 const CLEAN_MODAL := &"sand_cleaning"
 const OUTDOOR_DEBUFF_PROFILES := [
@@ -49,6 +54,7 @@ var state := State.CALM
 var _elapsed_seconds := 0.0
 var _state_remaining := 0.0
 var _sand_step_elapsed := 0.0
+var _storm_deposit_count := 0
 var _targets: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 
@@ -296,6 +302,7 @@ func reset_for_new_mission() -> void:
 	_finish_cleaning(false)
 	state = State.CALM
 	_sand_step_elapsed = 0.0
+	_storm_deposit_count = 0
 	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[0]).duplicate(true)
 	_schedule_calm_period()
 	if _weather_panel != null:
@@ -318,6 +325,7 @@ func _start_storm() -> void:
 	state = State.ACTIVE
 	_state_remaining = _rng.randf_range(MIN_STORM_SECONDS, MAX_STORM_SECONDS)
 	_sand_step_elapsed = 0.0
+	_storm_deposit_count = 0
 	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[_rng.randi_range(0, OUTDOOR_DEBUFF_PROFILES.size() - 1)]).duplicate(true)
 	storm_state_changed.emit(state)
 	_show_notice("TEMPESTA DI SABBIA\nAll'aperto: %s. Rientra o consuma più risorse." % str(_outdoor_debuff_profile.get("label", "VENTO FORTE")))
@@ -326,12 +334,17 @@ func _start_storm() -> void:
 func _end_storm() -> void:
 	state = State.CALM
 	_sand_step_elapsed = 0.0
+	_storm_deposit_count = 0
 	_schedule_calm_period()
 	storm_state_changed.emit(state)
 	_show_notice("TEMPESTA PASSATA\nLa sabbia rimasta sulle macchine va rimossa a mano.")
 
 
 func _deposit_sand_once() -> void:
+	var deposit_chance := 1.0 if _storm_deposit_count == 0 else (SAND_THIRD_LEVEL_CHANCE if _storm_deposit_count >= 2 else SAND_DEPOSIT_CHANCE)
+	if _rng.randf() > deposit_chance:
+		return
+	_storm_deposit_count += 1
 	for key_variant in _targets.keys().duplicate():
 		var key := str(key_variant)
 		var data: Dictionary = _targets[key]
@@ -381,9 +394,11 @@ func _process_cleaning(delta: float) -> void:
 		return
 	var level := _sand_level(target)
 	if level > 0 and target.has_method("set_sand_accumulation"):
-		target.call("set_sand_accumulation", level - 1)
-		sand_level_changed.emit(target, level - 1)
-	_show_notice("SABBIA RIMOSSA\n%s: %s" % [str(data.get("display_name", "MACCHINARIO")), _sand_label(level - 1)])
+		# Una sola spolveratura completa rimuove tutta la sabbia accumulata,
+		# invece di costringere il giocatore a ripetere E una volta per livello.
+		target.call("set_sand_accumulation", 0)
+		sand_level_changed.emit(target, 0)
+	_show_notice("SABBIA RIMOSSA\n%s: PULITO (-%d livelli)" % [str(data.get("display_name", "MACCHINARIO")), level])
 	_finish_cleaning(true)
 
 

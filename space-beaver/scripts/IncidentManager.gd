@@ -389,6 +389,10 @@ func _show_notification(message: String) -> void:
 	_notification_until_seconds = _elapsed_seconds + 8.0
 
 
+func show_notification(message: String) -> void:
+	_show_notification(message)
+
+
 func _show_repair_panel() -> void:
 	_ensure_ui()
 	var parts := PackedStringArray()

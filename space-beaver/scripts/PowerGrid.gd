@@ -2,6 +2,7 @@ extends Node
 
 signal network_changed
 signal stats_changed(data: Dictionary)
+signal routing_failed(device: Node, message: String)
 
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const ROCK_DRILL_SCRIPT := preload("res://scripts/RockDrill.gd")
@@ -21,6 +22,7 @@ const PATH_TURN_COST := 0.42
 const PATH_PARALLEL_COST := 0.28
 const PATH_HEURISTIC_SCALE := 0.80
 const PATH_START_DIRECTION := 4
+const PATH_SEARCH_BUDGET := 20_000
 
 var panels: Array[PowerDevice] = []
 var batteries: Array[PowerDevice] = []
@@ -45,6 +47,7 @@ var demand_kw := 0.0
 var network_powered := false
 var network_status := "RETE INCOMPLETA"
 var _stats_timer := 0.0
+var _routing_failure_keys: Dictionary = {}
 
 
 func _process(delta: float) -> void:
@@ -261,11 +264,13 @@ func rebuild_network() -> void:
 	_clear_cables()
 	connection_ok.clear()
 	if not has_transformer() or not _device_network_enabled(transformer):
+		_routing_failure_keys.clear()
 		_finalize_network_visuals()
 		return
 
 	# Le tre sezioni non condividono celle: prima della trasformazione,
 	# dopo il trasformatore e dopo la batteria sono reti elettriche distinte.
+	var failed_routing_nodes: Array = []
 	var transformer_input := transformer.get_power_input_cell()
 	for panel in panels:
 		if not _device_network_enabled(panel):
@@ -277,6 +282,8 @@ func rebuild_network() -> void:
 		connection_ok[panel] = connected
 		if connected:
 			_add_path(path, panel.get_power_output_attach_direction(), transformer.get_power_input_attach_direction(), NETWORK_SOLAR)
+		else:
+			failed_routing_nodes.append(panel)
 
 	var transformer_output := transformer.get_power_output_cell()
 	for battery in batteries:
@@ -289,6 +296,8 @@ func rebuild_network() -> void:
 		connection_ok[battery] = connected
 		if connected:
 			_add_path(path, transformer.get_power_output_attach_direction(), battery.get_power_input_attach_direction(), NETWORK_TRANSFORMED)
+		else:
+			failed_routing_nodes.append(battery)
 
 	var connected_batteries := _connected_batteries()
 	var use_battery_bus := not connected_batteries.is_empty()
@@ -306,6 +315,7 @@ func rebuild_network() -> void:
 			var closest := _closest_connected_battery(consumer_cell)
 			if closest == null:
 				connection_ok[node] = false
+				failed_routing_nodes.append(node)
 				continue
 			supply_cell = closest.get_power_output_cell()
 			supply_network = NETWORK_BATTERY
@@ -316,6 +326,8 @@ func rebuild_network() -> void:
 		if connected:
 			has_connected_consumer = true
 			_add_path(path, supply_attach, Vector2i(consumer["attach_direction"]), supply_network)
+		else:
+			failed_routing_nodes.append(node)
 
 	# Con una batteria collegata, l'uscita alimenta il bus di accumulo.
 	# Senza batterie, i macchinari vengono collegati direttamente all'uscita
@@ -323,6 +335,7 @@ func rebuild_network() -> void:
 	var has_downstream := use_battery_bus or has_connected_consumer
 	connection_ok[transformer] = _connected_panel_count() > 0 and has_downstream
 	_finalize_network_visuals()
+	_report_routing_failures(failed_routing_nodes)
 
 
 func get_battery_capacity() -> float:
@@ -599,11 +612,22 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 	blocked.erase(start)
 	blocked.erase(goal)
 	var own_cells: Dictionary = cable_cells_by_network.get(network_id, {})
-	var margin := 24
-	var min_x := mini(start.x, goal.x) - margin
-	var max_x := maxi(start.x, goal.x) + margin
-	var min_y := mini(start.y, goal.y) - margin
-	var max_y := maxi(start.y, goal.y) + margin
+	# Non esiste piu' un raggio massimo artificiale attorno ai due dispositivi:
+	# il percorso puo' attraversare tutta la mappa. I limiti fisici della mappa
+	# mantengono comunque finita la ricerca.
+	var min_x := mini(start.x, goal.x) - 24
+	var max_x := maxi(start.x, goal.x) + 24
+	var min_y := mini(start.y, goal.y) - 24
+	var max_y := maxi(start.y, goal.y) + 24
+	var map_provider := get_tree().get_first_node_in_group("world_map_provider")
+	if map_provider != null and map_provider.has_method("get_world_rect"):
+		var world_rect_variant = map_provider.call("get_world_rect")
+		if world_rect_variant is Rect2i:
+			var world_rect: Rect2i = world_rect_variant
+			min_x = world_rect.position.x
+			max_x = world_rect.end.x - 1
+			min_y = world_rect.position.y
+			max_y = world_rect.end.y - 1
 	# Lo stato include anche la direzione di arrivo. In questo modo due
 	# percorsi sulla stessa cella ma con orientamento diverso non sono
 	# equivalenti: una curva ha un costo reale e viene evitata se inutile.
@@ -613,6 +637,7 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 	var came_from: Dictionary = {}
 	var g_score: Dictionary = {start_state: 0.0}
 	var turn_count: Dictionary = {start_state: 0}
+	var expanded_states := 0
 	while not open.is_empty():
 		var best_index := 0
 		var best_score := INF
@@ -628,6 +653,11 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 				best_index = index
 		var current_state: Vector3i = open[best_index]
 		open.remove_at(best_index)
+		expanded_states += 1
+		if expanded_states > PATH_SEARCH_BUDGET:
+			# Una rete completamente chiusa non deve trasformare il rebuild in un
+			# blocco del gioco: il chiamante ricevera' un errore di instradamento.
+			return []
 		var current := Vector2i(current_state.x, current_state.y)
 		if current == goal:
 			return _reconstruct_directed_path(came_from, current_state)
@@ -657,6 +687,34 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 			if neighbor_state not in open:
 				open.append(neighbor_state)
 	return []
+
+
+func _report_routing_failures(failed_nodes: Array) -> void:
+	var current_keys: Dictionary = {}
+	for node_variant in failed_nodes:
+		var device := node_variant as Node
+		if device == null or not is_instance_valid(device):
+			continue
+		var key := str(device.get_instance_id())
+		current_keys[key] = true
+		if _routing_failure_keys.has(key):
+			continue
+		var device_name := _network_device_name(device)
+		var message := "ERRORE RETE ELETTRICA\n%s: percorso impossibile o bloccato. Sposta il macchinario in un posto migliore." % device_name
+		routing_failed.emit(device, message)
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null and incidents.has_method("show_notification"):
+			incidents.call("show_notification", message)
+	_routing_failure_keys = current_keys
+
+
+func _network_device_name(device: Node) -> String:
+	if device.has_method("get_display_name"):
+		return str(device.call("get_display_name")).to_upper()
+	var device_id := str(device.get("device_id"))
+	if not device_id.is_empty():
+		return _display_name(device_id)
+	return str(device.name).to_upper()
 
 
 func _reconstruct_directed_path(came_from: Dictionary, current_state: Vector3i) -> Array[Vector2i]:
@@ -906,5 +964,6 @@ func reset_for_new_mission() -> void:
 	network_powered = false
 	network_status = "RETE INCOMPLETA"
 	_stats_timer = 0.0
+	_routing_failure_keys.clear()
 	network_changed.emit()
 	stats_changed.emit(get_stats())

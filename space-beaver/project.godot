@@ -39,6 +39,7 @@ FieldCamera="*res://scripts/FieldCamera.gd"
 PerseveranceMission="*res://scripts/PerseveranceMission.gd"
 IncidentManager="*res://scripts/IncidentManager.gd"
 SandstormManager="*res://scripts/SandstormManager.gd"
+AmbientMusic="*res://scripts/AmbientMusic.gd"
 
 [display]
 

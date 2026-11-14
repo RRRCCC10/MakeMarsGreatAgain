@@ -459,7 +459,7 @@ func _item_icon(item: Dictionary) -> Texture2D:
 		"solar_panel":
 			return SOLAR_ICON
 		"transformer":
-			return _first_frame(TRANSFORMER_SHEET)
+			return _first_frame(TRANSFORMER_SHEET, Vector2i(32, 32))
 		"battery":
 			return _first_frame(BATTERY_SHEET)
 		"ice_drill":

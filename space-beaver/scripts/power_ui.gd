@@ -28,6 +28,8 @@ func _ready() -> void:
 	var power_grid := _power_grid()
 	if power_grid != null and power_grid.has_signal("stats_changed"):
 		power_grid.connect("stats_changed", _on_stats_changed)
+	if power_grid != null and power_grid.has_signal("routing_failed"):
+		power_grid.connect("routing_failed", _on_routing_failed)
 	_refresh()
 
 
@@ -202,6 +204,13 @@ func _on_stats_changed(_data: Dictionary) -> void:
 		_refresh()
 
 
+func _on_routing_failed(_device: Node, message: String) -> void:
+	if _notice == null:
+		return
+	_notice.text = message
+	_notice.add_theme_color_override("font_color", Color("ff776d"))
+
+
 func _refresh() -> void:
 	if _network_status == null:
 		return
@@ -371,6 +380,7 @@ func _toggle_device(device: Node, requested_enabled: Variant = null) -> void:
 		should_enable = bool(requested_enabled)
 	if bool(power_grid.call("set_device_network_enabled", device, should_enable)):
 		_notice.text = ("COLLEGATO · " if should_enable else "SCOLLEGATO · ") + _device_name(device)
+		_notice.add_theme_color_override("font_color", Color("a7eecc"))
 	else:
 		_notice.text = "QUESTO ELEMENTO NON SUPPORTA IL CONTROLLO MANUALE"
 	_refresh_elapsed = REFRESH_INTERVAL
