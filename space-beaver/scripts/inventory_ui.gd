@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const ROCK_ICON := preload("res://assets/sprites/rock.png")
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const ROCK_ICONS: Dictionary = {
 	"rock_roccia_rossa": preload("res://assets/sprites/rocks/roccia_rossa.png"),
 	"rock_pietra_rossastra": preload("res://assets/sprites/rocks/pietra_rossastra.png"),
@@ -82,11 +83,13 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	var root := Control.new()
+	root.add_theme_font_override("font", UI_FONT)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
 	pickup_label = Label.new()
+	pickup_label.add_theme_font_override("font", UI_FONT)
 	pickup_label.anchor_left = 0.5
 	pickup_label.anchor_right = 0.5
 	pickup_label.anchor_top = 1.0
@@ -327,6 +330,10 @@ func _process(_delta: float) -> void:
 		if not refill_prompt.is_empty():
 			pickup_label.text = refill_prompt
 			return
+	elif selected_id == "pipe_hammer" and player != null:
+		var builder := player.get_node_or_null("Node")
+		var help := str(builder.call("get_pipe_help_text")) if builder != null and builder.has_method("get_pipe_help_text") else "T tipo  ·  R ruota  ·  Dx demolisce"
+		pickup_label.text = "TUBO · $100 MLN\n" + help
 	elif selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):

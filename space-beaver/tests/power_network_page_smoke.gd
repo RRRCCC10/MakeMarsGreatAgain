@@ -52,6 +52,20 @@ func _run() -> void:
 	_expect(_has_device(devices, panel) and _has_device(devices, dome), "pannelli e cupole devono comparire singolarmente nella pagina")
 	_expect(bool(grid.call("set_device_network_enabled", panel, true)), "un pannello deve poter essere collegato dalla pagina")
 	_expect(bool(panel.call("is_network_enabled")), "il pannello deve risultare collegato dopo il comando")
+	var row_map: Dictionary = page.get("_device_row_by_id")
+	var panel_row := row_map.get(str(panel.get_instance_id())) as Control
+	var panel_button := panel_row.get_meta("toggle_button") as Button if panel_row != null else null
+	_expect(panel_button != null and not panel_button.disabled, "Il pannello deve avere un pulsante cliccabile")
+	if panel_button != null:
+		panel_button.emit_signal("pressed")
+		_expect(not bool(panel.call("is_network_enabled")), "Il click deve scollegare il pannello")
+		var row_before_refresh := panel_row
+		page.call("_refresh")
+		page.call("_refresh")
+		var row_after_refresh := page.get("_device_row_by_id").get(str(panel.get_instance_id())) as Control
+		_expect(row_after_refresh == row_before_refresh, "Il refresh non deve ricreare il pulsante sotto il mouse")
+		panel_button.emit_signal("pressed")
+		_expect(bool(panel.call("is_network_enabled")), "Il secondo click deve ricollegare il pannello")
 	page.call("_toggle_device", dome, false)
 	_expect(not bool(dome.call("is_network_enabled")), "la pagina deve poter scollegare una singola cupola")
 	page.call("_toggle_device", dome, true)

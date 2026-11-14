@@ -28,7 +28,7 @@ func _run() -> void:
 
 	storms.call("force_storm_for_test")
 	_expect(bool(storms.call("is_storm_active")), "Una tempesta deve poter iniziare sia con il clock diurno sia notturno")
-	_expect(is_equal_approx(float(storms.call("get_incident_rate_multiplier")), 7.0), "La tempesta deve aumentare il rischio di guasto")
+	_expect(is_equal_approx(float(storms.call("get_incident_rate_multiplier")), 2.5), "La tempesta deve aumentare moderatamente il rischio di guasto")
 	var player := current_scene.get_node("player") as Node2D
 	player.global_position = Vector2(1288.0, 1288.0)
 	var outdoor_effects: Dictionary = storms.call("get_active_outdoor_effects", player)

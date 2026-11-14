@@ -53,6 +53,9 @@ func remove_pipe(cell: Vector2i) -> bool:
 	BuildableRegistry.unregister_buildable(pipe)
 	pipes.erase(cell)
 	pipe.queue_free()
+	# Demolire un tubo restituisce l'intero costo di posa: il giocatore può
+	# correggere reti idrauliche senza perdere $100 MLN a ogni prova.
+	Economy.add_funds(PIPE_COST)
 	for direction in DIRECTIONS:
 		if pipes.has(cell + direction):
 			_recalculate_component(cell + direction)

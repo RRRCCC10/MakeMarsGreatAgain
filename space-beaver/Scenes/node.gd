@@ -1,6 +1,7 @@
 extends Node
 
 const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const ROCK_DRILL_SCRIPT := preload("res://scripts/RockDrill.gd")
 const PROCESS_MACHINE_SCRIPT := preload("res://scripts/ProcessMachine.gd")
@@ -327,7 +328,7 @@ func get_build_help_text() -> String:
 	if selected_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
 		return "RICERCA: Click in una cupola abitativa  ·  R ruota (%s)  ·  E pietra/rapporto  ·  U upgrade  ·  Dx riprende" % _machine_rotation_label()
 	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
-	return "TUBI: " + shape_name + "  ·  $100 MLN  ·  T tipo  ·  R ruota  ·  Dx demolisce"
+	return "TUBI: " + shape_name + "  ·  T tipo  ·  R ruota  ·  Dx demolisce"
 
 
 func get_pipe_help_text() -> String:
@@ -359,6 +360,7 @@ func _create_demolition_ui() -> void:
 	get_tree().current_scene.add_child(layer)
 
 	demolition_root = Control.new()
+	demolition_root.add_theme_font_override("font", UI_FONT)
 	demolition_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	demolition_root.visible = false
 	layer.add_child(demolition_root)
@@ -399,7 +401,7 @@ func _create_demolition_ui() -> void:
 	content.add_child(demolition_question)
 
 	var warning := Label.new()
-	warning.text = "NESSUN RIMBORSO DEL BUDGET"
+	warning.text = "TUBI: RIMBORSO COMPLETO DI $100 MLN · ALTRO: NESSUN RIMBORSO"
 	warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	warning.add_theme_font_size_override("font_size", 12)
 	warning.add_theme_color_override("font_color", Color("ff7d6b"))
@@ -444,6 +446,7 @@ func _create_nearby_machine_ui() -> void:
 	layer.layer = 70
 	get_tree().current_scene.add_child(layer)
 	nearby_machine_root = PanelContainer.new()
+	nearby_machine_root.add_theme_font_override("font", UI_FONT)
 	nearby_machine_root.name = "NearbyMachinePanel"
 	nearby_machine_root.add_to_group("machine_status_ui")
 	nearby_machine_root.anchor_left = 0.5
@@ -594,6 +597,7 @@ func _create_machine_info_ui() -> void:
 	layer.layer = 110
 	get_tree().current_scene.add_child(layer)
 	machine_info_root = Control.new()
+	machine_info_root.add_theme_font_override("font", UI_FONT)
 	machine_info_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	machine_info_root.visible = false
 	layer.add_child(machine_info_root)
@@ -753,6 +757,7 @@ func _demolition_panel_style() -> StyleBoxFlat:
 
 func _make_demolition_button(text: String, color: Color) -> Button:
 	var button := Button.new()
+	button.add_theme_font_override("font", UI_FONT)
 	button.text = text
 	button.custom_minimum_size = Vector2(140, 32)
 	button.add_theme_font_size_override("font_size", 13)

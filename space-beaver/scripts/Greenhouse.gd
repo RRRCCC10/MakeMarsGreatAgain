@@ -20,7 +20,7 @@ const WATER_L_PER_GAME_HOUR := 16.0
 const POWER_DEMAND_KW := 10.0
 const POWERED_EXTRA_DEMAND_KW := 15.0 # riscaldamento/luci della serra
 const PLOT_COUNT := 16
-const HARVEST_FOOD := 16
+const HARVEST_FOOD := 5
 const WALL_COLLISION_RADIUS := 70.0
 const GREENHOUSE_OXYGEN_CAPACITY := 60.0
 const GREENHOUSE_INITIAL_OXYGEN := 36.0
@@ -49,6 +49,8 @@ var _visual_asset_revision := 0
 var _power_refresh_queued := false
 var _system_incident_faulted := false
 var _sand_accumulation := 0
+var _crop_seed_yield_level := 0
+var _crop_seed_speed_level := 0
 const VISUAL_ASSET_REVISION := 2
 
 
@@ -296,7 +298,12 @@ func get_prompt_for_player(player: Node2D) -> String:
 			return "E  ·  SEMINA 16 PATATE NELLE AIUOLE"
 		return "AIUOLE VUOTE · acquista SEMI DI PATATE nello shop"
 	if _ready_to_harvest:
-		return "RACCOLTA PRONTA · avvicinati alle aiuole"
+		return "E  ·  RACCOGLI %d RAZIONI" % get_harvest_food()
+	var inventory := _inventory()
+	if inventory != null and inventory.has_method("get_best_potato_seed_lot"):
+		var stronger_lot: Dictionary = inventory.call("get_best_potato_seed_lot", _crop_seed_yield_level, _crop_seed_speed_level)
+		if not stronger_lot.is_empty():
+			return "SEMI GM PIÙ FORTI DISPONIBILI · E  ·  SOSTITUISCI LOTTO"
 	var water_status := "ACQUA OK" if has_water_source() else ("TUBO COLLEGATO · flusso assente" if is_water_connected() else "COLLEGA ACQUA A SINISTRA")
 	var power_status := " · crescita +60% · consumo elettrico aumentato" if powered else " · senza alimentazione"
 	return "PATATE: pronte tra %s\n%s%s" % [_format_crop_time(get_remaining_growth_seconds()), water_status, power_status]
@@ -308,10 +315,20 @@ func handle_airlock_key(player: Node2D, keycode: int) -> bool:
 	if keycode != KEY_E or is_preview or player == null or not contains_world_point(player.global_position):
 		return false
 	var inventory := _inventory()
-	if not _planted and inventory != null and int(inventory.call("count_item", "potato_seeds")) > 0:
-		if bool(inventory.call("consume_item", "potato_seeds", 1)):
-			_plant_crop()
+	if inventory == null or not inventory.has_method("take_best_potato_seed_lot"):
+		return false
+	if _ready_to_harvest:
+		return _try_harvest_nearby()
+	if not _planted:
+		var seed_lot: Dictionary = inventory.call("take_best_potato_seed_lot")
+		if not seed_lot.is_empty():
+			_plant_crop(seed_lot)
 			return true
+		return false
+	var replacement_lot: Dictionary = inventory.call("take_best_potato_seed_lot", _crop_seed_yield_level, _crop_seed_speed_level)
+	if not replacement_lot.is_empty():
+		_plant_crop(replacement_lot)
+		return true
 	return false
 
 
@@ -548,7 +565,6 @@ func _process(delta: float) -> void:
 		_record_achievement("greenhouse")
 	if not _system_incident_faulted:
 		_update_crop_growth(delta)
-		_try_harvest_nearby()
 	_update_port_markers()
 	_update_prompt()
 
@@ -593,7 +609,8 @@ func _update_crop_growth(delta: float) -> void:
 	_water_consumed_liters += supplied_water
 	if _remaining_growth_seconds <= 0.0:
 		_remaining_growth_seconds = maxf(0.0, _cycle_duration() - _growth_seconds)
-	var growth_work := delta * supplied_fraction * (POWERED_TIME_MULTIPLIER if powered else 1.0) * _get_crop_achievement_multiplier()
+	var genetic_speed_multiplier := 1.0 + float(_crop_seed_speed_level) * 0.15
+	var growth_work := delta * supplied_fraction * (POWERED_TIME_MULTIPLIER if powered else 1.0) * _get_crop_achievement_multiplier() * genetic_speed_multiplier
 	_growth_seconds = minf(_cycle_duration(), _growth_seconds + growth_work)
 	_remaining_growth_seconds = maxf(0.0, _remaining_growth_seconds - growth_work)
 	if _remaining_growth_seconds <= 0.001:
@@ -603,34 +620,47 @@ func _update_crop_growth(delta: float) -> void:
 	_refresh_crop_visuals()
 
 
-func _plant_crop() -> void:
+func _plant_crop(seed_lot: Dictionary = {}) -> void:
 	_planted = true
 	_ready_to_harvest = false
 	_completed_cycles = 0
 	_growth_seconds = 0.0
 	_remaining_growth_seconds = _cycle_duration()
+	var configuration: Dictionary = seed_lot.get("configuration", {})
+	_crop_seed_yield_level = clampi(int(configuration.get("yield_level", 0)), 0, 5)
+	_crop_seed_speed_level = clampi(int(configuration.get("speed_level", 0)), 0, 5)
 	_record_achievement("first_planting")
 	_refresh_crop_visuals()
 
 
-func _try_harvest_nearby() -> void:
+func _try_harvest_nearby() -> bool:
 	if not _ready_to_harvest:
-		return
+		return false
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or not contains_world_point(player.global_position) or player.global_position.distance_to(global_position) > 66.0:
-		return
+		return false
 	var inventory := _inventory()
-	if inventory != null and bool(inventory.call("add_item", "food_ration", "Razioni di patate", HARVEST_FOOD, false)):
+	if inventory != null and bool(inventory.call("add_item", "food_ration", "Razioni di patate", get_harvest_food(), false)):
 		_ready_to_harvest = false
 		_completed_cycles += 1
 		_growth_seconds = 0.0
 		_remaining_growth_seconds = _cycle_duration()
 		_record_achievement("first_harvest")
 		_refresh_crop_visuals()
+		return true
+	return false
 
 
 func _cycle_duration() -> float:
 	return FIRST_CYCLE_SECONDS if _completed_cycles == 0 else REGROWTH_SECONDS
+
+
+func get_harvest_food() -> int:
+	return roundi(float(HARVEST_FOOD) * (1.0 + float(_crop_seed_yield_level) * 0.20))
+
+
+func get_crop_seed_configuration() -> Dictionary:
+	return {"yield_level": _crop_seed_yield_level, "speed_level": _crop_seed_speed_level}
 
 
 func _refresh_crop_visuals() -> void:
@@ -673,7 +703,8 @@ func get_machine_specs() -> Dictionary:
 		"O₂ serra: %.1f / %.0f (piante %.3f unità/s)" % [oxygen_reserve, GREENHOUSE_OXYGEN_CAPACITY, _get_plant_oxygen_per_second()],
 		"Coltura: %s" % ("pronta" if _ready_to_harvest else (_format_crop_time(get_remaining_growth_seconds()) if _planted else "da seminare")),
 		"Acqua usata: %.1f L" % _water_consumed_liters,
-		"Raccolta: %d razioni" % HARVEST_FOOD,
+		"Genetica lotto: resa %d/5 · velocità %d/5" % [_crop_seed_yield_level, _crop_seed_speed_level],
+		"Raccolta: %d razioni" % get_harvest_food(),
 	]
 	return {
 		"title": "SERRA DI PATATE",

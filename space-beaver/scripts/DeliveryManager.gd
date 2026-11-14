@@ -113,10 +113,16 @@ func _dispatch_pending_order() -> void:
 	var contents: Array[Dictionary] = []
 	for item in pending_order.values():
 		contents.append(item.duplicate(true))
+	var landing_position := _choose_landing_position()
+	# Non forziamo mai la capsula dentro un ostacolo come fallback: se il
+	# giocatore ha saturato la zona, l'ordine resta in attesa e ritenta.
+	if landing_position == Vector2.INF:
+		batch_time_remaining = 0.75
+		return
 	pending_order.clear()
 	batch_time_remaining = 0.0
 	var capsule := CAPSULE_SCRIPT.new()
-	capsule.setup(contents, _choose_landing_position())
+	capsule.setup(contents, landing_position)
 	scene.add_child(capsule)
 	active_capsules.append(capsule)
 	_landing_sequence += 1
@@ -138,19 +144,44 @@ func _choose_landing_position() -> Vector2:
 		var candidate := _snap_to_grid(center + candidates[index])
 		if _landing_position_is_clear(candidate):
 			return candidate
-	return _snap_to_grid(center + Vector2(192 + _landing_sequence * 32, -96))
+	for distance in [192.0, 256.0, 320.0, 384.0, 448.0, 512.0]:
+		for direction_index in range(16):
+			var candidate := _snap_to_grid(center + Vector2.from_angle(TAU * float(direction_index) / 16.0) * distance)
+			if _landing_position_is_clear(candidate):
+				return candidate
+	return Vector2.INF
 
 
 func _landing_position_is_clear(position: Vector2) -> bool:
+	var landing_radius := 26.0
+	var map_provider := get_tree().get_first_node_in_group("world_map_provider")
+	if map_provider != null and map_provider.has_method("is_world_position_inside") and not bool(map_provider.call("is_world_position_inside", position, landing_radius)):
+		return false
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player != null and player.global_position.distance_to(position) < landing_radius + 24.0:
+		return false
 	for rock in get_tree().get_nodes_in_group("collectible_rocks"):
-		if rock is Node2D and position.distance_to(rock.global_position) < 42.0:
+		if rock is Node2D and position.distance_to(rock.global_position) < landing_radius + 26.0:
 			return false
 	for entry in BuildableRegistry.get_entries():
 		var node: Node = entry.get("node")
-		if is_instance_valid(node) and node.has_method("contains_world_point") and bool(node.call("contains_world_point", position)):
+		if not is_instance_valid(node) or not node is Node2D:
+			continue
+		var structure := node as Node2D
+		if structure.global_position.distance_to(position) < landing_radius + 28.0:
 			return false
+		if node.has_method("get_radius") and structure.global_position.distance_to(position) < float(node.call("get_radius")) + landing_radius + 8.0:
+			return false
+		if node.has_method("contains_world_point"):
+			for offset in [Vector2.ZERO, Vector2(-landing_radius, -landing_radius), Vector2(landing_radius, -landing_radius), Vector2(-landing_radius, landing_radius), Vector2(landing_radius, landing_radius)]:
+				if bool(node.call("contains_world_point", position + offset)):
+					return false
+		if node.has_method("is_in_corridor"):
+			for offset in [Vector2.ZERO, Vector2(-landing_radius, 0.0), Vector2(landing_radius, 0.0)]:
+				if bool(node.call("is_in_corridor", position + offset)):
+					return false
 	for capsule in active_capsules:
-		if is_instance_valid(capsule) and position.distance_to(capsule.global_position) < 52.0:
+		if is_instance_valid(capsule) and position.distance_to(capsule.global_position) < landing_radius * 2.0:
 			return false
 	return true
 
@@ -163,4 +194,3 @@ func _cleanup_capsules() -> void:
 	for index in range(active_capsules.size() - 1, -1, -1):
 		if not is_instance_valid(active_capsules[index]):
 			active_capsules.remove_at(index)
-

@@ -244,6 +244,79 @@ func consume_item(item_id: String, amount: int = 1) -> bool:
 	return false
 
 
+func take_item(item_id: String) -> Dictionary:
+	## Rimuove una singola unità e ne conserva i metadati. Le colture usano
+	## questa API per fissare i geni del lotto al momento della semina.
+	for collection in [hotbar, backpack]:
+		for index in collection.size():
+			var item: Dictionary = collection[index]
+			if str(item.get("id", "")) != item_id or int(item.get("count", 0)) <= 0:
+				continue
+			var taken := item.duplicate(true)
+			taken["count"] = 1
+			item["count"] = int(item.get("count", 0)) - 1
+			if int(item["count"]) <= 0:
+				collection[index] = {}
+			changed.emit()
+			return taken
+	return {}
+
+
+func take_best_potato_seed_lot(minimum_yield_level: int = -1, minimum_speed_level: int = -1) -> Dictionary:
+	## Preferisce il lotto più avanzato. Se sono indicati minimi, restituisce
+	## solo un miglioramento reale rispetto alla coltura già presente.
+	var best_collection: Array
+	var best_index := -1
+	var best_score := -1
+	for collection in [hotbar, backpack]:
+		for index in collection.size():
+			var item: Dictionary = collection[index]
+			if str(item.get("id", "")) != "potato_seeds" or int(item.get("count", 0)) <= 0:
+				continue
+			var configuration: Dictionary = item.get("configuration", {})
+			var yield_level := clampi(int(configuration.get("yield_level", 0)), 0, 5)
+			var speed_level := clampi(int(configuration.get("speed_level", 0)), 0, 5)
+			if yield_level <= minimum_yield_level and speed_level <= minimum_speed_level:
+				continue
+			var score := yield_level * 10 + speed_level
+			if score > best_score:
+				best_collection = collection
+				best_index = index
+				best_score = score
+	if best_index < 0:
+		return {}
+	var selected: Dictionary = best_collection[best_index]
+	var taken := selected.duplicate(true)
+	taken["count"] = 1
+	selected["count"] = int(selected.get("count", 0)) - 1
+	if int(selected["count"]) <= 0:
+		best_collection[best_index] = {}
+	changed.emit()
+	return taken
+
+
+func get_best_potato_seed_lot(minimum_yield_level: int = -1, minimum_speed_level: int = -1) -> Dictionary:
+	## Variante senza effetti per i prompt della serra: non deve consumare né
+	## spostare un lotto mentre il giocatore si limita ad avvicinarsi.
+	var best: Dictionary = {}
+	var best_score := -1
+	for collection in [hotbar, backpack]:
+		for item_variant in collection:
+			var item: Dictionary = item_variant
+			if str(item.get("id", "")) != "potato_seeds" or int(item.get("count", 0)) <= 0:
+				continue
+			var configuration: Dictionary = item.get("configuration", {})
+			var yield_level := clampi(int(configuration.get("yield_level", 0)), 0, 5)
+			var speed_level := clampi(int(configuration.get("speed_level", 0)), 0, 5)
+			if yield_level <= minimum_yield_level and speed_level <= minimum_speed_level:
+				continue
+			var score := yield_level * 10 + speed_level
+			if score > best_score:
+				best = item.duplicate(true)
+				best_score = score
+	return best
+
+
 func get_selected_item() -> Dictionary:
 	return hotbar[selected_hotbar_index]
 

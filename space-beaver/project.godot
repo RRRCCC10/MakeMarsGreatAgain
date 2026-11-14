@@ -36,6 +36,7 @@ GameState="*res://scripts/GameState.gd"
 RoverInteraction="*res://scripts/RoverInteraction.gd"
 AchievementManager="*res://scripts/AchievementManager.gd"
 FieldCamera="*res://scripts/FieldCamera.gd"
+PerseveranceMission="*res://scripts/PerseveranceMission.gd"
 IncidentManager="*res://scripts/IncidentManager.gd"
 SandstormManager="*res://scripts/SandstormManager.gd"
 
@@ -45,8 +46,15 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
+window/size/resizable=true
+window/size/min_width_override=960
+window/size/min_height_override=540
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom="res://assets/ui/mission_font_theme.tres"
 
 [editor_plugins]
 

@@ -20,8 +20,9 @@ const CATEGORY_LAYOUTS := {
 			"first_field_sample": Vector2(72, 126), "field_notes": Vector2(300, 126), "sample_satchel": Vector2(528, 126),
 			"surface_catalog": Vector2(756, 52), "surface_anomaly": Vector2(756, 202),
 			"first_horizon": Vector2(72, 406), "biome_survey": Vector2(300, 406), "long_range_survey": Vector2(528, 340), "polar_expedition": Vector2(528, 484),
+			"perseverance_photo": Vector2(1_020, 126), "perseverance_report": Vector2(1_020, 276), "perseverance_repair": Vector2(1_020, 426),
 		},
-		"sections": [["RACCOLTA IN SUPERFICIE", Vector2(72, 52)], ["ESPLORAZIONE", Vector2(72, 332)]],
+		"sections": [["RACCOLTA IN SUPERFICIE", Vector2(72, 52)], ["ESPLORAZIONE", Vector2(72, 332)], ["MISSIONE PERSEVERANCE", Vector2(1_020, 52)]],
 	},
 	"habitat": {
 		"nodes": {

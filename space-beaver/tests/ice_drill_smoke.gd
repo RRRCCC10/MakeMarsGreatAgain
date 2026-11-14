@@ -49,8 +49,8 @@ func _run() -> void:
 	var frame_before: int = int(drill.animation_frame)
 	drill._process(20.0)
 	_expect(drill.animation_frame != frame_before, "La trivella alimentata deve animarsi")
-	_expect(drill.water_extracted_liters >= 39.9, "In un'ora di gioco la trivella deve estrarre 40 L")
-	_expect(drill.water_transported_liters >= 39.9, "Con il tubo collegato l'acqua deve essere trasportata")
+	_expect(drill.water_extracted_liters >= 79.9, "In un'ora di gioco la trivella deve estrarre 80 L")
+	_expect(drill.water_transported_liters >= 79.9, "Con il tubo collegato l'acqua deve essere trasportata")
 	var specs: Dictionary = drill.get_machine_specs()
 	_expect(str(specs.get("title", "")).contains("TRIVELLA"), "La scheda tecnica della trivella deve essere disponibile")
 	var registry: Node = root.get_node("BuildableRegistry")
@@ -86,6 +86,14 @@ func _run() -> void:
 	player.call("_unhandled_input", refill_event)
 	_expect(is_equal_approx(float(bottle.get("liters", 0.0)), 2.0), "Con borraccia selezionata, E vicino alla trivella alimentata deve riempirla")
 	_expect(float(drill.water_storage_liters) < water_before_refill, "Riempire la borraccia deve sottrarre acqua reale dalla riserva della trivella")
+	# La riserva è acqua già estratta: il refill manuale non deve richiedere che
+	# la trivella resti connessa alla rete elettrica.
+	bottle["liters"] = 0.3
+	drill.set_network_enabled(false)
+	var reserve_before_unpowered_refill := float(drill.water_storage_liters)
+	_expect(str(drill.get_bottle_refill_prompt()).begins_with("E · RIEMPI BORRACCIA"), "Una trivella scollegata ma con acqua in riserva deve mostrare il comando di refill")
+	_expect(drill.try_refill_selected_bottle(player), "Il refill deve essere accettato anche senza corrente")
+	_expect(is_equal_approx(float(bottle.get("liters", 0.0)), 2.0) and float(drill.water_storage_liters) < reserve_before_unpowered_refill, "La borraccia deve poter usare la riserva della trivella scollegata")
 	var drill_entry: Dictionary = registry.find_at(drill.global_position)
 	builder.call("_show_machine_info", drill_entry)
 	_expect(registry.is_modal_open, "Il click sul macchinario deve aprire una finestra modale")

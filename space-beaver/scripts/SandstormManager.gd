@@ -10,38 +10,38 @@ signal sand_level_changed(target: Node2D, level: int)
 
 enum State { CALM, WARNING, ACTIVE }
 
-const MIN_CALM_SECONDS := 480.0
-const MAX_CALM_SECONDS := 900.0
-const WARNING_SECONDS := 65.0
-const MIN_STORM_SECONDS := 105.0
-const MAX_STORM_SECONDS := 165.0
-const SAND_STEP_SECONDS := 24.0
+const MIN_CALM_SECONDS := 600.0
+const MAX_CALM_SECONDS := 1200.0
+const WARNING_SECONDS := 45.0
+const MIN_STORM_SECONDS := 75.0
+const MAX_STORM_SECONDS := 120.0
+const SAND_STEP_SECONDS := 36.0
 const CLEAN_DISTANCE := 94.0
 const CLEAN_MODAL := &"sand_cleaning"
 const OUTDOOR_DEBUFF_PROFILES := [
 	{
 		"label": "RAFFICHE TAGLIENTI",
-		"movement_multiplier": 0.86,
-		"oxygen_multiplier": 1.55,
-		"hunger_multiplier": 1.15,
-		"thirst_multiplier": 1.45,
-		"wind_chill_c": -8.0,
+		"movement_multiplier": 0.94,
+		"oxygen_multiplier": 1.15,
+		"hunger_multiplier": 1.05,
+		"thirst_multiplier": 1.15,
+		"wind_chill_c": -4.0,
 	},
 	{
 		"label": "NUVOLA DI POLVERE",
-		"movement_multiplier": 0.78,
-		"oxygen_multiplier": 1.90,
-		"hunger_multiplier": 1.28,
-		"thirst_multiplier": 1.72,
-		"wind_chill_c": -14.0,
+		"movement_multiplier": 0.88,
+		"oxygen_multiplier": 1.30,
+		"hunger_multiplier": 1.10,
+		"thirst_multiplier": 1.28,
+		"wind_chill_c": -8.0,
 	},
 	{
 		"label": "WHITEOUT MARZIANO",
-		"movement_multiplier": 0.68,
-		"oxygen_multiplier": 2.25,
-		"hunger_multiplier": 1.42,
-		"thirst_multiplier": 2.05,
-		"wind_chill_c": -20.0,
+		"movement_multiplier": 0.82,
+		"oxygen_multiplier": 1.50,
+		"hunger_multiplier": 1.18,
+		"thirst_multiplier": 1.45,
+		"wind_chill_c": -12.0,
 	},
 ]
 
@@ -121,7 +121,7 @@ func unregister_target(target: Node) -> void:
 func get_incident_rate_multiplier() -> float:
 	# Durante il vento la polvere entra nei giunti e rende più probabili tutti i
 	# guasti normali; i pannelli hanno inoltre la loro regola irreversibile.
-	return 7.0 if state == State.ACTIVE else 1.0
+	return 2.5 if state == State.ACTIVE else 1.0
 
 
 func is_storm_active() -> bool:
@@ -412,7 +412,7 @@ func _clean_position(target: Node2D) -> Vector2:
 
 
 func _clean_duration_for_level(level: int) -> float:
-	return 2.5 + float(clampi(level, 1, 3)) * 2.25
+	return 1.5 + float(clampi(level, 1, 3)) * 1.5
 
 
 func _sand_label(level: int) -> String:

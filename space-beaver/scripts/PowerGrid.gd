@@ -404,6 +404,8 @@ func _append_network_device(result: Array[Dictionary], seen: Dictionary, device:
 	var display_name := str(device.name).to_upper()
 	if device.has_method("get_display_name"):
 		display_name = str(device.call("get_display_name")).to_upper()
+	if display_name in ["", "NODE", "NODE2D", "OBJECT"]:
+		display_name = _fallback_network_device_name(role)
 	var status := "DISCONNESSO"
 	if enabled and not connected:
 		status = "CAVO NON COLLEGATO"
@@ -425,6 +427,19 @@ func _append_network_device(result: Array[Dictionary], seen: Dictionary, device:
 		"detail": detail,
 		"can_toggle": device.has_method("set_network_enabled") and device.has_method("is_network_enabled"),
 	})
+
+
+func _fallback_network_device_name(role: String) -> String:
+	match role:
+		"GENERAZIONE":
+			return "GENERATORE ELETTRICO"
+		"CONVERSIONE":
+			return "TRASFORMATORE ELETTRICO"
+		"ACCUMULO":
+			return "BATTERIA DI ACCUMULO"
+		"CONSUMO":
+			return "CONSUMATORE ELETTRICO"
+	return "DISPOSITIVO ELETTRICO"
 
 
 func _update_energy(delta: float) -> void:

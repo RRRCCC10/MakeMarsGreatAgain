@@ -8,7 +8,7 @@ signal photo_taken(photo: Dictionary)
 signal photo_transmitted(photo: Dictionary)
 
 const CAMERA_ITEM_ID := "field_camera"
-const MAX_ROLL_SIZE := 36
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const PHOTO_DISTANCE := 78.0
 const CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
 
@@ -89,8 +89,6 @@ func take_photo() -> Dictionary:
 	if photo.is_empty():
 		return {}
 	photo_roll.append(photo)
-	while photo_roll.size() > MAX_ROLL_SIZE:
-		photo_roll.pop_front()
 	_show_flash()
 	_capture_view_to_archive(int(photo.get("id", 0)))
 	_show_notice("SCATTO %02d SALVATO · %s · premi O per inviarlo" % [int(photo.get("id", 0)), str(photo.get("subject", "Marte"))], Color("b6f3ff"))
@@ -175,6 +173,9 @@ func _build_photo_context() -> Dictionary:
 		elif structure.is_in_group("rovers"):
 			subject = "Rover esplorativo"
 			tags.append("rover")
+		elif structure.is_in_group("perseverance_rover"):
+			subject = "Rover Perseverance danneggiato"
+			tags.append("perseverance")
 	if Inventory.count_item("rock_ghiaccio_profondo_primordiale") > 0:
 		tags.append("primordial_ice")
 		if subject == BIOME_NAMES.get(source_id, "Orizzonte marziano"):
@@ -222,7 +223,7 @@ func _nearest_group_node(group_name: String, point: Vector2) -> Node2D:
 
 
 func _nearest_photo_structure(point: Vector2) -> Node2D:
-	for group_name in ["greenhouses", "research_machines", "base_domes", "rovers"]:
+	for group_name in ["greenhouses", "research_machines", "base_domes", "perseverance_rover", "rovers"]:
 		var node := _nearest_group_node(group_name, point)
 		if node != null:
 			return node
@@ -437,7 +438,7 @@ func _refresh_status() -> void:
 	var biome := "AREA SCONOSCIUTA"
 	if player != null:
 		biome = str(BIOME_NAMES.get(_source_at(player.global_position), biome)).to_upper()
-	_status.text = "TELECAMERA SCIENTIFICA · %s\nRULLINO %d/%d · %d DA TRASMETTERE" % [biome, photo_roll.size(), MAX_ROLL_SIZE, unsent]
+	_status.text = "TELECAMERA SCIENTIFICA · %s\nRULLINO · %d SCATTI · %d DA TRASMETTERE" % [biome, photo_roll.size(), unsent]
 
 
 func _refresh_archive() -> void:

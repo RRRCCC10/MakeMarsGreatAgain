@@ -41,6 +41,24 @@ func _run() -> void:
 		await process_frame
 		_expect(inventory.count_item("solar_panel") == 1 and inventory.count_item("battery") == 1, "Il ritiro deve trasferire tutti gli oggetti nell'inventario")
 		_expect(delivery.active_capsules.is_empty(), "La capsula vuota deve scomparire")
+	var dome := BaseDome.new()
+	dome.setup("dome_small", 1, false)
+	current_scene.add_child(dome)
+	dome.global_position = Vector2(1600.0, 1600.0)
+	await process_frame
+	_expect(not bool(delivery.call("_landing_position_is_clear", dome.global_position)), "Una capsula non deve poter atterrare nel centro di una cupola")
+	_expect(not bool(delivery.call("_landing_position_is_clear", dome.global_position + Vector2(52.0, 0.0))), "L'intera impronta della capsula deve restare fuori dalla parete della cupola")
+	dome.queue_free()
+
+	var pipe_manager: Node = root.get_node("PipeManager")
+	var pipe_cell := Vector2i(112, 112)
+	var money_before_pipe := int(economy.balance)
+	var pipe := pipe_manager.call("place_pipe", current_scene, pipe_cell, PipeSegment.ShapeType.STRAIGHT, false) as PipeSegment
+	_expect(pipe != null, "Un tubo di prova deve poter essere piazzato")
+	if pipe != null:
+		_expect(int(economy.balance) == money_before_pipe - 100_000_000, "Posare un tubo deve costare $100 MLN")
+		_expect(bool(pipe_manager.call("remove_pipe", pipe_cell)), "Il tubo deve poter essere rimosso dal martello")
+		_expect(int(economy.balance) == money_before_pipe, "Rimuovere un tubo deve restituire integralmente $100 MLN")
 
 	var power_device_script := load("res://scripts/PowerDevice.gd")
 	var drill = power_device_script.new()

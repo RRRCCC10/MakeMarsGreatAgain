@@ -30,7 +30,7 @@ const CATALOG := {
 		"price": 1_250_000_000,
 		"category": "extraction",
 		"placeable": true,
-		"description": "Consuma 60 kW e produce 40 L/h. Uscita dell'acqua a destra, nella cella centrale.",
+		"description": "Consuma 60 kW e produce 80 L/h: abbastanza per serra ed elettrolizzatore con una riserva. Uscita dell'acqua a destra, nella cella centrale.",
 	},
 	"rock_drill": {
 		"name": "Trivella mineraria",
@@ -142,8 +142,15 @@ const CATEGORY_LABELS := {
 	"life_support": "SUPPORTO VITALE",
 	"research": "RICERCA E ANALISI",
 }
+const SEED_UPGRADE_COSTS := {
+	"yield": [300_000_000, 500_000_000, 750_000_000, 1_050_000_000, 1_400_000_000],
+	"speed": [350_000_000, 575_000_000, 850_000_000, 1_150_000_000, 1_550_000_000],
+}
+const MAX_SEED_UPGRADE_LEVEL := 5
 
 var is_open := false
+var potato_seed_yield_level := 0
+var potato_seed_speed_level := 0
 
 
 func open() -> bool:
@@ -187,7 +194,8 @@ func purchase(item_id: String) -> bool:
 	if not Economy.spend(price):
 		message_changed.emit("Budget insufficiente.", true)
 		return false
-	if not DeliveryManager.queue_item(item_id, definition, 1):
+	var configuration := get_current_seed_configuration() if item_id == "potato_seeds" else {}
+	if not DeliveryManager.queue_item(item_id, definition, 1, configuration):
 		Economy.add_funds(price)
 		message_changed.emit("Impossibile preparare la spedizione.", true)
 		return false
@@ -256,7 +264,64 @@ func _dome_order_name(base_name: String, options: Dictionary) -> String:
 
 
 func get_definition(item_id: String) -> Dictionary:
-	return CATALOG.get(item_id, {})
+	var definition: Dictionary = CATALOG.get(item_id, {}).duplicate(true)
+	if item_id == "potato_seeds" and not definition.is_empty():
+		definition["description"] = get_potato_seed_description()
+	return definition
+
+
+func are_seed_genetics_unlocked() -> bool:
+	var achievements := get_node_or_null("/root/AchievementManager")
+	return achievements != null and bool(achievements.call("is_claimed", "first_harvest")) and bool(achievements.call("has_effect", "genetic_seed_access"))
+
+
+func get_seed_upgrade_level(track: String) -> int:
+	return potato_seed_yield_level if track == "yield" else (potato_seed_speed_level if track == "speed" else 0)
+
+
+func get_seed_upgrade_price(track: String) -> int:
+	if track not in SEED_UPGRADE_COSTS:
+		return -1
+	var level := get_seed_upgrade_level(track)
+	var costs: Array = SEED_UPGRADE_COSTS[track]
+	return int(costs[level]) if level >= 0 and level < costs.size() else -1
+
+
+func get_current_seed_configuration() -> Dictionary:
+	return {
+		"yield_level": potato_seed_yield_level,
+		"speed_level": potato_seed_speed_level,
+	}
+
+
+func get_potato_seed_description() -> String:
+	var base := "Un lotto semina tutte e 16 le piante della serra. Il lotto conserva i suoi livelli genetici anche dopo l'acquisto."
+	if not are_seed_genetics_unlocked():
+		return base + " Bioingegneria: completa Primo raccolto e la missione Perseverance."
+	return "%s Livelli ordinati: resa %d/%d · velocità %d/%d." % [base, potato_seed_yield_level, MAX_SEED_UPGRADE_LEVEL, potato_seed_speed_level, MAX_SEED_UPGRADE_LEVEL]
+
+
+func purchase_seed_upgrade(track: String) -> bool:
+	if not are_seed_genetics_unlocked():
+		message_changed.emit("Bioingegneria bloccata: completa Primo raccolto e la missione Perseverance.", true)
+		return false
+	if track not in SEED_UPGRADE_COSTS:
+		return false
+	var level := get_seed_upgrade_level(track)
+	if level >= MAX_SEED_UPGRADE_LEVEL:
+		message_changed.emit("Upgrade genetico già al livello massimo.", true)
+		return false
+	var price := get_seed_upgrade_price(track)
+	if price < 0 or not Economy.spend(price):
+		message_changed.emit("Budget insufficiente per l'upgrade genetico.", true)
+		return false
+	if track == "yield":
+		potato_seed_yield_level += 1
+	else:
+		potato_seed_speed_level += 1
+	message_changed.emit("Semi GM aggiornati: %s livello %d. I nuovi lotti mantengono il miglioramento." % ["resa" if track == "yield" else "velocità", get_seed_upgrade_level(track)], false)
+	state_changed.emit()
+	return true
 
 
 func get_category_ids() -> Array[String]:
@@ -283,6 +348,8 @@ func get_category_label(category: String) -> String:
 
 func reset_for_new_mission() -> void:
 	is_open = false
+	potato_seed_yield_level = 0
+	potato_seed_speed_level = 0
 	_close_ui_modal()
 	state_changed.emit()
 

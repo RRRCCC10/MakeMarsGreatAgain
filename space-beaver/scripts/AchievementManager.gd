@@ -186,7 +186,7 @@ const ACHIEVEMENTS := [
 	},
 	{
 		"id": "refill_bottle", "title": "BORRACCIA RICARICATA", "icon": "◒", "color": Color("73dfff"),
-		"description": "Riempi una borraccia alla trivella alimentata.", "target": 1,
+		"description": "Riempi una borraccia usando la riserva d'acqua della trivella.", "target": 1,
 		"prerequisites": ["ice_drill"],
 		"reward": {"effect": "water_efficiency", "label": "Consumo acqua -10%"},
 	},
@@ -204,9 +204,30 @@ const ACHIEVEMENTS := [
 	},
 	{
 		"id": "first_harvest", "title": "PRIMO RACCOLTO", "icon": "▣", "color": Color("e8c45b"),
-		"description": "Raccogli 16 patate mature.", "target": 1,
+		"description": "Raccogli il primo lotto di 5 razioni.", "target": 1,
 		"prerequisites": ["first_planting"],
 		"reward": {"funds": 300_000_000, "label": "+ $300 MLN"},
+	},
+	# La missione Perseverance è una sola catena narrativa: fotografare,
+	# documentare e riparare lo stesso rover completa tutti e tre i contratti.
+	# Nessun obiettivo richiede di aspettare il guasto di un secondo rover.
+	{
+		"id": "perseverance_photo", "title": "SEGNALE DA PERSEVERANCE", "icon": "◉", "color": Color("f2ba72"),
+		"description": "Fotografa e trasmetti alla Terra il rover Perseverance danneggiato.", "target": 1,
+		"prerequisites": ["first_photo"],
+		"reward": {"funds": 350_000_000, "label": "+ $350 MLN · telemetria rover"},
+	},
+	{
+		"id": "perseverance_report", "title": "DIAGNOSI A DISTANZA", "icon": "≣", "color": Color("f0d29a"),
+		"description": "Studia e invia alla Terra il rapporto danni di Perseverance.", "target": 1,
+		"prerequisites": ["perseverance_photo"],
+		"reward": {"funds": 500_000_000, "label": "+ $500 MLN · rapporto firmato"},
+	},
+	{
+		"id": "perseverance_repair", "title": "EREDITÀ OPERATIVA", "icon": "✦", "color": Color("8ae7d4"),
+		"description": "Completa la sequenza di manutenzione e ripara Perseverance.", "target": 1,
+		"prerequisites": ["perseverance_report"],
+		"reward": {"funds": 900_000_000, "effect": "genetic_seed_access", "label": "+ $900 MLN · accesso bioingegneria"},
 	},
 	# La ricerca non è un traguardo decorativo: è il principale programma di
 	# finanziamento della prima metà della missione. I rapporti pagano ogni volta;

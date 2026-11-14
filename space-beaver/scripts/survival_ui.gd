@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const SEGMENT_COUNT := 10
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const EMPTY_SEGMENT := Color("26313c")
 const PANEL_COLOR := Color("101820")
 const PANEL_BORDER := Color("8aa7b8")
@@ -28,6 +29,7 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	var root := Control.new()
+	root.add_theme_font_override("font", UI_FONT)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
@@ -60,7 +62,7 @@ func _build_ui() -> void:
 	money_panel.offset_left = -250.0
 	money_panel.offset_top = 16.0
 	money_panel.offset_right = -16.0
-	money_panel.offset_bottom = 105.0
+	money_panel.offset_bottom = 80.0
 	money_panel.add_theme_stylebox_override("panel", _panel_style(Color("111a1f"), Color("dfbd52")))
 	root.add_child(money_panel)
 
@@ -72,9 +74,6 @@ func _build_ui() -> void:
 	money_label = _make_label("", 19, Color("fff2b5"))
 	money_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	money_rows.add_child(money_label)
-	var price_label := _make_label("TUBO  -  $ 100 MLN", 11, Color("b9c8ca"))
-	price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	money_rows.add_child(price_label)
 
 
 func _add_meter(parent: VBoxContainer, title: String, color: Color) -> Dictionary:
@@ -110,6 +109,7 @@ func _add_meter(parent: VBoxContainer, title: String, color: Color) -> Dictionar
 
 func _make_label(text: String, size: int, color: Color) -> Label:
 	var label := Label.new()
+	label.add_theme_font_override("font", UI_FONT)
 	label.text = text
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)

@@ -21,7 +21,7 @@ const BATTERY_FRAME_SIZE := Vector2i(16, 16)
 const ICE_DRILL_FRAME_SIZE := Vector2i(32, 48)
 const BATTERY_CAPACITY_KWH := 500.0
 const ICE_DRILL_DEMAND_KW := 60.0
-const ICE_DRILL_WATER_L_PER_HOUR := 40.0
+const ICE_DRILL_WATER_L_PER_HOUR := 80.0
 const WATER_BOTTLE_REFILL_DISTANCE := 58.0
 const TILE_SIZE := 16
 
@@ -181,7 +181,12 @@ func get_interaction_summary() -> String:
 		"ice_drill":
 			var summary := "Consumo: 60 kW  ·  Acqua: %.0f L/h" % get_fluid_output_rate_lph()
 			var refill_prompt := get_bottle_refill_prompt()
-			return summary + ("\n" + refill_prompt if not refill_prompt.is_empty() else "")
+			if not refill_prompt.is_empty():
+				return summary + "\n" + refill_prompt
+			var inventory := get_node_or_null("/root/Inventory")
+			if inventory != null and int(inventory.call("count_item", "water_bottle")) > 0:
+				return summary + "\nBORRACCIA: selezionala e premi E per ricaricarla"
+			return summary
 	return "Dispositivo elettrico"
 
 
@@ -322,16 +327,13 @@ func get_bottle_refill_prompt() -> String:
 	var bottle: Dictionary = inventory.call("get_selected_item")
 	if str(bottle.get("id", "")) != "water_bottle":
 		return ""
-	if not network_enabled:
-		return "BORRACCIA · collega prima la trivella alla rete"
-	if not powered:
-		return "BORRACCIA · in attesa di corrente"
 	var capacity := float(bottle.get("capacity_liters", 2.0))
 	var current := float(bottle.get("liters", 0.0))
 	if current >= capacity - 0.001:
 		return "BORRACCIA GIÀ PIENA"
 	if water_storage_liters < 0.05:
-		return "BORRACCIA · trivella in produzione (%s)" % (refill_feedback if not refill_feedback.is_empty() else "attendi acqua")
+		var production_state := "trivella in produzione" if powered else "alimenta la trivella per produrre altra acqua"
+		return "BORRACCIA · riserva vuota · %s" % production_state
 	return "E · RIEMPI BORRACCIA · riserva %.1f L%s" % [water_storage_liters, (" · " + refill_feedback if not refill_feedback.is_empty() else "")]
 
 
@@ -346,9 +348,6 @@ func try_refill_selected_bottle(player: Node2D) -> bool:
 	var bottle: Dictionary = inventory.call("get_selected_item")
 	if str(bottle.get("id", "")) != "water_bottle":
 		return false
-	if not network_enabled or not powered:
-		refill_feedback = "servono corrente e collegamento"
-		return true
 	if water_storage_liters < 0.05:
 		refill_feedback = "riserva acqua insufficiente"
 		return true
@@ -534,7 +533,7 @@ func get_machine_specs() -> Dictionary:
 				"status": drill_connection if not network_enabled else ("OPERATIVA" if powered else drill_connection),
 				"status_color": Color("72eda0") if powered else Color("ff655d"),
 				"principle": "La testa di perforazione frantuma il regolite marziano ghiacciato; un sistema termico interno separa e fonde il ghiaccio, ottenendo acqua liquida.",
-			"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: 40 L/h", "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f L" % water_storage_liters, "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
+				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f L" % water_storage_liters, "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
 			}
 	return {"title": "MACCHINARIO", "category": "SISTEMA", "status": "SCONOSCIUTO", "status_color": Color.WHITE, "principle": "", "specs": []}
 

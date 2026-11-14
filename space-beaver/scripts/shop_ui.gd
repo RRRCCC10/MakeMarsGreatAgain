@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const SOLAR_TEXTURE := preload("res://assets/sprites/machines/solar-panel-spritesheet.png")
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const TRANSFORMER_SHEET := preload("res://assets/sprites/machines/transformer-spritesheet.png")
 const BATTERY_SHEET := preload("res://assets/sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://assets/sprites/machines/ice-drill-spritesheet.png")
@@ -17,6 +18,7 @@ const SHOP_SECTIONS := [
 	{"label": "TUTE", "categories": ["equipment"]},
 	{"label": "BASE & INFRASTRUTTURE", "categories": ["habitats", "energy", "life_support"]},
 	{"label": "RISORSE & RICERCA", "categories": ["extraction", "research"]},
+	{"label": "BIOINGEGNERIA", "categories": ["bioengineering"]},
 ]
 
 var overlay: ColorRect
@@ -32,6 +34,8 @@ var dome_lead_checkbox: Button
 var dome_hydrogen_checkbox: Button
 var dome_rover_pad_checkbox: Button
 var selected_dome_id := ""
+var seed_program_label: Label
+var seed_upgrade_buttons: Dictionary = {}
 
 
 func _ready() -> void:
@@ -41,11 +45,13 @@ func _ready() -> void:
 	Shop.message_changed.connect(_show_message)
 	Economy.balance_changed.connect(_on_balance_changed)
 	DeliveryManager.order_changed.connect(_refresh_order)
+	AchievementManager.achievement_claimed.connect(func(_achievement_id: String, _label: String) -> void: _refresh())
 	_refresh()
 
 
 func _build_ui() -> void:
 	var root := Control.new()
+	root.add_theme_font_override("font", UI_FONT)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
@@ -102,6 +108,7 @@ func _build_ui() -> void:
 	message_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(message_label)
 	var close_button := Button.new()
+	close_button.add_theme_font_override("font", UI_FONT)
 	close_button.text = "[ CHIUDI EMPORIO ]"
 	close_button.custom_minimum_size = Vector2(220, 34)
 	close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -131,6 +138,10 @@ func _add_category_group(parent: VBoxContainer, category: String) -> void:
 	var group := VBoxContainer.new()
 	group.add_theme_constant_override("separation", 7)
 	parent.add_child(group)
+	if category == "bioengineering":
+		group.add_child(_label("▸ PROGRAMMA SEMI GM", 14, Color("86d4e5")))
+		_add_seed_program_card(group)
+		return
 	group.add_child(_label("▸ %s" % Shop.get_category_label(category), 14, Color("86d4e5")))
 	var cards := HFlowContainer.new()
 	cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -140,12 +151,50 @@ func _add_category_group(parent: VBoxContainer, category: String) -> void:
 	var item_ids := Shop.get_items_for_category(category)
 	for item_id in item_ids:
 		_add_card(cards, item_id, _texture_for_item(item_id))
+
+
+func _add_seed_program_card(parent: VBoxContainer) -> void:
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(500, 218)
+	card.add_theme_stylebox_override("panel", _card_style())
+	parent.add_child(card)
+	var rows := VBoxContainer.new()
+	rows.alignment = BoxContainer.ALIGNMENT_CENTER
+	rows.add_theme_constant_override("separation", 8)
+	card.add_child(rows)
+	var title := _label("SEMI DI PATATE GENETICAMENTE MODIFICATI", 16, Color("a9ed8c"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rows.add_child(title)
+	seed_program_label = _label("", 12, Color("c7d5d7"))
+	seed_program_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	seed_program_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	rows.add_child(seed_program_label)
+	var buttons := HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 14)
+	rows.add_child(buttons)
+	for track in ["yield", "speed"]:
+		var upgrade := Button.new()
+		upgrade.add_theme_font_override("font", UI_FONT)
+		upgrade.custom_minimum_size = Vector2(205, 40)
+		upgrade.add_theme_stylebox_override("normal", _button_style(Color("315a42")))
+		upgrade.add_theme_stylebox_override("hover", _button_style(Color("4e8a61")))
+		upgrade.pressed.connect(_purchase_seed_upgrade.bind(track))
+		buttons.add_child(upgrade)
+		seed_upgrade_buttons[track] = upgrade
+	_refresh_seed_program()
+
+
+func _purchase_seed_upgrade(track: String) -> void:
+	Shop.purchase_seed_upgrade(track)
+	_refresh_seed_program()
 func _build_dome_config_view() -> VBoxContainer:
 	var config := VBoxContainer.new()
 	config.custom_minimum_size = Vector2(890, 330)
 	config.alignment = BoxContainer.ALIGNMENT_CENTER
 	config.add_theme_constant_override("separation", 4)
 	var back := Button.new()
+	back.add_theme_font_override("font", UI_FONT)
 	back.text = "← TORNA ALLE SEZIONI DELLO SHOP"
 	back.custom_minimum_size = Vector2(280, 30)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -178,6 +227,7 @@ func _build_dome_config_view() -> VBoxContainer:
 	dome_config_total.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	config.add_child(dome_config_total)
 	var confirm := Button.new()
+	confirm.add_theme_font_override("font", UI_FONT)
 	confirm.text = "[ CONFERMA CUPOLA E ORDINA ]"
 	confirm.custom_minimum_size = Vector2(280, 34)
 	confirm.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -191,6 +241,7 @@ func _build_dome_config_view() -> VBoxContainer:
 
 func _make_dome_option(description: String) -> Button:
 	var option := Button.new()
+	option.add_theme_font_override("font", UI_FONT)
 	option.toggle_mode = true
 	option.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	option.custom_minimum_size = Vector2(620, 36)
@@ -248,6 +299,7 @@ func _add_card(parent: HFlowContainer, item_id: String, texture: Texture2D) -> v
 	description.custom_minimum_size = Vector2(180, 64)
 	rows.add_child(description)
 	var buy := Button.new()
+	buy.add_theme_font_override("font", UI_FONT)
 	buy.text = "[ CONFIGURA ]" if item_id in ["dome_small", "dome_medium", "dome_large"] else "[ ORDINA ]"
 	buy.custom_minimum_size = Vector2(150, 32)
 	buy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -318,6 +370,7 @@ func _input(event: InputEvent) -> void:
 
 func _refresh() -> void:
 	overlay.visible = Shop.is_open
+	_refresh_seed_program()
 	if Shop.is_open:
 		message_label.text = "Seleziona i componenti: verranno raggruppati in un unico lancio."
 	_refresh_buttons()
@@ -333,6 +386,25 @@ func _refresh_buttons() -> void:
 		elif SuitSystem.is_suit(item_id):
 			disabled = disabled or SuitSystem.owns_suit(item_id) or DeliveryManager.count_uncollected(item_id) > 0
 		buy_buttons[item_id].disabled = disabled
+
+
+func _refresh_seed_program() -> void:
+	if seed_program_label == null:
+		return
+	var unlocked := Shop.are_seed_genetics_unlocked()
+	if not unlocked:
+		seed_program_label.text = "BLOCCATO · completa e riscatta PRIMO RACCOLTO e EREDITÀ OPERATIVA (missione Perseverance)."
+	else:
+		seed_program_label.text = "Gli upgrade valgono per i nuovi lotti. Le piante già seminate mantengono i loro geni; avvicinati con semi migliori per sostituirle."
+	for track_variant in seed_upgrade_buttons.keys():
+		var track := str(track_variant)
+		var button := seed_upgrade_buttons[track] as Button
+		var level := Shop.get_seed_upgrade_level(track)
+		var maxed := level >= Shop.MAX_SEED_UPGRADE_LEVEL
+		var title := "RESA" if track == "yield" else "VELOCITÀ"
+		var effect := "+20% raccolto" if track == "yield" else "+15% crescita"
+		button.text = "%s %d/%d\n%s%s" % [title, level, Shop.MAX_SEED_UPGRADE_LEVEL, effect, " · MASSIMO" if maxed else " · " + Economy.format_money(Shop.get_seed_upgrade_price(track))]
+		button.disabled = not unlocked or maxed or not Economy.can_afford(Shop.get_seed_upgrade_price(track))
 
 
 func _refresh_order() -> void:
@@ -399,6 +471,7 @@ func _atlas_frame(sheet: Texture2D, frame_size: Vector2i) -> Texture2D:
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var label := Label.new()
+	label.add_theme_font_override("font", UI_FONT)
 	label.text = text
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
