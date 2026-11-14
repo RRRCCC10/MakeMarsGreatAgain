@@ -27,6 +27,7 @@ var oxygen_flow_kg := 0.0
 var water_consumed_liters := 0.0
 var methane_produced_kg := 0.0
 var network_enabled := true
+var incident_faulted := false
 var sprite: Sprite2D
 var indicator: Polygon2D
 var body: StaticBody2D
@@ -83,12 +84,22 @@ func _ready() -> void:
 	if not is_preview:
 		_setup_indicator()
 		_setup_collision()
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("register_target", self, "machine", get_display_name())
+
+
+func _exit_tree() -> void:
+	if not is_preview:
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("unregister_target", self, "machine")
 
 
 func _process(delta: float) -> void:
 	if is_preview:
 		return
-	if not powered:
+	if incident_faulted or not powered:
 		simulation_elapsed = 0.0
 		hydrogen_flow_kg = 0.0
 		oxygen_flow_kg = 0.0
@@ -154,7 +165,7 @@ func _process_sabatier(hours: float) -> void:
 
 
 func set_powered(value: bool) -> void:
-	powered = value
+	powered = value and not incident_faulted
 	if indicator != null:
 		indicator.visible = powered and not is_preview
 	if not powered:
@@ -229,6 +240,8 @@ func get_display_name() -> String:
 
 
 func get_connection_label() -> String:
+	if incident_faulted:
+		return "GUASTO — avvicinati e ripara"
 	var connected := bool(PowerGrid.connection_ok.get(self, false))
 	if not network_enabled:
 		return "DISATTIVATO"
@@ -273,7 +286,7 @@ func get_machine_specs() -> Dictionary:
 		var hydrogen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.HYDROGEN)
 		var oxygen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.OXYGEN)
 		var has_output := hydrogen_connected or oxygen_connected
-		var status := "IN PRODUZIONE" if powered and water_connected and has_output else get_connection_label()
+		var status := "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("IN PRODUZIONE" if powered and water_connected and has_output else get_connection_label())
 		if powered and not water_connected:
 			status = "IN ATTESA DI ACQUA"
 		elif powered and water_connected and not has_output:
@@ -282,7 +295,7 @@ func get_machine_specs() -> Dictionary:
 			"title": "ELETTROLIZZATORE DELL'ACQUA",
 			"category": "PRODUZIONE DI PROPELLENTI",
 			"status": status,
-			"status_color": Color("72eda0") if powered and water_connected and has_output else Color("ffb45d"),
+			"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and water_connected and has_output else Color("ffb45d")),
 			"principle": "L'elettrolisi scinde l'acqua in H₂ e O₂ e li fornisce in continuo sulle rispettive linee, senza serbatoi interni.",
 			"specs": ["Consumo elettrico: %.0f kW" % ELECTROLYZER_DEMAND_KW, "Ingresso acqua: basso-sinistra (%s)" % ("collegato" if water_connected else "non collegato"), "Consumo nominale: %.0f L/h acqua" % WATER_L_PER_HOUR, "Produzione nominale: H₂ %.1f kg/h · O₂ %.1f kg/h" % [HYDROGEN_KG_PER_HOUR, OXYGEN_KG_PER_HOUR], "Funzionamento: flusso diretto, senza serbatoi", "Uscite indipendenti: H₂ %s · O₂ %s" % ["collegato" if hydrogen_connected else "scollegato", "collegato" if oxygen_connected else "scollegato"]],
 		}
@@ -291,11 +304,36 @@ func get_machine_specs() -> Dictionary:
 	return {
 		"title": "REATTORE SABATIER",
 		"category": "PRODUZIONE DI PROPELLENTI",
-		"status": "CARICAMENTO RAZZO" if powered and h2_connected and rocket != null else get_connection_label(),
-		"status_color": Color("72eda0") if powered and h2_connected else Color("ffb45d"),
+		"status": "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("CARICAMENTO RAZZO" if powered and h2_connected and rocket != null else get_connection_label()),
+		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and h2_connected else Color("ffb45d")),
 		"principle": "La reazione di Sabatier combina idrogeno e anidride carbonica per sintetizzare metano. Il metano viene trasferito direttamente al razzo, senza tubazioni d'uscita.",
 		"specs": ["Consumo elettrico: %.0f kW" % SABATIER_DEMAND_KW, "Ingresso H₂: lato sinistro (%s)" % ("collegato" if h2_connected else "non collegato"), "Produzione nominale: %.1f kg/h CH₄" % SABATIER_METHANE_KG_PER_HOUR, "Uscita CH₄: caricamento diretto del razzo", "Carburante razzo: %.1f / %.0f kg" % [rocket.methane_kg, rocket.get_methane_capacity_kg()] if rocket != null else "Razzo non disponibile", "Posizione vincolata: immediatamente a sinistra del razzo"],
 	}
+
+
+func set_incident_faulted(_target_id: String, value: bool) -> void:
+	if incident_faulted == value:
+		return
+	incident_faulted = value
+	if incident_faulted:
+		set_powered(false)
+	PowerGrid.request_rebuild()
+
+
+func is_incident_faulted(_target_id: String = "machine") -> bool:
+	return incident_faulted
+
+
+func is_incident_operational() -> bool:
+	return not incident_faulted
+
+
+func can_receive_incident(_target_id: String = "machine") -> bool:
+	return not is_preview and not incident_faulted
+
+
+func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
+	return global_position
 
 
 func contains_world_point(point: Vector2) -> bool:

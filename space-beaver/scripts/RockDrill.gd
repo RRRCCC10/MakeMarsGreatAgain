@@ -32,6 +32,7 @@ var is_preview := false
 var placement_rotation := 0
 var network_enabled := false
 var powered := false
+var incident_faulted := false
 var biome_source_id := 0
 var biome_label := "PIANURA DI ATTERRAGGIO"
 var extraction_elapsed := 0.0
@@ -77,9 +78,16 @@ func _ready() -> void:
 	_setup_collision()
 	_setup_status_light()
 	_build_storage_ui()
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("register_target", self, "machine", "TRIVELLA MINERARIA")
 
 
 func _exit_tree() -> void:
+	if not is_preview:
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("unregister_target", self, "machine")
 	if storage_layer != null and is_instance_valid(storage_layer):
 		storage_layer.queue_free()
 	if storage_root != null and storage_root.visible:
@@ -90,7 +98,7 @@ func _process(delta: float) -> void:
 	if is_preview:
 		return
 	_update_status_light()
-	if not powered:
+	if incident_faulted or not powered:
 		return
 	animation_elapsed += delta
 	if animation_elapsed >= 0.10:
@@ -301,7 +309,7 @@ func is_storage_open() -> bool:
 
 
 func set_powered(value: bool) -> void:
-	powered = value and network_enabled
+	powered = value and network_enabled and not incident_faulted
 	if not powered:
 		animation_frame = 0
 		animation_elapsed = 0.0
@@ -348,13 +356,15 @@ func get_display_name() -> String:
 
 
 func get_connection_label() -> String:
+	if incident_faulted:
+		return "GUASTO — avvicinati e ripara"
 	if not network_enabled:
 		return "DISCONNESSA"
 	return "COLLEGATO ALLA RETE" if bool(PowerGrid.connection_ok.get(self, false)) else "CAVO ELETTRICO NON COLLEGATO"
 
 
 func get_interaction_summary() -> String:
-	var state := "ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else "IN ATTESA DI POTENZA")
+	var state := "GUASTO" if incident_faulted else ("ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else "IN ATTESA DI POTENZA"))
 	return "%s · %s · %d/%d campioni" % [biome_label, state, get_stock_count(), STORAGE_CAPACITY]
 
 
@@ -371,11 +381,36 @@ func get_machine_specs() -> Dictionary:
 	return {
 		"title": "TRIVELLA MINERARIA",
 		"category": "PROSPEZIONE GEOLOGICA IN SITU",
-		"status": "ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else get_connection_label()),
-		"status_color": Color("72eda0") if powered and get_stock_count() < STORAGE_CAPACITY else Color("ffb45d"),
+		"status": "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else get_connection_label())),
+		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and get_stock_count() < STORAGE_CAPACITY else Color("ffb45d")),
 		"principle": "Una testa rotativa preleva carote dal regolite locale, le vaglia per composizione e conserva i campioni fisici. Il bioma di posa decide quali minerali può trovare.",
 		"specs": ["Bioma di posa: %s" % biome_label, "Assorbimento: %.0f kW" % POWER_DEMAND_KW, "Cadenza: 1 campione ogni %.0f s" % EXTRACTION_INTERVAL_SECONDS, "Riserva: %d / %d campioni" % [get_stock_count(), STORAGE_CAPACITY], "Campioni rari in riserva: %d" % rare_count, "Raro locale: 5%% · ghiaccio profondo primordiale: %.0f%%" % deep_ice_percent, "Totale estratto: %d" % total_samples_extracted, "E: apri riserva · V: rete"],
 	}
+
+
+func set_incident_faulted(_target_id: String, value: bool) -> void:
+	if incident_faulted == value:
+		return
+	incident_faulted = value
+	if incident_faulted:
+		set_powered(false)
+	PowerGrid.request_rebuild()
+
+
+func is_incident_faulted(_target_id: String = "machine") -> bool:
+	return incident_faulted
+
+
+func is_incident_operational() -> bool:
+	return not incident_faulted
+
+
+func can_receive_incident(_target_id: String = "machine") -> bool:
+	return not is_preview and not incident_faulted
+
+
+func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
+	return global_position
 
 
 func _build_storage_ui() -> void:

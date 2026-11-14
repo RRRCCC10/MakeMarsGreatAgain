@@ -33,6 +33,7 @@ enum PanelState { CLOSED, OPENING, OPEN, CLOSING }
 var is_preview := false
 var battery_energy_kwh := STARTING_ENERGY_KWH
 var panel_state := PanelState.CLOSED
+var incident_faulted := false
 var animation_elapsed := 0.0
 var facing_index := 0 # destra, sinistra, alto, basso
 var driver: Node2D
@@ -111,11 +112,17 @@ func _ready() -> void:
 	var registry := _service("BuildableRegistry")
 	if registry != null:
 		registry.call("register_buildable", self, "ROVER DI ESPLORAZIONE", "vehicle", pickup)
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("register_target", self, "vehicle", "ROVER DI ESPLORAZIONE")
 	_refresh_visual()
 
 
 func _exit_tree() -> void:
 	if not is_preview:
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("unregister_target", self, "vehicle")
 		var registry := _service("BuildableRegistry")
 		if registry != null:
 			registry.call("unregister_buildable", self)
@@ -125,7 +132,7 @@ func _physics_process(delta: float) -> void:
 	if is_preview:
 		return
 	var moving := false
-	if is_instance_valid(driver) and panel_state == PanelState.CLOSED and not _movement_blocked():
+	if is_instance_valid(driver) and not incident_faulted and panel_state == PanelState.CLOSED and not _movement_blocked():
 		var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		if battery_energy_kwh > 0.01:
 			velocity = direction * ROVER_SPEED
@@ -195,7 +202,7 @@ func _input(event: InputEvent) -> void:
 
 
 func can_board(player: Node2D) -> bool:
-	return not is_preview and not is_instance_valid(driver) and panel_state == PanelState.CLOSED and battery_energy_kwh > 0.01 and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
+	return not is_preview and not incident_faulted and not is_instance_valid(driver) and panel_state == PanelState.CLOSED and battery_energy_kwh > 0.01 and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
 
 
 func board(player: Node2D) -> bool:
@@ -233,7 +240,7 @@ func exit_rover() -> bool:
 
 
 func toggle_panels() -> bool:
-	if not _can_toggle_panels():
+	if incident_faulted or not _can_toggle_panels():
 		return false
 	if panel_state == PanelState.CLOSED:
 		panel_state = PanelState.OPENING
@@ -296,12 +303,12 @@ func present_docked_at_base() -> void:
 func get_machine_specs() -> Dictionary:
 	var solar_factor := _solar_factor()
 	var panels_label := "APERTI · ricarica solare %.1f kW" % (SOLAR_CHARGE_KW * solar_factor) if is_panels_open() else "CHIUSI"
-	var status := "IN MARCIA" if is_instance_valid(driver) and panel_state == PanelState.CLOSED else ("RICARICA SOLARE" if is_panels_open() and solar_factor > 0.0 else "PRONTO")
+	var status := "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("IN MARCIA" if is_instance_valid(driver) and panel_state == PanelState.CLOSED else ("RICARICA SOLARE" if is_panels_open() and solar_factor > 0.0 else "PRONTO"))
 	return {
 		"title": "ROVER DI ESPLORAZIONE EVA",
 		"category": "VEICOLO SCIENTIFICO E LOGISTICO",
 		"status": status,
-		"status_color": Color("72eda0") if battery_energy_kwh > 0.0 else Color("ff776d"),
+		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if battery_energy_kwh > 0.0 else Color("ff776d")),
 		"principle": "Un pacco batteria dedicato alimenta trazione e sistemi di bordo. I pannelli fotovoltaici dispiegabili riconvertono la luce marziana in energia durante il giorno, senza gravare sulla rete della base.",
 		"specs": [
 			"Batteria dedicata: %.1f / %.0f kWh · %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(get_battery_percent())],
@@ -311,6 +318,33 @@ func get_machine_specs() -> Dictionary:
 			"Autonomia: indipendente dalla rete elettrica",
 		],
 	}
+
+
+func set_incident_faulted(_target_id: String, value: bool) -> void:
+	if incident_faulted == value:
+		return
+	incident_faulted = value
+	if incident_faulted:
+		velocity = Vector2.ZERO
+		if is_instance_valid(driver):
+			exit_rover()
+	_update_interaction_label()
+
+
+func is_incident_faulted(_target_id: String = "vehicle") -> bool:
+	return incident_faulted
+
+
+func is_incident_operational() -> bool:
+	return not incident_faulted
+
+
+func can_receive_incident(_target_id: String = "vehicle") -> bool:
+	return not is_preview and not incident_faulted and not is_instance_valid(driver) and panel_state == PanelState.CLOSED
+
+
+func get_incident_repair_position(_target_id: String = "vehicle") -> Vector2:
+	return global_position
 
 
 func _setup_sprite() -> void:
@@ -468,7 +502,7 @@ func _is_player_nearby() -> bool:
 
 
 func _charge_from_solar(delta: float) -> void:
-	if battery_energy_kwh >= BATTERY_CAPACITY_KWH:
+	if incident_faulted or battery_energy_kwh >= BATTERY_CAPACITY_KWH:
 		return
 	var charge_rate_kw := _get_base_pad_charge_rate_kw()
 	if charge_rate_kw <= 0.0 and is_panels_open():
@@ -542,6 +576,9 @@ func _update_interaction_label() -> void:
 	var nearby := player != null and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
 	interaction_label.visible = nearby
 	if not nearby:
+		return
+	if incident_faulted:
+		interaction_label.text = "ROVER IN GUASTO\nE · RIPARA SISTEMI DI BORDO"
 		return
 	if panel_state == PanelState.CLOSED:
 		interaction_label.text = "E / CLICK · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())

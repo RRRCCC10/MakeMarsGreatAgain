@@ -822,6 +822,10 @@ func _connected_panel_count() -> int:
 func _device_network_enabled(device: Node) -> bool:
 	if not is_instance_valid(device):
 		return false
+	# Un guasto interrompe il nodo fisico senza alterarne il collegamento scelto
+	# dal giocatore. Dopo la riparazione la rete viene ricostruita e riparte.
+	if device.has_method("is_incident_operational") and not bool(device.call("is_incident_operational")):
+		return false
 	if device.has_method("is_network_enabled"):
 		return bool(device.call("is_network_enabled"))
 	# Mantiene compatibili eventuali consumatori di servizio non interattivi.

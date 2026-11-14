@@ -47,6 +47,7 @@ var _water_consumed_liters := 0.0
 var _oxygen_produced_units := 0.0
 var _visual_asset_revision := 0
 var _power_refresh_queued := false
+var _system_incident_faulted := false
 const VISUAL_ASSET_REVISION := 2
 
 
@@ -73,6 +74,9 @@ func _ready() -> void:
 	if registry != null:
 		registry.call("unregister_buildable", self, false)
 		registry.call("register_buildable", self, "SERRA DI PATATE", "building", Callable(self, "_destroy"))
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("register_target", self, "greenhouse_system", "SISTEMA SERRA")
 
 
 func get_radius() -> float:
@@ -111,7 +115,7 @@ func can_place_greenhouse_at(world_position: Vector2) -> bool:
 
 func get_thermal_shelter_bonus_c() -> float:
 	# È una serra, non un modulo abitativo: ripara appena dal freddo.
-	return 5.0 if powered else 3.0
+	return 5.0 if powered and not _system_incident_faulted else 3.0
 
 
 func get_power_demand_kw() -> float:
@@ -187,6 +191,8 @@ func _ensure_water_network_category() -> bool:
 
 
 func get_interaction_summary() -> String:
+	if _system_incident_faulted:
+		return "GUASTO SISTEMA SERRA · avvicinati e ripara"
 	var water_label := "acqua disponibile" if has_water_source() else ("tubo agganciato" if is_water_connected() else "tubo acqua assente")
 	var power_label := "rete attiva" if powered else ("rete disattivata" if not network_enabled else "non alimentata")
 	return "%s · %s" % [water_label, power_label]
@@ -197,6 +203,8 @@ func get_display_name() -> String:
 
 
 func get_connection_label() -> String:
+	if _system_incident_faulted:
+		return "GUASTO — avvicinati e ripara"
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	var cable_connected := power_grid != null and bool(power_grid.get("connection_ok").get(self, false))
 	if not network_enabled:
@@ -216,8 +224,8 @@ func set_network_enabled(value: bool) -> void:
 
 
 func set_powered(value: bool) -> void:
-	var changed := powered != value
-	powered = value
+	var changed := powered != (value and not _system_incident_faulted)
+	powered = value and not _system_incident_faulted
 	if changed:
 		_queue_power_consumer_refresh()
 
@@ -526,8 +534,9 @@ func _process(delta: float) -> void:
 	_update_greenhouse_oxygen(delta)
 	if has_water_source():
 		_record_achievement("greenhouse")
-	_update_crop_growth(delta)
-	_try_harvest_nearby()
+	if not _system_incident_faulted:
+		_update_crop_growth(delta)
+		_try_harvest_nearby()
 	_update_port_markers()
 	_update_prompt()
 
@@ -553,7 +562,7 @@ func _get_plant_oxygen_per_second() -> float:
 
 
 func _update_crop_growth(delta: float) -> void:
-	if not _planted or _ready_to_harvest or delta <= 0.0 or not _ensure_water_network_category():
+	if _system_incident_faulted or not _planted or _ready_to_harvest or delta <= 0.0 or not _ensure_water_network_category():
 		return
 	var clock := get_node_or_null("/root/WorldClock")
 	if clock == null:
@@ -644,7 +653,7 @@ func _get_crop_achievement_multiplier() -> float:
 
 
 func get_machine_specs() -> Dictionary:
-	var power_state := "ATTIVA (+60% crescita)" if powered else ("abilitata, in attesa rete" if network_enabled else "disattivata manualmente")
+	var power_state := "GUASTO — RIPARAZIONE RICHIESTA" if _system_incident_faulted else ("ATTIVA (+60% crescita)" if powered else ("abilitata, in attesa rete" if network_enabled else "disattivata manualmente"))
 	var specs := [
 		"Tubo acqua sinistra: %s" % ("collegato" if is_water_connected() else "non collegato"),
 		"Sorgente acqua: %s" % ("disponibile" if has_water_source() else "assente o senza rete"),
@@ -657,8 +666,44 @@ func get_machine_specs() -> Dictionary:
 	return {
 		"title": "SERRA DI PATATE",
 		"category": "AGRICOLTURA PRESSURIZZATA",
-		"status": "RACCOLTA PRONTA" if _ready_to_harvest else ("IN CRESCITA" if _planted else "AIUOLE VUOTE"),
-		"status_color": Color("72eda0") if _ready_to_harvest else Color("8cd9ff"),
+		"status": "GUASTO — RIPARAZIONE RICHIESTA" if _system_incident_faulted else ("RACCOLTA PRONTA" if _ready_to_harvest else ("IN CRESCITA" if _planted else "AIUOLE VUOTE")),
+		"status_color": Color("ff6258") if _system_incident_faulted else (Color("72eda0") if _ready_to_harvest else Color("8cd9ff")),
 		"principle": "Due aiuole da otto piante coltivano un lotto sincronizzato di patate. La prima crescita richiede 5 minuti, le successive 3 minuti.",
 		"specs": specs,
 	}
+
+
+func set_incident_faulted(target_id: String, value: bool) -> void:
+	if target_id in ["outer_door", "inner_door"]:
+		super.set_incident_faulted(target_id, value)
+		return
+	if target_id != "greenhouse_system" or _system_incident_faulted == value:
+		return
+	_system_incident_faulted = value
+	if value:
+		set_powered(false)
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("request_rebuild")
+
+
+func is_incident_faulted(target_id: String) -> bool:
+	if target_id in ["outer_door", "inner_door"]:
+		return super.is_incident_faulted(target_id)
+	return _system_incident_faulted if target_id == "greenhouse_system" else false
+
+
+func is_incident_operational() -> bool:
+	return not _system_incident_faulted
+
+
+func can_receive_incident(target_id: String) -> bool:
+	if target_id in ["outer_door", "inner_door"]:
+		return super.can_receive_incident(target_id)
+	return not is_preview and target_id == "greenhouse_system" and not _system_incident_faulted
+
+
+func get_incident_repair_position(target_id: String) -> Vector2:
+	if target_id in ["outer_door", "inner_door"]:
+		return super.get_incident_repair_position(target_id)
+	return global_position

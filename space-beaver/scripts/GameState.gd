@@ -42,6 +42,7 @@ func restart_from_scratch() -> void:
 	BuildableRegistry.reset_for_new_mission()
 	AchievementManager.reset_for_new_mission()
 	FieldCamera.reset_for_new_mission()
+	IncidentManager.reset_for_new_mission()
 	get_tree().reload_current_scene()
 
 
@@ -93,4 +94,3 @@ func _get_death_data(reason: String) -> Dictionary:
 		"epilogue": "Su Marte anche una serra e' un sistema di supporto vitale.",
 		"color": Color("ffbf66"),
 	}
-

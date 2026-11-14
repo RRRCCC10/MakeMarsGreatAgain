@@ -84,6 +84,7 @@ var _sequence_progress := 0
 var _sequence_feedback := ""
 var _sequence_player: Node2D
 var _first_door_crossed := false
+var _faulted_doors := {"outer_door": false, "inner_door": false}
 var network_enabled := true
 var powered := false
 var oxygen_reserve := INITIAL_OXYGEN_UNITS
@@ -111,6 +112,10 @@ func _ready() -> void:
 		if registry != null:
 			registry.call("register_buildable", self, str(SIZES[dome_id]["label"]), "building", Callable(self, "_destroy"))
 		call_deferred("_register_connections")
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("register_target", self, "outer_door", "PORTA ESTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
+			incidents.call("register_target", self, "inner_door", "PORTA INTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
 	_refresh_rover_pad()
 	_apply_door_frames()
 
@@ -467,6 +472,10 @@ func can_interact(player: Node2D) -> bool:
 func get_prompt_for_player(player: Node2D) -> String:
 	if is_preview or player == null or not is_instance_valid(player):
 		return ""
+	if is_incident_faulted("outer_door") and player.global_position.distance_to(get_outer_door_position()) <= 62.0:
+		return "PORTA ESTERNA IN GUASTO · E  ·  RIPARA"
+	if is_incident_faulted("inner_door") and player.global_position.distance_to(get_inner_door_position()) <= 58.0:
+		return "PORTA INTERNA IN GUASTO · E  ·  RIPARA"
 	if _player_is_at_rover_pad(player):
 		var rover := _get_existing_rover()
 		if rover == null:
@@ -957,6 +966,9 @@ func _reset_cycle() -> void:
 func _animate_door(door_name: String, open: bool) -> void:
 	if _airlock_busy:
 		return
+	if open and is_incident_faulted("%s_door" % door_name):
+		_update_prompt()
+		return
 	_airlock_busy = true
 	var direction_name: String = DIRECTION_NAMES[entrance_direction]
 	var sheet: Texture2D = DOOR_OPEN_SHEETS[direction_name] if open else DOOR_CLOSE_SHEETS[direction_name]
@@ -1029,6 +1041,32 @@ func _update_airlock_state() -> void:
 			_airlock_path = ""
 
 
+func set_incident_faulted(target_id: String, value: bool) -> void:
+	if not _faulted_doors.has(target_id) or bool(_faulted_doors[target_id]) == value:
+		return
+	_faulted_doors[target_id] = value
+	if value:
+		_reset_cycle()
+		_airlock_path = ""
+	_update_prompt()
+
+
+func is_incident_faulted(target_id: String) -> bool:
+	return bool(_faulted_doors.get(target_id, false))
+
+
+func can_receive_incident(target_id: String) -> bool:
+	if is_preview or not _faulted_doors.has(target_id) or is_incident_faulted(target_id):
+		return false
+	# Non interrompere mai una camera d'aria durante animazione, ciclo o
+	# attraversamento: un incidente blocca l'apertura della porta a riposo.
+	return not _airlock_busy and not _sequence_active and not _outer_door_open and not _inner_door_open and _airlock_path.is_empty()
+
+
+func get_incident_repair_position(target_id: String) -> Vector2:
+	return get_outer_door_position() if target_id == "outer_door" else get_inner_door_position()
+
+
 func _destroy() -> bool:
 	if _airlock_busy or _sequence_active:
 		return false
@@ -1047,6 +1085,9 @@ func _record_achievement(achievement_id: String) -> void:
 
 func _exit_tree() -> void:
 	if not is_preview and is_inside_tree():
+		var incidents := get_tree().root.get_node_or_null("IncidentManager")
+		if incidents != null:
+			incidents.call("unregister_target", self)
 		var pipe_manager := get_tree().root.get_node_or_null("PipeManager")
 		if pipe_manager != null:
 			pipe_manager.call("unregister_fluid_source", self)

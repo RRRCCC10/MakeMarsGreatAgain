@@ -29,6 +29,7 @@ var water_transported_liters := 0.0
 var water_storage_liters := 0.0
 var fluid_output_connected := false
 var network_enabled := false
+var incident_faulted := false
 var refill_feedback := ""
 var stock_items: Array[Dictionary] = []
 var sprite: Sprite2D
@@ -58,10 +59,23 @@ func _ready() -> void:
 	_setup_collision()
 	if device_id == "ice_drill" and not is_preview:
 		add_to_group("ice_drills")
+	if not is_preview:
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("register_target", self, "machine", _incident_display_name())
+
+
+func _exit_tree() -> void:
+	if not is_preview:
+		var incidents := get_node_or_null("/root/IncidentManager")
+		if incidents != null:
+			incidents.call("unregister_target", self, "machine")
 
 
 func _process(delta: float) -> void:
 	_update_night_light()
+	if incident_faulted:
+		return
 	if device_id == "ice_drill" and not is_preview:
 		var pipe_manager := get_node_or_null("/root/PipeManager")
 		fluid_output_connected = pipe_manager != null and bool(pipe_manager.call("is_source_connected", self))
@@ -89,8 +103,8 @@ func _process(delta: float) -> void:
 
 
 func set_power_state(new_powered: bool, new_flow_state: int = 0) -> void:
-	powered = new_powered
-	flow_state = new_flow_state
+	powered = new_powered and not incident_faulted
+	flow_state = new_flow_state if not incident_faulted else 0
 	if not powered and device_id in ["transformer", "ice_drill"]:
 		animation_frame = 0
 		_refresh_texture()
@@ -117,6 +131,8 @@ func is_network_enabled() -> bool:
 
 
 func get_connection_label() -> String:
+	if incident_faulted:
+		return "GUASTO — avvicinati e ripara"
 	if not network_enabled:
 		return "DISCONNESSO"
 	var power_grid := get_node_or_null("/root/PowerGrid")
@@ -140,6 +156,46 @@ func get_interaction_summary() -> String:
 			var refill_prompt := get_bottle_refill_prompt()
 			return summary + ("\n" + refill_prompt if not refill_prompt.is_empty() else "")
 	return "Dispositivo elettrico"
+
+
+func set_incident_faulted(_target_id: String, value: bool) -> void:
+	if incident_faulted == value:
+		return
+	incident_faulted = value
+	if incident_faulted:
+		set_power_state(false, 0)
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("request_rebuild")
+
+
+func is_incident_faulted(_target_id: String = "machine") -> bool:
+	return incident_faulted
+
+
+func is_incident_operational() -> bool:
+	return not incident_faulted
+
+
+func can_receive_incident(_target_id: String = "machine") -> bool:
+	return not is_preview and not incident_faulted
+
+
+func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
+	return global_position
+
+
+func _incident_display_name() -> String:
+	match device_id:
+		"solar_panel":
+			return "PANNELLO SOLARE"
+		"transformer":
+			return "TRASFORMATORE"
+		"battery":
+			return "BATTERIA"
+		"ice_drill":
+			return "TRIVELLA DI GHIACCIO"
+	return "DISPOSITIVO ELETTRICO"
 
 
 func get_bottle_refill_prompt() -> String:

@@ -1,6 +1,9 @@
 extends CharacterBody2D
 
-const SPEED := 190.0
+## Velocità in pixel del mondo al secondo. move_and_slide() applica il delta
+## del tick fisico: questo valore resta quindi identico a 30, 60 o 144 FPS.
+## 190 risultava circa tre volte troppo rapido nel ritmo della mappa 16×16.
+const SPEED := 64.0
 const PICKUP_DISTANCE := 70.0
 const FRAME_SIZE := Vector2i(32, 32)
 const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
@@ -223,6 +226,20 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Una riparazione e' modale: va gestita prima del controllo generale sulle
+	# GUI, altrimenti UIState bloccherebbe proprio la sequenza WASD necessaria.
+	if event is InputEventKey and event.pressed and not event.echo:
+		var incident_manager := get_node_or_null("/root/IncidentManager")
+		if incident_manager != null:
+			var repair_key := _get_control_key(event)
+			if event.keycode == KEY_ESCAPE:
+				repair_key = KEY_ESCAPE
+			if bool(incident_manager.call("handle_repair_key", repair_key)):
+				get_viewport().set_input_as_handled()
+				return
+			if repair_key == KEY_E and not _ui_blocks_world_actions() and bool(incident_manager.call("begin_nearby_repair", self)):
+				get_viewport().set_input_as_handled()
+				return
 	if _ui_is_minimap_active():
 		if event is InputEventMouseButton and event.pressed:
 			var active_map_ui := get_tree().get_first_node_in_group("world_map_ui")

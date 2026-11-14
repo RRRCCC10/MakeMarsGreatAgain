@@ -152,7 +152,9 @@ func _run() -> void:
 	_expect(dome.is_door_open("outer"), "L'animazione deve lasciare aperta la porta esterna")
 	_expect(bool(dome.get_node("DomeAndCorridorCollision/OuterGate").disabled), "La hitbox del varco esterno deve sparire quando la porta e' aperta")
 	Input.action_press("move_up")
-	for _frame in 14:
+	# La durata e' espressa in distanza, non nella precedente velocita' fissa
+	# del giocatore: attraversiamo il varco anche con il passo calibrato a 64 px/s.
+	for _frame in 48:
 		await physics_frame
 	Input.action_release("move_up")
 	await process_frame
