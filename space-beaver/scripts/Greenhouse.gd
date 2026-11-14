@@ -192,6 +192,10 @@ func get_interaction_summary() -> String:
 	return "%s · %s" % [water_label, power_label]
 
 
+func get_display_name() -> String:
+	return "SERRA DI PATATE"
+
+
 func get_connection_label() -> String:
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	var cable_connected := power_grid != null and bool(power_grid.get("connection_ok").get(self, false))

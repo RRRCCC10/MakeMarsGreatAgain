@@ -15,6 +15,7 @@ const ACHIEVEMENTS := &"achievements"
 const MINIMAP := &"minimap"
 const FIELD_CAMERA_ARCHIVE := &"field_camera_archive"
 const WORLD_PANEL := &"world_panel"
+const POWER_NETWORK := &"power_network"
 
 var active_modal: StringName = &""
 

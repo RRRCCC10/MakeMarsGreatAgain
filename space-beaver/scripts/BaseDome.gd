@@ -344,6 +344,21 @@ func is_network_enabled() -> bool:
 	return network_enabled
 
 
+func set_network_enabled(value: bool) -> void:
+	if is_preview or network_enabled == value:
+		return
+	network_enabled = value
+	if not network_enabled:
+		set_powered(false)
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("request_rebuild")
+
+
+func get_display_name() -> String:
+	return str(SIZES.get(dome_id, SIZES["dome_small"]).get("label", "Cupola abitativa")).to_upper()
+
+
 func set_powered(value: bool) -> void:
 	powered = value
 

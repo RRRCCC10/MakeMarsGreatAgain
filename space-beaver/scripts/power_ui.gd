@@ -1,99 +1,413 @@
 extends CanvasLayer
 
-var status_label: Label
-var time_label: Label
-var production_label: Label
-var solar_label: Label
-var demand_label: Label
-var battery_label: Label
-var autonomy_label: Label
+## Centro di distribuzione elettrica.
+##
+## Sostituisce il vecchio HUD permanente con una sola pagina operativa: qui si
+## leggono i flussi e si abilita/disabilita ogni elemento della rete. Il mondo
+## resta bloccato dalla UIState mentre la pagina è aperta.
+
+const PAGE_MODAL_ID := &"power_network"
+const REFRESH_INTERVAL := 0.20
+
+var _root: Control
+var _network_status: Label
+var _network_note: Label
+var _metrics: Dictionary = {}
+var _device_rows: VBoxContainer
+var _device_count: Label
+var _notice: Label
+var _refresh_elapsed := 0.0
 
 
 func _ready() -> void:
+	layer = 82
 	_build_ui()
-	PowerGrid.stats_changed.connect(_refresh)
-	_refresh(PowerGrid.get_stats())
+	var power_grid := _power_grid()
+	if power_grid != null and power_grid.has_signal("stats_changed"):
+		power_grid.connect("stats_changed", _on_stats_changed)
+	_refresh()
+
+
+func _process(delta: float) -> void:
+	if _root == null or not _root.visible:
+		return
+	_refresh_elapsed += delta
+	if _refresh_elapsed >= REFRESH_INTERVAL:
+		_refresh_elapsed = 0.0
+		_refresh()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if event.keycode == KEY_L:
+		toggle()
+		get_viewport().set_input_as_handled()
+	elif _root.visible and event.keycode == KEY_ESCAPE:
+		close()
+		get_viewport().set_input_as_handled()
+
+
+func toggle() -> bool:
+	if _root.visible:
+		close()
+		return false
+	return open()
+
+
+func open() -> bool:
+	if _root.visible:
+		return true
+	if not _try_open_modal():
+		return false
+	_notice.text = ""
+	_root.visible = true
+	_refresh_elapsed = REFRESH_INTERVAL
+	_refresh()
+	return true
+
+
+func close() -> void:
+	if _root == null or not _root.visible:
+		_close_modal()
+		return
+	_root.visible = false
+	_close_modal()
 
 
 func _build_ui() -> void:
-	var root := Control.new()
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(root)
+	_root = Control.new()
+	_root.name = "PowerNetworkRoot"
+	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.visible = false
+	add_child(_root)
+
+	var shade := ColorRect.new()
+	shade.color = Color("03080dee")
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(shade)
+
 	var panel := PanelContainer.new()
-	panel.anchor_left = 1.0
-	panel.anchor_right = 1.0
-	panel.offset_left = -250.0
-	panel.offset_top = 114.0
-	panel.offset_right = -16.0
-	panel.offset_bottom = 302.0
-	panel.add_theme_stylebox_override("panel", _panel_style())
-	root.add_child(panel)
-	var rows := VBoxContainer.new()
-	rows.add_theme_constant_override("separation", 3)
-	panel.add_child(rows)
-	var title := _label(">> RETE ELETTRICA", 14, Color("ffe38a"))
-	rows.add_child(title)
-	status_label = _label("", 15, Color.WHITE)
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	rows.add_child(status_label)
-	time_label = _label("", 11, Color("b9c8ca"))
-	production_label = _label("", 11, Color("6fe8a3"))
-	solar_label = _label("", 11, Color("ffe38a"))
-	demand_label = _label("", 11, Color("ffad66"))
-	battery_label = _label("", 11, Color("69a7ff"))
-	autonomy_label = _label("", 11, Color("b9c8ca"))
-	rows.add_child(time_label)
-	rows.add_child(production_label)
-	rows.add_child(solar_label)
-	rows.add_child(demand_label)
-	rows.add_child(battery_label)
-	rows.add_child(autonomy_label)
+	panel.name = "PowerNetworkPanel"
+	panel.anchor_left = 0.045
+	panel.anchor_top = 0.045
+	panel.anchor_right = 0.955
+	panel.anchor_bottom = 0.955
+	panel.add_theme_stylebox_override("panel", _box(Color("0d1b24"), Color("4fc0e8"), 3, 10))
+	_root.add_child(panel)
+
+	var margins := MarginContainer.new()
+	margins.add_theme_constant_override("margin_left", 18)
+	margins.add_theme_constant_override("margin_right", 18)
+	margins.add_theme_constant_override("margin_top", 14)
+	margins.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margins)
+
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 10)
+	margins.add_child(content)
+
+	var title_row := HBoxContainer.new()
+	content.add_child(title_row)
+	var title := _label("CENTRO DI DISTRIBUZIONE ELETTRICA", 22, Color("ffe07c"))
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_color_override("font_outline_color", Color("03070a"))
+	title.add_theme_constant_override("outline_size", 3)
+	title_row.add_child(title)
+	var close_hint := _label("L / ESC · CHIUDI", 12, Color("9edcf2"))
+	close_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	title_row.add_child(close_hint)
+
+	var subtitle := _label("Gestisci il collegamento di ogni elemento. Un dispositivo disconnesso non produce, non assorbe e non modifica la rete.", 12, Color("bacbd2"))
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(subtitle)
+
+	var overview := PanelContainer.new()
+	overview.add_theme_stylebox_override("panel", _box(Color("0a141b"), Color("315869"), 1, 6))
+	content.add_child(overview)
+	var overview_rows := VBoxContainer.new()
+	overview_rows.add_theme_constant_override("separation", 6)
+	overview.add_child(overview_rows)
+	_network_status = _label("", 17, Color("dceff2"))
+	overview_rows.add_child(_network_status)
+	_network_note = _label("", 11, Color("93b2bf"))
+	overview_rows.add_child(_network_note)
+	var metric_flow := HFlowContainer.new()
+	metric_flow.add_theme_constant_override("h_separation", 8)
+	metric_flow.add_theme_constant_override("v_separation", 8)
+	overview_rows.add_child(metric_flow)
+	_metrics["production"] = _make_metric(metric_flow, "PRODUZIONE", Color("71e6a4"))
+	_metrics["demand"] = _make_metric(metric_flow, "RICHIESTA", Color("ffb46b"))
+	_metrics["battery"] = _make_metric(metric_flow, "RISERVA", Color("79aaff"))
+	_metrics["solar"] = _make_metric(metric_flow, "SOLE", Color("ffe38b"))
+	_metrics["autonomy"] = _make_metric(metric_flow, "AUTONOMIA", Color("91c8db"))
+
+	var devices_header := HBoxContainer.new()
+	content.add_child(devices_header)
+	var devices_title := _label("ELEMENTI DELLA RETE", 14, Color("7ee5ff"))
+	devices_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	devices_header.add_child(devices_title)
+	_device_count = _label("", 11, Color("9eb6bf"))
+	_device_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	devices_header.add_child(_device_count)
+
+	var table_header := HBoxContainer.new()
+	table_header.add_theme_constant_override("separation", 10)
+	content.add_child(table_header)
+	for column in [["ELEMENTO", 0.47], ["STATO E FLUSSO", 0.30], ["COMANDO", 0.23]]:
+		var header := _label(str(column[0]), 10, Color("77929c"))
+		header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		header.size_flags_stretch_ratio = float(column[1])
+		table_header.add_child(header)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "PowerNetworkDeviceScroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(0, 265)
+	content.add_child(scroll)
+	_device_rows = VBoxContainer.new()
+	_device_rows.name = "PowerNetworkDeviceRows"
+	_device_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_device_rows.add_theme_constant_override("separation", 6)
+	scroll.add_child(_device_rows)
+
+	_notice = _label("", 11, Color("a7eecc"))
+	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice.custom_minimum_size = Vector2(0, 18)
+	content.add_child(_notice)
+	var footer := _label("VERDE = operativo · GIALLO = collegato ma in attesa · ROSSO = disconnesso · Ogni comando aggiorna subito il percorso dei cavi.", 10, Color("78959f"))
+	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	content.add_child(footer)
 
 
-func _refresh(data: Dictionary) -> void:
-	var status := str(data.get("status", "RETE INCOMPLETA"))
-	status_label.text = status
-	var status_color := Color("7fe39d")
-	if status == "BLACKOUT":
-		status_color = Color("ff655d")
-	elif status in ["RETE INCOMPLETA", "RETE DISCONNESSA"]:
-		status_color = Color("ffb45d")
-	status_label.add_theme_color_override("font_color", status_color)
-	var hour := float(data.get("hour", 0.0))
-	var whole_hour := floori(hour)
-	var minutes := floori((hour - whole_hour) * 60.0)
-	time_label.text = "%s  %02d:%02d" % [str(data.get("phase", "NOTTE")), whole_hour, minutes]
-	production_label.text = "PRODUZIONE  %d kW  (%d/%d pannelli)" % [roundi(data.get("production_kw", 0.0)), int(data.get("panels_connected", 0)), int(data.get("panels_total", 0))]
-	solar_label.text = "LUCE SOLARE %d%%" % roundi(float(data.get("solar_factor", 0.0)) * 100.0)
-	demand_label.text = "RICHIESTA   %d kW" % roundi(data.get("demand_kw", 0.0))
-	battery_label.text = "BATTERIE RETE %d/%d kWh  [%d/%d]" % [
-		roundi(data.get("connected_battery_kwh", 0.0)),
-		roundi(data.get("connected_battery_capacity_kwh", 0.0)),
-		int(data.get("batteries_connected", 0)),
-		int(data.get("batteries_total", 0)),
+func _make_metric(parent: Control, title: String, color: Color) -> Label:
+	var frame := PanelContainer.new()
+	frame.custom_minimum_size = Vector2(150, 48)
+	frame.add_theme_stylebox_override("panel", _box(Color("111f28"), color.darkened(0.36), 1, 5))
+	parent.add_child(frame)
+	var column := VBoxContainer.new()
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(column)
+	var title_label := _label(title, 9, color)
+	column.add_child(title_label)
+	var value := _label("—", 14, Color("e5eff2"))
+	column.add_child(value)
+	return value
+
+
+func _on_stats_changed(_data: Dictionary) -> void:
+	if _root != null and _root.visible:
+		_refresh()
+
+
+func _refresh() -> void:
+	if _network_status == null:
+		return
+	var power_grid := _power_grid()
+	if power_grid == null:
+		_network_status.text = "RETE NON DISPONIBILE"
+		_network_note.text = "Il controllore della rete elettrica non è stato inizializzato."
+		return
+	var stats: Dictionary = power_grid.call("get_stats")
+	var status := str(stats.get("status", "RETE INCOMPLETA"))
+	_network_status.text = "STATO RETE · " + status
+	_network_status.add_theme_color_override("font_color", _status_color(status))
+	var hour := float(stats.get("hour", 0.0))
+	_network_note.text = "%s · %02d:%02d · %d pannelli collegati su %d · %d batterie collegate su %d" % [
+		str(stats.get("phase", "OPERAZIONI")),
+		floori(hour),
+		floori((hour - floorf(hour)) * 60.0),
+		int(stats.get("panels_connected", 0)),
+		int(stats.get("panels_total", 0)),
+		int(stats.get("batteries_connected", 0)),
+		int(stats.get("batteries_total", 0)),
 	]
-	var autonomy := float(data.get("battery_autonomy_hours", -1.0))
-	autonomy_label.text = "AUTONOMIA   STABILE" if autonomy < 0.0 else "AUTONOMIA   %.1f h" % autonomy
+	_metrics["production"].text = "%d kW" % roundi(float(stats.get("production_kw", 0.0)))
+	_metrics["demand"].text = "%d kW" % roundi(float(stats.get("demand_kw", 0.0)))
+	_metrics["battery"].text = "%d / %d kWh" % [roundi(float(stats.get("connected_battery_kwh", 0.0))), roundi(float(stats.get("connected_battery_capacity_kwh", 0.0)))]
+	_metrics["solar"].text = "%d%% luce" % roundi(float(stats.get("solar_factor", 0.0)) * 100.0)
+	var autonomy := float(stats.get("battery_autonomy_hours", -1.0))
+	_metrics["autonomy"].text = "STABILE" if autonomy < 0.0 else "%.1f h" % autonomy
+	_rebuild_device_rows(Array(power_grid.call("get_network_devices")))
 
 
-func _label(text: String, size: int, color: Color) -> Label:
+func _rebuild_device_rows(devices: Array) -> void:
+	for child in _device_rows.get_children():
+		child.queue_free()
+	_device_count.text = "%d dispositivi rilevati" % devices.size()
+	if devices.is_empty():
+		var empty := _label("Nessun elemento elettrico costruito. Acquista e posiziona un pannello, un trasformatore o un dispositivo da alimentare.", 13, Color("9db5bd"))
+		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		empty.custom_minimum_size = Vector2(0, 72)
+		_device_rows.add_child(empty)
+		return
+	var previous_role := ""
+	for entry_variant in devices:
+		var entry: Dictionary = entry_variant
+		var role := str(entry.get("role", "ELEMENTO"))
+		if role != previous_role:
+			previous_role = role
+			var section := _label("// " + role + " //", 10, _role_color(role))
+			section.add_theme_constant_override("outline_size", 2)
+			section.add_theme_color_override("font_outline_color", Color("02070a"))
+			_device_rows.add_child(section)
+		_device_rows.add_child(_make_device_row(entry))
+
+
+func _make_device_row(entry: Dictionary) -> Control:
+	var enabled := bool(entry.get("enabled", false))
+	var connected := bool(entry.get("connected", false))
+	var role := str(entry.get("role", "ELEMENTO"))
+	var row := PanelContainer.new()
+	row.custom_minimum_size = Vector2(0, 64)
+	var border := _status_color(str(entry.get("status", "")))
+	row.add_theme_stylebox_override("panel", _box(Color("111f28"), border.darkened(0.28), 1, 5))
+	var content := HBoxContainer.new()
+	content.add_theme_constant_override("separation", 10)
+	row.add_child(content)
+
+	var identity := VBoxContainer.new()
+	identity.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	identity.size_flags_stretch_ratio = 0.47
+	identity.add_theme_constant_override("separation", 2)
+	content.add_child(identity)
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 6)
+	identity.add_child(name_row)
+	var role_badge := _label(role, 9, _role_color(role))
+	role_badge.add_theme_color_override("font_outline_color", Color("03080d"))
+	role_badge.add_theme_constant_override("outline_size", 2)
+	name_row.add_child(role_badge)
+	var name := _label(str(entry.get("name", "ELEMENTO")), 13, Color("eaf3f4"))
+	name.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_row.add_child(name)
+	var detail := _label(str(entry.get("detail", "")), 10, Color("91aab3"))
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	identity.add_child(detail)
+
+	var flow := VBoxContainer.new()
+	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	flow.size_flags_stretch_ratio = 0.30
+	flow.add_theme_constant_override("separation", 2)
+	content.add_child(flow)
+	var state_text := str(entry.get("status", ""))
+	var state := _label(state_text, 11, _status_color(state_text))
+	state.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	flow.add_child(state)
+	var power_label := _label(_power_text(role, float(entry.get("power_kw", 0.0)), enabled, connected), 10, Color("c3d4d9"))
+	flow.add_child(power_label)
+
+	var controls := VBoxContainer.new()
+	controls.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	controls.size_flags_stretch_ratio = 0.23
+	controls.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_child(controls)
+	var button := Button.new()
+	button.custom_minimum_size = Vector2(134, 34)
+	button.text = "[ SCOLLEGA ]" if enabled else "[ COLLEGA ]"
+	button.tooltip_text = "Scollega questo elemento dalla rete" if enabled else "Abilita questo elemento: il cavo dovrà comunque raggiungerlo"
+	button.disabled = not bool(entry.get("can_toggle", false))
+	button.add_theme_font_size_override("font_size", 11)
+	button.add_theme_stylebox_override("normal", _button_style(Color("a9444f") if enabled else Color("39785f")))
+	button.add_theme_stylebox_override("hover", _button_style(Color("d95a66") if enabled else Color("55ad83")))
+	button.pressed.connect(_toggle_device.bind(entry.get("node") as Node, not enabled))
+	controls.add_child(button)
+	return row
+
+
+func _toggle_device(device: Node, should_enable: bool) -> void:
+	var power_grid := _power_grid()
+	if power_grid == null or not is_instance_valid(device):
+		return
+	if bool(power_grid.call("set_device_network_enabled", device, should_enable)):
+		_notice.text = ("COLLEGATO · " if should_enable else "SCOLLEGATO · ") + _device_name(device)
+	else:
+		_notice.text = "QUESTO ELEMENTO NON SUPPORTA IL CONTROLLO MANUALE"
+	_refresh_elapsed = REFRESH_INTERVAL
+	_refresh()
+
+
+func _power_text(role: String, value: float, enabled: bool, connected: bool) -> String:
+	if not enabled:
+		return "nessun flusso · disattivato"
+	if not connected:
+		return "nessun flusso · cavo assente"
+	match role:
+		"GENERAZIONE":
+			return "%.0f kW disponibili" % value
+		"ACCUMULO":
+			return "%.0f kWh immagazzinati" % value
+		"CONSUMO":
+			return "%.0f kW richiesti" % value
+	return "ponte di rete"
+
+
+func _device_name(device: Node) -> String:
+	if device != null and is_instance_valid(device) and device.has_method("get_display_name"):
+		return str(device.call("get_display_name")).to_upper()
+	return str(device.name).to_upper() if device != null and is_instance_valid(device) else "ELEMENTO"
+
+
+func _power_grid() -> Node:
+	return get_node_or_null("/root/PowerGrid")
+
+
+func _try_open_modal() -> bool:
+	var ui_state := get_node_or_null("/root/UIState")
+	return ui_state == null or bool(ui_state.call("try_open_modal", PAGE_MODAL_ID))
+
+
+func _close_modal() -> void:
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", PAGE_MODAL_ID)
+
+
+func _status_color(status: String) -> Color:
+	if status in ["OPERATIVO", "RETE ATTIVA", "IN CARICA", "RETE DIRETTA", "BATTERIA"]:
+		return Color("78e9aa")
+	if status in ["COLLEGATO · IN ATTESA", "IN ATTESA DI LUCE", "RETE INCOMPLETA", "CAVO NON COLLEGATO"]:
+		return Color("ffd278")
+	return Color("f16d70")
+
+
+func _role_color(role: String) -> Color:
+	match role:
+		"GENERAZIONE": return Color("78e9aa")
+		"CONVERSIONE": return Color("7ed8f4")
+		"ACCUMULO": return Color("82aaff")
+		"CONSUMO": return Color("ffb56f")
+	return Color("c3d4d9")
+
+
+func _label(text: String, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_outline_color", Color("05090d"))
+	label.add_theme_color_override("font_outline_color", Color("03080c"))
 	label.add_theme_constant_override("outline_size", 2)
 	return label
 
 
-func _panel_style() -> StyleBoxFlat:
+func _box(fill: Color, border: Color, border_width: int, radius: int) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("101820")
-	style.border_color = Color("dfbd52")
-	style.set_border_width_all(3)
-	style.content_margin_left = 10
-	style.content_margin_right = 10
-	style.content_margin_top = 8
-	style.content_margin_bottom = 8
+	style.bg_color = fill
+	style.border_color = border
+	style.set_border_width_all(border_width)
+	style.set_corner_radius_all(radius)
+	style.content_margin_left = 9.0
+	style.content_margin_right = 9.0
+	style.content_margin_top = 7.0
+	style.content_margin_bottom = 7.0
+	return style
+
+
+func _button_style(color: Color) -> StyleBoxFlat:
+	var style := _box(color.darkened(0.52), color, 1, 4)
+	style.content_margin_top = 4.0
+	style.content_margin_bottom = 4.0
 	return style

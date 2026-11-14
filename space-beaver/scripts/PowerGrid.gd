@@ -355,6 +355,78 @@ func get_stats() -> Dictionary:
 	}
 
 
+func get_network_devices() -> Array[Dictionary]:
+	## Modello unico per la pagina di distribuzione: ogni sorgente, accumulo e
+	## carico resta selezionabile singolarmente, senza dover cercare lo sprite
+	## sulla mappa. Il nodo reale è mantenuto nel record per il pulsante manuale.
+	_cleanup_invalid()
+	var result: Array[Dictionary] = []
+	var seen: Dictionary = {}
+	for panel in panels:
+		_append_network_device(result, seen, panel, "GENERAZIONE", PANEL_OUTPUT_KW * WorldClock.get_solar_factor(), "produzione disponibile")
+	if is_instance_valid(transformer):
+		_append_network_device(result, seen, transformer, "CONVERSIONE", 0.0, "ponte tra le sezioni della rete")
+	for battery in batteries:
+		var stored := battery.get_battery_energy_kwh()
+		_append_network_device(result, seen, battery, "ACCUMULO", stored, "%.0f / %.0f kWh" % [stored, BATTERY_CAPACITY_KWH])
+	for consumer in consumers:
+		var node := consumer.get("node") as Node
+		var demand := float(consumer.get("demand_kw", 0.0))
+		if is_instance_valid(node) and node.has_method("get_power_demand_kw"):
+			demand = float(node.call("get_power_demand_kw"))
+		_append_network_device(result, seen, node, "CONSUMO", demand, "richiesta nominale")
+	return result
+
+
+func set_device_network_enabled(device: Node, enabled: bool) -> bool:
+	if not is_instance_valid(device) or not device.has_method("set_network_enabled"):
+		return false
+	device.call("set_network_enabled", enabled)
+	# Alcuni edifici aggiornano la propria registrazione in differita; il rebuild
+	# immediato rende già visibile il nuovo collegamento nella pagina.
+	rebuild_network()
+	stats_changed.emit(get_stats())
+	return true
+
+
+func _append_network_device(result: Array[Dictionary], seen: Dictionary, device: Node, role: String, power_value_kw: float, detail: String) -> void:
+	if not is_instance_valid(device):
+		return
+	var instance_key := device.get_instance_id()
+	if seen.has(instance_key):
+		return
+	seen[instance_key] = true
+	var enabled := _device_network_enabled(device)
+	var connected := bool(connection_ok.get(device, false))
+	var powered := false
+	if device.get("powered") != null:
+		powered = bool(device.get("powered"))
+	var display_name := str(device.name).to_upper()
+	if device.has_method("get_display_name"):
+		display_name = str(device.call("get_display_name")).to_upper()
+	var status := "DISCONNESSO"
+	if enabled and not connected:
+		status = "CAVO NON COLLEGATO"
+	elif enabled and role == "GENERAZIONE" and power_value_kw <= 0.01:
+		status = "IN ATTESA DI LUCE"
+	elif enabled and powered:
+		status = "OPERATIVO"
+	elif enabled and connected:
+		status = "COLLEGATO · IN ATTESA"
+	result.append({
+		"node": device,
+		"name": display_name,
+		"role": role,
+		"enabled": enabled,
+		"connected": connected,
+		"powered": powered,
+		"status": status,
+		"power_kw": maxf(0.0, power_value_kw),
+		"detail": detail,
+		"can_toggle": device.has_method("set_network_enabled") and device.has_method("is_network_enabled"),
+	})
+
+
 func _update_energy(delta: float) -> void:
 	var connected_batteries := _connected_batteries()
 	var chain_ready := has_transformer() and bool(connection_ok.get(transformer, false))
