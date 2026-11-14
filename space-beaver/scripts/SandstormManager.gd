@@ -18,6 +18,32 @@ const MAX_STORM_SECONDS := 165.0
 const SAND_STEP_SECONDS := 24.0
 const CLEAN_DISTANCE := 94.0
 const CLEAN_MODAL := &"sand_cleaning"
+const OUTDOOR_DEBUFF_PROFILES := [
+	{
+		"label": "RAFFICHE TAGLIENTI",
+		"movement_multiplier": 0.86,
+		"oxygen_multiplier": 1.55,
+		"hunger_multiplier": 1.15,
+		"thirst_multiplier": 1.45,
+		"wind_chill_c": -8.0,
+	},
+	{
+		"label": "NUVOLA DI POLVERE",
+		"movement_multiplier": 0.78,
+		"oxygen_multiplier": 1.90,
+		"hunger_multiplier": 1.28,
+		"thirst_multiplier": 1.72,
+		"wind_chill_c": -14.0,
+	},
+	{
+		"label": "WHITEOUT MARZIANO",
+		"movement_multiplier": 0.68,
+		"oxygen_multiplier": 2.25,
+		"hunger_multiplier": 1.42,
+		"thirst_multiplier": 2.05,
+		"wind_chill_c": -20.0,
+	},
+]
 
 var state := State.CALM
 var _elapsed_seconds := 0.0
@@ -40,10 +66,12 @@ var _clean_elapsed := 0.0
 var _clean_duration := 0.0
 var _notice_text := ""
 var _notice_until_seconds := 0.0
+var _outdoor_debuff_profile: Dictionary = {}
 
 
 func _ready() -> void:
 	_rng.randomize()
+	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[0]).duplicate(true)
 	_schedule_calm_period()
 	call_deferred("_ensure_layers")
 
@@ -98,6 +126,54 @@ func get_incident_rate_multiplier() -> float:
 
 func is_storm_active() -> bool:
 	return state == State.ACTIVE
+
+
+func is_player_exposed_to_storm(player: Node2D) -> bool:
+	if state != State.ACTIVE or player == null or not is_instance_valid(player):
+		return false
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if is_instance_valid(dome) and dome.has_method("contains_world_point") and bool(dome.call("contains_world_point", player.global_position)):
+			return false
+	return true
+
+
+func get_outdoor_movement_multiplier(player: Node2D) -> float:
+	return _outdoor_multiplier("movement_multiplier", player)
+
+
+func get_outdoor_oxygen_multiplier(player: Node2D) -> float:
+	return _outdoor_multiplier("oxygen_multiplier", player)
+
+
+func get_outdoor_hunger_multiplier(player: Node2D) -> float:
+	return _outdoor_multiplier("hunger_multiplier", player)
+
+
+func get_outdoor_thirst_multiplier(player: Node2D) -> float:
+	return _outdoor_multiplier("thirst_multiplier", player)
+
+
+func get_outdoor_wind_chill_c(player: Node2D) -> float:
+	return float(_outdoor_debuff_profile.get("wind_chill_c", 0.0)) if is_player_exposed_to_storm(player) else 0.0
+
+
+func get_outdoor_debuff_label(player: Node2D) -> String:
+	return str(_outdoor_debuff_profile.get("label", "TEMPESTA")) if is_player_exposed_to_storm(player) else "RIPARATO"
+
+
+func get_active_outdoor_effects(player: Node2D) -> Dictionary:
+	return {
+		"active": is_player_exposed_to_storm(player),
+		"movement_multiplier": get_outdoor_movement_multiplier(player),
+		"oxygen_multiplier": get_outdoor_oxygen_multiplier(player),
+		"hunger_multiplier": get_outdoor_hunger_multiplier(player),
+		"thirst_multiplier": get_outdoor_thirst_multiplier(player),
+		"wind_chill_c": get_outdoor_wind_chill_c(player),
+	}
+
+
+func _outdoor_multiplier(key: String, player: Node2D) -> float:
+	return float(_outdoor_debuff_profile.get(key, 1.0)) if is_player_exposed_to_storm(player) else 1.0
 
 
 func get_state_label() -> String:
@@ -220,6 +296,7 @@ func reset_for_new_mission() -> void:
 	_finish_cleaning(false)
 	state = State.CALM
 	_sand_step_elapsed = 0.0
+	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[0]).duplicate(true)
 	_schedule_calm_period()
 	if _weather_panel != null:
 		_weather_panel.visible = false
@@ -241,8 +318,9 @@ func _start_storm() -> void:
 	state = State.ACTIVE
 	_state_remaining = _rng.randf_range(MIN_STORM_SECONDS, MAX_STORM_SECONDS)
 	_sand_step_elapsed = 0.0
+	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[_rng.randi_range(0, OUTDOOR_DEBUFF_PROFILES.size() - 1)]).duplicate(true)
 	storm_state_changed.emit(state)
-	_show_notice("TEMPESTA DI SABBIA\nIl vento deposita polvere sulle infrastrutture.")
+	_show_notice("TEMPESTA DI SABBIA\nAll'aperto: %s. Rientra o consuma più risorse." % str(_outdoor_debuff_profile.get("label", "VENTO FORTE")))
 
 
 func _end_storm() -> void:
@@ -367,13 +445,7 @@ func _ensure_layers() -> void:
 		_ui_layer.layer = 115
 		get_tree().root.add_child(_ui_layer)
 		_weather_panel = _make_panel(Color("b85c2f"))
-		_weather_panel.anchor_left = 0.5
-		_weather_panel.anchor_right = 0.5
-		_weather_panel.anchor_top = 0.12
-		_weather_panel.anchor_bottom = 0.12
-		_weather_panel.offset_left = -265.0
-		_weather_panel.offset_right = 265.0
-		_weather_panel.offset_bottom = 52.0
+		_weather_panel.name = "SandstormWeatherPanel"
 		_weather_panel.visible = false
 		_ui_layer.add_child(_weather_panel)
 		_weather_label = _make_label(15, Color("ffe2bd"))
@@ -395,6 +467,7 @@ func _ensure_layers() -> void:
 		_clean_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_clean_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_clean_panel.add_child(_clean_label)
+	_update_weather_panel_position()
 	_update_overlay()
 
 
@@ -430,6 +503,7 @@ func _make_label(font_size: int, color: Color) -> Label:
 func _update_weather_ui() -> void:
 	if _weather_panel == null or _weather_label == null:
 		return
+	_update_weather_panel_position()
 	if _elapsed_seconds < _notice_until_seconds and not _notice_text.is_empty():
 		_weather_panel.visible = true
 		_weather_label.text = _notice_text
@@ -442,7 +516,39 @@ func _update_weather_ui() -> void:
 	if state == State.WARNING:
 		_weather_label.text = "⚠ TEMPESTA IN ARRIVO  ·  %ds\nMetti il telo sui pannelli solari: T" % seconds
 	else:
-		_weather_label.text = "TEMPESTA DI SABBIA ATTIVA  ·  %ds\nMacchinari esposti: pulisci la sabbia con E" % seconds
+		_weather_label.text = "TEMPESTA DI SABBIA ATTIVA  ·  %ds\nAll'aperto: %s · consumi EVA aumentati" % [seconds, str(_outdoor_debuff_profile.get("label", "VENTO FORTE"))]
+
+
+func _update_weather_panel_position() -> void:
+	if _weather_panel == null:
+		return
+	# Il pannello della macchina vive in un CanvasLayer separato dalla scena
+	# principale: il gruppo resta affidabile anche quando l'HUD viene ricreato.
+	var machine_panel: Control
+	for candidate in get_tree().get_nodes_in_group("machine_status_ui"):
+		if candidate is Control and is_instance_valid(candidate) and candidate.visible:
+			machine_panel = candidate as Control
+			break
+	if machine_panel != null and machine_panel.visible:
+		# Il pannello macchina occupa il centro alto; l'avviso scende sotto i
+		# sistemi EVA, dove resta leggibile senza coprire dati utili.
+		_weather_panel.anchor_left = 0.0
+		_weather_panel.anchor_right = 0.0
+		_weather_panel.anchor_top = 0.0
+		_weather_panel.anchor_bottom = 0.0
+		_weather_panel.offset_left = 16.0
+		_weather_panel.offset_right = 386.0
+		_weather_panel.offset_top = 202.0
+		_weather_panel.offset_bottom = 294.0
+	else:
+		_weather_panel.anchor_left = 0.5
+		_weather_panel.anchor_right = 0.5
+		_weather_panel.anchor_top = 0.0
+		_weather_panel.anchor_bottom = 0.0
+		_weather_panel.offset_left = -265.0
+		_weather_panel.offset_right = 265.0
+		_weather_panel.offset_top = 18.0
+		_weather_panel.offset_bottom = 100.0
 
 
 func _update_overlay() -> void:

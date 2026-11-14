@@ -15,7 +15,12 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_set_hunger(hunger - LOSS_PER_SECOND * delta)
+	var storm_multiplier := 1.0
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if sandstorms != null and player != null and sandstorms.has_method("get_outdoor_hunger_multiplier"):
+		storm_multiplier = float(sandstorms.call("get_outdoor_hunger_multiplier", player))
+	_set_hunger(hunger - LOSS_PER_SECOND * storm_multiplier * delta)
 
 
 func eat_selected_ration() -> bool:

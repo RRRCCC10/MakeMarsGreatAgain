@@ -31,7 +31,11 @@ func _run() -> void:
 		_finish()
 		return
 	_expect(drill.get_node_or_null("RockDrillCollision") is StaticBody2D, "La trivella mineraria deve avere una hitbox")
-	_expect(drill.get_node_or_null("RockDrillSprite").texture is Texture2D, "La trivella mineraria deve mostrare lo sprite importato")
+	var drill_sprite := drill.get_node_or_null("RockDrillSprite") as Sprite2D
+	_expect(drill_sprite != null and drill_sprite.texture is AtlasTexture, "La trivella mineraria deve mostrare un frame dello spritesheet")
+	if drill_sprite != null and drill_sprite.texture is AtlasTexture:
+		var first_frame := drill_sprite.texture as AtlasTexture
+		_expect(first_frame.region.size == Vector2(32.0, 48.0), "Ogni frame della trivella mineraria deve usare una posa completa da 32x48 px")
 	panel.set_network_enabled(true)
 	transformer.set_network_enabled(true)
 	battery.set_network_enabled(true)

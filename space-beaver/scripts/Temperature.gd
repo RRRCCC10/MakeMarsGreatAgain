@@ -34,6 +34,7 @@ var current_biome_name := "PIANURA DI ATTERRAGGIO"
 var shelter_bonus_c := 0.0
 var shelter_name := "ESPOSTO"
 var is_sheltered := false
+var storm_wind_chill_c := 0.0
 var _ui_timer := 0.0
 
 
@@ -52,6 +53,7 @@ func _process(delta: float) -> void:
 	ambient_temperature_c = float(environment["ambient_c"])
 	shelter_bonus_c = float(environment["shelter_bonus_c"])
 	shelter_name = str(environment["shelter_name"])
+	storm_wind_chill_c = float(environment.get("storm_wind_chill_c", 0.0))
 	is_sheltered = shelter_bonus_c > 0.0
 	_apply_thermal_step(game_hours, ambient_temperature_c, shelter_bonus_c)
 	_ui_timer += delta
@@ -70,6 +72,7 @@ func get_data() -> Dictionary:
 		"biome_name": current_biome_name,
 		"shelter_bonus_c": shelter_bonus_c,
 		"shelter_name": shelter_name,
+		"storm_wind_chill_c": storm_wind_chill_c,
 		"is_sheltered": is_sheltered,
 		"suit_tolerance_c": SuitSystem.get_cold_tolerance_c(),
 		"condition": get_condition_label(),
@@ -155,6 +158,7 @@ func reset_for_new_mission() -> void:
 	shelter_bonus_c = 0.0
 	shelter_name = "ESPOSTO"
 	is_sheltered = false
+	storm_wind_chill_c = 0.0
 	_ui_timer = 0.0
 	changed.emit(get_data())
 
@@ -170,13 +174,18 @@ func _resolve_environment() -> Dictionary:
 			if resolved_source >= 0:
 				source_id = resolved_source
 	var shelter := _get_shelter_at(player.global_position if player != null else Vector2.ZERO)
+	var storm_wind_chill := 0.0
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null and player != null and sandstorms.has_method("get_outdoor_wind_chill_c"):
+		storm_wind_chill = float(sandstorms.call("get_outdoor_wind_chill_c", player))
 	var profile: Dictionary = BIOME_PROFILES.get(source_id, BIOME_PROFILES[0])
 	return {
 		"source_id": source_id,
 		"biome_name": str(profile["name"]),
-		"ambient_c": get_surface_temperature_for_source(source_id),
+		"ambient_c": get_surface_temperature_for_source(source_id) + storm_wind_chill,
 		"shelter_bonus_c": float(shelter["bonus_c"]),
 		"shelter_name": str(shelter["name"]),
+		"storm_wind_chill_c": storm_wind_chill,
 	}
 
 

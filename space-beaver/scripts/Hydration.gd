@@ -16,7 +16,12 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	_set_thirst(thirst - LOSS_PER_SECOND * _get_achievement_loss_multiplier() * delta)
+	var storm_multiplier := 1.0
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if sandstorms != null and player != null and sandstorms.has_method("get_outdoor_thirst_multiplier"):
+		storm_multiplier = float(sandstorms.call("get_outdoor_thirst_multiplier", player))
+	_set_thirst(thirst - LOSS_PER_SECOND * _get_achievement_loss_multiplier() * storm_multiplier * delta)
 
 
 func _get_achievement_loss_multiplier() -> float:

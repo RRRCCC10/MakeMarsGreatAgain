@@ -42,7 +42,11 @@ func _physics_process(_delta: float) -> void:
 		_update_animation(Vector2.ZERO)
 		return
 	var direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = direction * SPEED * SuitSystem.get_movement_multiplier() * Radiation.get_movement_multiplier() * Temperature.get_movement_multiplier()
+	var storm_multiplier := 1.0
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null and sandstorms.has_method("get_outdoor_movement_multiplier"):
+		storm_multiplier = float(sandstorms.call("get_outdoor_movement_multiplier", self))
+	velocity = direction * SPEED * SuitSystem.get_movement_multiplier() * Radiation.get_movement_multiplier() * Temperature.get_movement_multiplier() * storm_multiplier
 	move_and_slide()
 	_clamp_to_world_bounds()
 	_update_animation(direction)

@@ -10,8 +10,11 @@ const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 const DRILL_SHEET := preload("res://assets/sprites/machines/rock_drill/rock_drill_spritesheet.png")
 
 const TILE_SIZE := 16
-const FRAME_SIZE := Vector2i(16, 48)
-const FRAME_COUNT := 8
+# Lo spritesheet è largo 128px e contiene quattro pose complete affiancate.
+# Tagliarlo a 16px spezzava ciascuna trivella a metà, alternando le due metà
+# come se fossero fotogrammi distinti.
+const FRAME_SIZE := Vector2i(32, 48)
+const FRAME_COUNT := 4
 const POWER_DEMAND_KW := 85.0
 const EXTRACTION_INTERVAL_SECONDS := 12.0
 const STORAGE_CAPACITY := 32

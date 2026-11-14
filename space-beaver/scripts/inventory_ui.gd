@@ -319,6 +319,14 @@ func _process(_delta: float) -> void:
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if selected_id == "field_camera":
 		pickup_label.text = "TELECAMERA: P · scatta     O · invia alla Terra     C · archivio"
+	elif selected_id == "water_bottle" and player != null and player.has_method("nearest_ice_drill"):
+		# Vicino alla trivella dell'acqua la borraccia ha priorità assoluta: non
+		# alternare il suggerimento di raccolta con il comando di ricarica.
+		var ice_drill := player.call("nearest_ice_drill") as Node
+		var refill_prompt := str(ice_drill.call("get_bottle_refill_prompt")) if ice_drill != null and ice_drill.has_method("get_bottle_refill_prompt") else ""
+		if not refill_prompt.is_empty():
+			pickup_label.text = refill_prompt
+			return
 	elif selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
@@ -450,7 +458,7 @@ func _item_icon(item: Dictionary) -> Texture2D:
 		"ice_drill":
 			return _first_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
 		"rock_drill":
-			return _first_frame(ROCK_DRILL_SHEET, Vector2i(16, 48))
+			return _first_frame(ROCK_DRILL_SHEET, Vector2i(32, 48))
 		"electrolyzer":
 			return _first_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
 		"sabatier":

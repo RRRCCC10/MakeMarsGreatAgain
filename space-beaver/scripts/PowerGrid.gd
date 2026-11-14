@@ -76,8 +76,8 @@ func device_world_position(item_id: String, cell: Vector2i, _placement_rotation:
 	if item_id == "solar_panel":
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
 	if item_id in ["transformer", "ice_drill", "rock_drill"]:
-		# Il frame reale e' 32x32. L'asse dei cavi resta allineato
-		# al centro della riga da 16px identificata da origin_cell.
+		# L'asse dei cavi resta allineato al centro della riga da 16px
+		# identificata da origin_cell, indipendentemente dall'altezza del frame.
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
 	return cell_to_world(cell)
 
@@ -571,7 +571,7 @@ func _set_total_battery_energy(value: float) -> void:
 func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Vector2i]:
 	if start == goal:
 		return [start]
-	var blocked := _get_blocked_cells()
+	var blocked := _get_blocked_cells(true)
 	# Un cavo puo' riutilizzare soltanto celle della propria corrente.
 	# Le celle appartenenti alle altre sezioni sono ostacoli, cosi' due
 	# correnti diverse non diventano mai una singola giunzione grafica/logica.
@@ -743,7 +743,7 @@ func _clear_cables() -> void:
 		cable_attachments_by_network[network_id] = {}
 
 
-func _get_blocked_cells() -> Dictionary:
+func _get_blocked_cells(block_dome_interiors: bool = false) -> Dictionary:
 	var blocked: Dictionary = {}
 	# Un dispositivo non può comparire sotto l'astronauta. Riserviamo il suo
 	# collider completo, non soltanto la cella centrale del click.
@@ -776,10 +776,12 @@ func _get_blocked_cells() -> Dictionary:
 		if entry.get("kind", "") in ["pipe", "power_device"]:
 			continue
 		var node: Node = entry.get("node")
-		# Le cupole abitative sono contenitori: le loro pareti bloccano il
-		# movimento del player, non l'installazione dei macchinari interni.
+		# Per il piazzamento i moduli interni della cupola restano utilizzabili.
+		# I cavi invece non possono attraversare una cupola: il percorso viene
+		# calcolato con block_dome_interiors=true.
 		if is_instance_valid(node) and node.is_in_group("base_domes") and not node.is_in_group("greenhouses"):
-			continue
+			if not block_dome_interiors:
+				continue
 		if is_instance_valid(node) and node.has_method("get_occupied_power_cells"):
 			for cell in node.get_occupied_power_cells():
 				blocked[cell] = true

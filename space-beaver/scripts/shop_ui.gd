@@ -368,7 +368,7 @@ func _texture_for_item(item_id: String) -> Texture2D:
 		"ice_drill":
 			return _atlas_frame(ICE_DRILL_SHEET, Vector2i(32, 48))
 		"rock_drill":
-			return _atlas_frame(ROCK_DRILL_SHEET, Vector2i(16, 48))
+			return _atlas_frame(ROCK_DRILL_SHEET, Vector2i(32, 48))
 		"electrolyzer":
 			return _atlas_frame(ELECTROLYZER_SHEET, Vector2i(32, 32))
 		"sabatier":

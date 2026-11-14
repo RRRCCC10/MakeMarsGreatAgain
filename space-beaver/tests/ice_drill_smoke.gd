@@ -71,6 +71,14 @@ func _run() -> void:
 	inventory.call("select_hotbar", 3)
 	var bottle: Dictionary = inventory.call("get_selected_item")
 	bottle["liters"] = 0.3
+	builder.call("_update_nearby_machine_ui")
+	_expect(not builder.nearby_machine_root.visible, "Con la borraccia selezionata il pannello generico della trivella non deve coprire il comando di ricarica")
+	var inventory_ui: Node = main_scene.get_node_or_null("InventoryUI")
+	if inventory_ui != null:
+		inventory_ui.call("_process", 0.0)
+		_expect(str(inventory_ui.pickup_label.text).begins_with("E · RIEMPI BORRACCIA"), "Vicino alla trivella deve rimanere visibile solo il comando per riempire la borraccia")
+	else:
+		_expect(false, "L'interfaccia inventario deve essere disponibile per il prompt della borraccia")
 	var water_before_refill := float(drill.water_storage_liters)
 	var refill_event := InputEventKey.new()
 	refill_event.keycode = KEY_E

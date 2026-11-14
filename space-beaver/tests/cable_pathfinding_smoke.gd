@@ -32,6 +32,18 @@ func _run() -> void:
 	var minimum_allowed_x := mini(second_start.x, goal.x) - 1
 	for cell in second_path:
 		_expect(Vector2i(cell).x >= minimum_allowed_x, "Il percorso non deve tornare verso il pannello lontano per inseguire il vecchio cavo")
+	var dome := BaseDome.new()
+	dome.setup("dome_small", 1, false)
+	current_scene.add_child(dome)
+	dome.global_position = BaseDome.world_position_for(Vector2i(64, 64))
+	await process_frame
+	var dome_cells: Array[Vector2i] = dome.get_occupied_power_cells()
+	var dome_path: Array = power_grid.call("_find_path", Vector2i(56, 64), Vector2i(72, 64), network_id)
+	_expect(not dome_path.is_empty(), "Un cavo deve riuscire ad aggirare una cupola piccola")
+	for cell in dome_path:
+		_expect(not dome_cells.has(Vector2i(cell)), "Il pathfinding dei cavi non deve attraversare la cupola piccola")
+	dome.queue_free()
+	await process_frame
 
 	var inventory: Node = root.get_node("Inventory")
 	var suits: Node = root.get_node("SuitSystem")

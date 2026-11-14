@@ -28,7 +28,12 @@ func _process(delta: float) -> void:
 		var temperature := get_node_or_null("/root/Temperature")
 		if temperature != null and temperature.has_method("get_oxygen_consumption_multiplier"):
 			thermal_multiplier = float(temperature.call("get_oxygen_consumption_multiplier"))
-		_set_oxygen(oxygen - LOSS_PER_SECOND * thermal_multiplier * delta)
+		var storm_multiplier := 1.0
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		var player := get_tree().get_first_node_in_group("player") as Node2D
+		if sandstorms != null and player != null and sandstorms.has_method("get_outdoor_oxygen_multiplier"):
+			storm_multiplier = float(sandstorms.call("get_outdoor_oxygen_multiplier", player))
+		_set_oxygen(oxygen - LOSS_PER_SECOND * thermal_multiplier * storm_multiplier * delta)
 
 
 func _player_inside_pressurized_dome() -> bool:

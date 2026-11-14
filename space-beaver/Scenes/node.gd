@@ -444,6 +444,8 @@ func _create_nearby_machine_ui() -> void:
 	layer.layer = 70
 	get_tree().current_scene.add_child(layer)
 	nearby_machine_root = PanelContainer.new()
+	nearby_machine_root.name = "NearbyMachinePanel"
+	nearby_machine_root.add_to_group("machine_status_ui")
 	nearby_machine_root.anchor_left = 0.5
 	nearby_machine_root.anchor_right = 0.5
 	nearby_machine_root.offset_left = -245.0
@@ -499,6 +501,13 @@ func _update_nearby_machine_ui() -> void:
 		return
 	nearby_machine = closest_entry.get("node") as Node
 	if not is_instance_valid(nearby_machine):
+		nearby_machine_root.visible = false
+		return
+	# La borraccia selezionata ha un'unica azione utile vicino alla trivella
+	# dell'acqua. Il prompt dedicato dell'inventario sostituisce quindi tutto il
+	# pannello macchina, evitando due testi che si contendono lo stesso input.
+	var bottle_prompt := str(nearby_machine.call("get_bottle_refill_prompt")) if nearby_machine.has_method("get_bottle_refill_prompt") else ""
+	if not bottle_prompt.is_empty():
 		nearby_machine_root.visible = false
 		return
 	nearby_machine_root.visible = true
