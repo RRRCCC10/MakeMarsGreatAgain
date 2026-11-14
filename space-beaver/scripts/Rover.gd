@@ -7,14 +7,46 @@ extends CharacterBody2D
 signal battery_changed(energy_kwh: float, capacity_kwh: float)
 signal occupancy_changed(occupied: bool)
 
-const IDLE_SHEET := preload("res://assets/rover/rover_idle.png")
-const DRIVER_IDLE_SHEET := preload("res://assets/rover/rover_driver_idle.png")
-const DRIVER_RIGHT_SHEET := preload("res://assets/rover/rover_driver_right.png")
-const DRIVER_LEFT_SHEET := preload("res://assets/rover/rover_driver_left.png")
-const DRIVER_UP_SHEET := preload("res://assets/rover/rover_driver_up.png")
-const DRIVER_DOWN_SHEET := preload("res://assets/rover/rover_driver_down.png")
-const OPENING_SHEET := preload("res://assets/rover/rover_opening.png")
-const CLOSING_SHEET := preload("res://assets/rover/rover_closing.png")
+const IDLE_SHEET := preload("res://assets/sprites/rover/rover_idle.png")
+const DRIVER_IDLE_SHEET := preload("res://assets/sprites/rover/rover_driver_idle.png")
+const DRIVER_RIGHT_SHEET := preload("res://assets/sprites/rover/rover_driver_right.png")
+const DRIVER_LEFT_SHEET := preload("res://assets/sprites/rover/rover_driver_left.png")
+const DRIVER_UP_SHEET := preload("res://assets/sprites/rover/rover_driver_up.png")
+const DRIVER_DOWN_SHEET := preload("res://assets/sprites/rover/rover_driver_down.png")
+const OPENING_SHEET := preload("res://assets/sprites/rover/rover_opening.png")
+const CLOSING_SHEET := preload("res://assets/sprites/rover/rover_closing.png")
+const SAND_SHEETS := {
+	1: {
+		"idle": preload("res://assets/sprites/rover/sand/dirty/rover_idle.png"),
+		"driver_idle": preload("res://assets/sprites/rover/sand/dirty/rover_driver_idle.png"),
+		"driver_right": preload("res://assets/sprites/rover/sand/dirty/rover_driver_right.png"),
+		"driver_left": preload("res://assets/sprites/rover/sand/dirty/rover_driver_left.png"),
+		"driver_up": preload("res://assets/sprites/rover/sand/dirty/rover_driver_up.png"),
+		"driver_down": preload("res://assets/sprites/rover/sand/dirty/rover_driver_down.png"),
+		"opening": preload("res://assets/sprites/rover/sand/dirty/rover_opening.png"),
+		"closing": preload("res://assets/sprites/rover/sand/dirty/rover_closing.png"),
+	},
+	2: {
+		"idle": preload("res://assets/sprites/rover/sand/covered/rover_idle.png"),
+		"driver_idle": preload("res://assets/sprites/rover/sand/covered/rover_driver_idle.png"),
+		"driver_right": preload("res://assets/sprites/rover/sand/covered/rover_driver_right.png"),
+		"driver_left": preload("res://assets/sprites/rover/sand/covered/rover_driver_left.png"),
+		"driver_up": preload("res://assets/sprites/rover/sand/covered/rover_driver_up.png"),
+		"driver_down": preload("res://assets/sprites/rover/sand/covered/rover_driver_down.png"),
+		"opening": preload("res://assets/sprites/rover/sand/covered/rover_opening.png"),
+		"closing": preload("res://assets/sprites/rover/sand/covered/rover_closing.png"),
+	},
+	3: {
+		"idle": preload("res://assets/sprites/rover/sand/buried/rover_idle.png"),
+		"driver_idle": preload("res://assets/sprites/rover/sand/buried/rover_driver_idle.png"),
+		"driver_right": preload("res://assets/sprites/rover/sand/buried/rover_driver_right.png"),
+		"driver_left": preload("res://assets/sprites/rover/sand/buried/rover_driver_left.png"),
+		"driver_up": preload("res://assets/sprites/rover/sand/buried/rover_driver_up.png"),
+		"driver_down": preload("res://assets/sprites/rover/sand/buried/rover_driver_down.png"),
+		"opening": preload("res://assets/sprites/rover/sand/buried/rover_opening.png"),
+		"closing": preload("res://assets/sprites/rover/sand/buried/rover_closing.png"),
+	},
+}
 
 const INTERACTION_DISTANCE := 74.0
 const ROVER_SPEED := 310.0
@@ -34,6 +66,7 @@ var is_preview := false
 var battery_energy_kwh := STARTING_ENERGY_KWH
 var panel_state := PanelState.CLOSED
 var incident_faulted := false
+var sand_accumulation := 0
 var animation_elapsed := 0.0
 var facing_index := 0 # destra, sinistra, alto, basso
 var driver: Node2D
@@ -115,6 +148,9 @@ func _ready() -> void:
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
 		incidents.call("register_target", self, "vehicle", "ROVER DI ESPLORAZIONE")
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null:
+		sandstorms.call("register_target", self, "ROVER DI ESPLORAZIONE")
 	_refresh_visual()
 
 
@@ -123,6 +159,9 @@ func _exit_tree() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("unregister_target", self, "vehicle")
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
 		var registry := _service("BuildableRegistry")
 		if registry != null:
 			registry.call("unregister_buildable", self)
@@ -347,6 +386,28 @@ func get_incident_repair_position(_target_id: String = "vehicle") -> Vector2:
 	return global_position
 
 
+func get_sand_accumulation() -> int:
+	return sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	var clamped := clampi(level, 0, 3)
+	if sand_accumulation == clamped:
+		return
+	sand_accumulation = clamped
+	_refresh_visual()
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
+func on_sand_buried() -> void:
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("force_incident", self, "vehicle")
+
+
 func _setup_sprite() -> void:
 	sprite = Sprite2D.new()
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -421,10 +482,10 @@ func _update_vehicle_visual(moving: bool) -> void:
 		sprite.texture = _atlas_frame(_driver_moving_sheet(), moving_frame, 0, MOVING_COLUMNS, 1)
 		sprite.position = Vector2.ZERO
 	elif is_instance_valid(driver):
-		sprite.texture = _atlas_frame(DRIVER_IDLE_SHEET, facing_index, 0, IDLE_COLUMNS, 1)
+		sprite.texture = _atlas_frame(_sheet_for("driver_idle", DRIVER_IDLE_SHEET), facing_index, 0, IDLE_COLUMNS, 1)
 		sprite.position = Vector2.ZERO
 	else:
-		sprite.texture = _atlas_frame(IDLE_SHEET, facing_index, 0, IDLE_COLUMNS, 1)
+		sprite.texture = _atlas_frame(_sheet_for("idle", IDLE_SHEET), facing_index, 0, IDLE_COLUMNS, 1)
 		sprite.position = Vector2.ZERO
 
 
@@ -433,7 +494,7 @@ func _update_panel_animation(delta: float) -> void:
 		return
 	animation_elapsed += delta
 	var frame_index := mini(PANEL_COLUMNS - 1, floori(animation_elapsed / PANEL_FRAME_TIME))
-	var sheet := OPENING_SHEET if panel_state == PanelState.OPENING else CLOSING_SHEET
+	var sheet := _sheet_for("opening", OPENING_SHEET) if panel_state == PanelState.OPENING else _sheet_for("closing", CLOSING_SHEET)
 	sprite.texture = _atlas_frame(sheet, frame_index, facing_index, PANEL_COLUMNS, DIRECTION_ROWS)
 	sprite.position = Vector2.ZERO
 	if frame_index >= PANEL_COLUMNS - 1:
@@ -446,7 +507,7 @@ func _refresh_visual() -> void:
 	if sprite == null:
 		return
 	if panel_state == PanelState.OPEN:
-		sprite.texture = _atlas_frame(OPENING_SHEET, PANEL_COLUMNS - 1, facing_index, PANEL_COLUMNS, DIRECTION_ROWS)
+		sprite.texture = _atlas_frame(_sheet_for("opening", OPENING_SHEET), PANEL_COLUMNS - 1, facing_index, PANEL_COLUMNS, DIRECTION_ROWS)
 		sprite.position = Vector2.ZERO
 		return
 	if panel_state in [PanelState.OPENING, PanelState.CLOSING]:
@@ -472,12 +533,19 @@ func _set_facing_from_direction(direction: Vector2) -> void:
 func _driver_moving_sheet() -> Texture2D:
 	match facing_index:
 		0:
-			return DRIVER_RIGHT_SHEET
+			return _sheet_for("driver_right", DRIVER_RIGHT_SHEET)
 		1:
-			return DRIVER_LEFT_SHEET
+			return _sheet_for("driver_left", DRIVER_LEFT_SHEET)
 		2:
-			return DRIVER_UP_SHEET
-	return DRIVER_DOWN_SHEET
+			return _sheet_for("driver_up", DRIVER_UP_SHEET)
+	return _sheet_for("driver_down", DRIVER_DOWN_SHEET)
+
+
+func _sheet_for(sheet_name: String, normal_sheet: Texture2D) -> Texture2D:
+	if sand_accumulation <= 0:
+		return normal_sheet
+	var level_sheets := SAND_SHEETS.get(sand_accumulation, {}) as Dictionary
+	return level_sheets.get(sheet_name, normal_sheet) as Texture2D
 
 
 func _exit_direction() -> Vector2:

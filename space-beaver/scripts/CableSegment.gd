@@ -1,7 +1,7 @@
 class_name CableSegment
 extends Node2D
 
-const CABLE_SHEET := preload("res://sprites/machines/energy-pipe-spritesheet.png")
+const CABLE_SHEET := preload("res://assets/sprites/machines/energy-pipe-spritesheet.png")
 const FRAME_SIZE := Vector2i(16, 16)
 
 var cell := Vector2i.ZERO

@@ -1,8 +1,18 @@
 class_name ProcessMachine
 extends Node2D
 
-const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
-const SABATIER_SHEET := preload("res://assets/sabatier.png")
+const ELECTROLYZER_SHEET := preload("res://assets/sprites/machines/electrolyzer.png")
+const SABATIER_SHEET := preload("res://assets/sprites/machines/sabatier.png")
+const ELECTROLYZER_SAND_SHEETS := {
+	1: preload("res://assets/sprites/machines/sand/dirty/electrolyzer.png"),
+	2: preload("res://assets/sprites/machines/sand/covered/electrolyzer.png"),
+	3: preload("res://assets/sprites/machines/sand/buried/electrolyzer.png"),
+}
+const SABATIER_SAND_SHEETS := {
+	1: preload("res://assets/sprites/machines/sand/dirty/sabatier.png"),
+	2: preload("res://assets/sprites/machines/sand/covered/sabatier.png"),
+	3: preload("res://assets/sprites/machines/sand/buried/sabatier.png"),
+}
 const ELECTROLYZER_FRAME := Vector2i(32, 32)
 const SABATIER_FRAME := Vector2i(48, 48)
 const CELL_SIZE := 16
@@ -28,6 +38,7 @@ var water_consumed_liters := 0.0
 var methane_produced_kg := 0.0
 var network_enabled := true
 var incident_faulted := false
+var sand_accumulation := 0
 var sprite: Sprite2D
 var indicator: Polygon2D
 var body: StaticBody2D
@@ -87,6 +98,9 @@ func _ready() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("register_target", self, "machine", get_display_name())
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("register_target", self, get_display_name())
 
 
 func _exit_tree() -> void:
@@ -94,6 +108,9 @@ func _exit_tree() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("unregister_target", self, "machine")
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
 
 
 func _process(delta: float) -> void:
@@ -336,6 +353,28 @@ func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
 	return global_position
 
 
+func get_sand_accumulation() -> int:
+	return sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	var clamped := clampi(level, 0, 3)
+	if sand_accumulation == clamped:
+		return
+	sand_accumulation = clamped
+	_refresh_texture()
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
+func on_sand_buried() -> void:
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("force_incident", self, "machine")
+
+
 func contains_world_point(point: Vector2) -> bool:
 	var size := Vector2(32.0, 32.0) if device_id == "electrolyzer" else Vector2(48.0, 48.0)
 	return Rect2(global_position - size * 0.5, size).has_point(point)
@@ -350,7 +389,10 @@ func _refresh_texture() -> void:
 		return
 	var atlas := AtlasTexture.new()
 	var frame_size := ELECTROLYZER_FRAME if device_id == "electrolyzer" else SABATIER_FRAME
-	atlas.atlas = ELECTROLYZER_SHEET if device_id == "electrolyzer" else SABATIER_SHEET
+	if device_id == "electrolyzer":
+		atlas.atlas = ELECTROLYZER_SAND_SHEETS.get(sand_accumulation, ELECTROLYZER_SHEET)
+	else:
+		atlas.atlas = SABATIER_SAND_SHEETS.get(sand_accumulation, SABATIER_SHEET)
 	atlas.region = Rect2(Vector2i(animation_frame if powered else 0, 0) * frame_size, frame_size)
 	sprite.texture = atlas
 

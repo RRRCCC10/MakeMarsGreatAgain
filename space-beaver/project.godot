@@ -37,6 +37,7 @@ RoverInteraction="*res://scripts/RoverInteraction.gd"
 AchievementManager="*res://scripts/AchievementManager.gd"
 FieldCamera="*res://scripts/FieldCamera.gd"
 IncidentManager="*res://scripts/IncidentManager.gd"
+SandstormManager="*res://scripts/SandstormManager.gd"
 
 [display]
 
@@ -44,6 +45,7 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
+window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 

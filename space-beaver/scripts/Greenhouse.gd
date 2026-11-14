@@ -5,12 +5,12 @@ class_name Greenhouse
 ## ma usa due aiuole bloccanti e una coltura sincronizzata di 16 patate.
 
 const GREENHOUSE_RADIUS := 80.0
-const BASE_TEXTURE := preload("res://assets/greenhouse/greenhouse_base.jpg")
-const GLASS_TEXTURE := preload("res://assets/greenhouse/greenhouse_glass.jpg")
-const BED_TEXTURE := preload("res://assets/greenhouse/potato_bed.png")
-const FIRST_GROWTH_SHEET := preload("res://assets/greenhouse/potato_first_cycle.jpg")
-const REGROWTH_SHEET := preload("res://assets/greenhouse/potato_regrowth.jpg")
-const PIPE_SHEET := preload("res://sprites/machines/pipe-spritesheet.png")
+const BASE_TEXTURE := preload("res://assets/sprites/greenhouse/greenhouse_base.jpg")
+const GLASS_TEXTURE := preload("res://assets/sprites/greenhouse/greenhouse_glass.jpg")
+const BED_TEXTURE := preload("res://assets/sprites/greenhouse/potato_bed.png")
+const FIRST_GROWTH_SHEET := preload("res://assets/sprites/greenhouse/potato_first_cycle.jpg")
+const REGROWTH_SHEET := preload("res://assets/sprites/greenhouse/potato_regrowth.jpg")
+const PIPE_SHEET := preload("res://assets/sprites/machines/pipe-spritesheet.png")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 
 const FIRST_CYCLE_SECONDS := 5.0 * 60.0
@@ -48,6 +48,7 @@ var _oxygen_produced_units := 0.0
 var _visual_asset_revision := 0
 var _power_refresh_queued := false
 var _system_incident_faulted := false
+var _sand_accumulation := 0
 const VISUAL_ASSET_REVISION := 2
 
 
@@ -77,6 +78,17 @@ func _ready() -> void:
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
 		incidents.call("register_target", self, "greenhouse_system", "SISTEMA SERRA")
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null:
+		sandstorms.call("register_target", self, "SERRA DI PATATE")
+
+
+func _exit_tree() -> void:
+	if not is_preview:
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
+	super._exit_tree()
 
 
 func get_radius() -> float:
@@ -707,3 +719,27 @@ func get_incident_repair_position(target_id: String) -> Vector2:
 	if target_id in ["outer_door", "inner_door"]:
 		return super.get_incident_repair_position(target_id)
 	return global_position
+
+
+func get_sand_accumulation() -> int:
+	return _sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	var clamped := clampi(level, 0, 3)
+	if _sand_accumulation == clamped:
+		return
+	_sand_accumulation = clamped
+	var dome_sprite := get_node_or_null("DomeSprite") as Sprite2D
+	if dome_sprite != null:
+		dome_sprite.modulate = Color.WHITE if clamped <= 0 else Color(1.0, 0.82 - float(clamped) * 0.09, 0.62 - float(clamped) * 0.10)
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
+func on_sand_buried() -> void:
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("force_incident", self, "greenhouse_system")

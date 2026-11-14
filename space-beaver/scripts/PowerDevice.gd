@@ -1,10 +1,21 @@
 class_name PowerDevice
 extends Node2D
 
-const SOLAR_TEXTURE := preload("res://sprites/machines/solar-panel-spritesheet.png")
-const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
-const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
-const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
+const SOLAR_TEXTURE := preload("res://assets/sprites/machines/solar-panel-spritesheet.png")
+const TRANSFORMER_SHEET := preload("res://assets/sprites/machines/transformer-spritesheet.png")
+const BATTERY_SHEET := preload("res://assets/sprites/machines/battery-spritesheet.png")
+const ICE_DRILL_SHEET := preload("res://assets/sprites/machines/ice-drill-spritesheet.png")
+const SOLAR_TARP_TEXTURE := preload("res://assets/sprites/machines/solar-panel-tarp.png")
+const SOLAR_SAND_TEXTURES := {
+	1: preload("res://assets/sprites/machines/sand/dirty/solar-panel.png"),
+	2: preload("res://assets/sprites/machines/sand/covered/solar-panel.png"),
+	3: preload("res://assets/sprites/machines/sand/buried/solar-panel.png"),
+}
+const TRANSFORMER_SAND_SHEETS := {
+	1: preload("res://assets/sprites/machines/sand/dirty/transformer.png"),
+	2: preload("res://assets/sprites/machines/sand/covered/transformer.png"),
+	3: preload("res://assets/sprites/machines/sand/buried/transformer.png"),
+}
 const TRANSFORMER_FRAME_SIZE := Vector2i(32, 32)
 const BATTERY_FRAME_SIZE := Vector2i(16, 16)
 const ICE_DRILL_FRAME_SIZE := Vector2i(32, 48)
@@ -30,6 +41,10 @@ var water_storage_liters := 0.0
 var fluid_output_connected := false
 var network_enabled := false
 var incident_faulted := false
+var sand_accumulation := 0
+var solar_tarped := false
+var solar_destroyed := false
+var solar_burial_evaluated := false
 var refill_feedback := ""
 var stock_items: Array[Dictionary] = []
 var sprite: Sprite2D
@@ -63,6 +78,9 @@ func _ready() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("register_target", self, "machine", _incident_display_name())
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("register_target", self, _incident_display_name())
 
 
 func _exit_tree() -> void:
@@ -70,6 +88,9 @@ func _exit_tree() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("unregister_target", self, "machine")
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
 
 
 func _process(delta: float) -> void:
@@ -103,8 +124,8 @@ func _process(delta: float) -> void:
 
 
 func set_power_state(new_powered: bool, new_flow_state: int = 0) -> void:
-	powered = new_powered and not incident_faulted
-	flow_state = new_flow_state if not incident_faulted else 0
+	powered = new_powered and not incident_faulted and not solar_destroyed
+	flow_state = new_flow_state if not incident_faulted and not solar_destroyed else 0
 	if not powered and device_id in ["transformer", "ice_drill"]:
 		animation_frame = 0
 		_refresh_texture()
@@ -131,6 +152,8 @@ func is_network_enabled() -> bool:
 
 
 func get_connection_label() -> String:
+	if solar_destroyed:
+		return "DISTRUTTO DALLA SABBIA — rimuovi e sostituisci"
 	if incident_faulted:
 		return "GUASTO — avvicinati e ripara"
 	if not network_enabled:
@@ -145,8 +168,12 @@ func get_connection_label() -> String:
 func get_interaction_summary() -> String:
 	match device_id:
 		"solar_panel":
-			var available_kw := 100.0 * WorldClock.get_solar_factor()
-			return "Produzione disponibile: %d kW" % roundi(available_kw)
+			if solar_destroyed:
+				return "PANNELLO DISTRUTTO DALLA TEMPESTA · rimuovilo e acquistane uno nuovo"
+			if solar_tarped:
+				return "TELO PROTETTIVO INSTALLATO · T per rimuoverlo"
+			var available_kw := 100.0 * WorldClock.get_solar_factor() * get_solar_output_multiplier()
+			return "Produzione disponibile: %d kW · sabbia: %s" % [roundi(available_kw), _sand_label()]
 		"transformer":
 			return "Trasformazione e isolamento delle sezioni elettriche"
 		"battery":
@@ -174,15 +201,103 @@ func is_incident_faulted(_target_id: String = "machine") -> bool:
 
 
 func is_incident_operational() -> bool:
-	return not incident_faulted
+	return not incident_faulted and not solar_destroyed
 
 
 func can_receive_incident(_target_id: String = "machine") -> bool:
-	return not is_preview and not incident_faulted
+	return not is_preview and not incident_faulted and not solar_destroyed
 
 
 func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
 	return global_position
+
+
+func get_sand_accumulation() -> int:
+	return sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	var clamped := clampi(level, 0, 3)
+	if sand_accumulation == clamped:
+		return
+	sand_accumulation = clamped
+	if clamped < 3:
+		solar_burial_evaluated = false
+	_refresh_texture()
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("request_rebuild")
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
+func can_clean_sand() -> bool:
+	return not solar_destroyed
+
+
+func is_sand_protected() -> bool:
+	return device_id == "solar_panel" and solar_tarped
+
+
+func on_sand_buried() -> void:
+	if device_id == "solar_panel":
+		if solar_tarped or solar_destroyed:
+			return
+		if solar_burial_evaluated:
+			return
+		solar_burial_evaluated = true
+		# Un pannello esposto ha due terzi della probabilità di fallimento del
+		# guasto completo provocato dal terzo strato, e non è riparabile.
+		if randf() < 2.0 / 3.0:
+			solar_destroyed = true
+			network_enabled = false
+			set_power_state(false, 0)
+			_refresh_texture()
+			var power_grid := get_node_or_null("/root/PowerGrid")
+			if power_grid != null:
+				power_grid.call("request_rebuild")
+			var sandstorms := get_node_or_null("/root/SandstormManager")
+			if sandstorms != null:
+				sandstorms.call("show_notification", "PANNELLO SOLARE DISTRUTTO\nLa sabbia ha danneggiato le celle: rimuovilo e acquistane uno nuovo.")
+		return
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("force_incident", self, "machine")
+
+
+func can_toggle_solar_tarp() -> bool:
+	return not is_preview and device_id == "solar_panel" and not solar_destroyed
+
+
+func toggle_solar_tarp() -> bool:
+	if not can_toggle_solar_tarp():
+		return false
+	solar_tarped = not solar_tarped
+	_refresh_texture()
+	var power_grid := get_node_or_null("/root/PowerGrid")
+	if power_grid != null:
+		power_grid.call("request_rebuild")
+	return solar_tarped
+
+
+func is_solar_tarped() -> bool:
+	return solar_tarped
+
+
+func is_solar_destroyed() -> bool:
+	return solar_destroyed
+
+
+func get_solar_output_multiplier() -> float:
+	if device_id != "solar_panel" or solar_destroyed or solar_tarped:
+		return 0.0 if device_id == "solar_panel" else 1.0
+	return [1.0, 0.66, 0.30, 0.0][sand_accumulation]
+
+
+func _sand_label() -> String:
+	return ["PULITO", "SPORCO", "COPERTO", "SEPOLTO"][sand_accumulation]
 
 
 func _incident_display_name() -> String:
@@ -435,12 +550,20 @@ func _flow_label() -> String:
 func _refresh_texture() -> void:
 	if sprite == null:
 		return
+	sprite.modulate = Color.WHITE
 	if device_id == "solar_panel":
-		sprite.texture = SOLAR_TEXTURE
+		if solar_tarped:
+			sprite.texture = SOLAR_TARP_TEXTURE
+		elif sand_accumulation > 0:
+			sprite.texture = SOLAR_SAND_TEXTURES[sand_accumulation]
+			if solar_destroyed:
+				sprite.modulate = Color(1.0, 0.42, 0.34)
+		else:
+			sprite.texture = SOLAR_TEXTURE
 		return
 	var atlas := AtlasTexture.new()
 	if device_id == "transformer":
-		atlas.atlas = TRANSFORMER_SHEET
+		atlas.atlas = TRANSFORMER_SAND_SHEETS.get(sand_accumulation, TRANSFORMER_SHEET)
 		var transformer_column := animation_frame % 2
 		var transformer_row := floori(float(animation_frame) / 2.0)
 		atlas.region = Rect2(
@@ -457,6 +580,8 @@ func _refresh_texture() -> void:
 		)
 	else:
 		atlas.atlas = BATTERY_SHEET
+		if sand_accumulation > 0:
+			sprite.modulate = Color(1.0, 0.76 - float(sand_accumulation) * 0.10, 0.56 - float(sand_accumulation) * 0.10)
 		# Riga 0 = piena, riga 4 = vuota. Ogni riga contiene i 4
 		# frame dell'animazione, che non devono mai cambiare la carica.
 		var charge_band := clampi(floori(battery_charge_ratio * 5.0), 0, 4)

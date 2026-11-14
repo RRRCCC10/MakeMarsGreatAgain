@@ -1,18 +1,18 @@
 extends Node2D
 
-const BASE_ROCK_TEXTURE := preload("res://sprites/rock.png")
+const BASE_ROCK_TEXTURE := preload("res://assets/sprites/rock.png")
 const ROCK_TEXTURES: Dictionary = {
 	"roccia_base": BASE_ROCK_TEXTURE,
-	"roccia_ghiacciata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
-	"roccia_scura": preload("res://sprites/rocks/roccia_scura.png"),
-	"roccia_basaltica": preload("res://sprites/rocks/roccia_basaltica.png"),
-	"roccia_grigia": preload("res://sprites/rocks/roccia_grigia.png"),
-	"ghiaccio_profondo": preload("res://sprites/rocks/ghiaccio_profondo.png"),
-	"roccia_rossa": preload("res://sprites/rocks/roccia_rossa.png"),
-	"pietra_rossastra": preload("res://sprites/rocks/pietra_rossastra.png"),
-	"ghiaccio_leggero": preload("res://sprites/rocks/ghiaccio_leggero.png"),
-	"ghiaccio_blu": preload("res://sprites/rocks/ghiaccio_blu.png"),
-	"basalto": preload("res://sprites/rocks/basalto.png"),
+	"roccia_ghiacciata": preload("res://assets/sprites/rocks/roccia_ghiacciata.png"),
+	"roccia_scura": preload("res://assets/sprites/rocks/roccia_scura.png"),
+	"roccia_basaltica": preload("res://assets/sprites/rocks/roccia_basaltica.png"),
+	"roccia_grigia": preload("res://assets/sprites/rocks/roccia_grigia.png"),
+	"ghiaccio_profondo": preload("res://assets/sprites/rocks/ghiaccio_profondo.png"),
+	"roccia_rossa": preload("res://assets/sprites/rocks/roccia_rossa.png"),
+	"pietra_rossastra": preload("res://assets/sprites/rocks/pietra_rossastra.png"),
+	"ghiaccio_leggero": preload("res://assets/sprites/rocks/ghiaccio_leggero.png"),
+	"ghiaccio_blu": preload("res://assets/sprites/rocks/ghiaccio_blu.png"),
+	"basalto": preload("res://assets/sprites/rocks/basalto.png"),
 }
 
 ## I nuovi minerali riutilizzano volutamente le silhouette già presenti: nella

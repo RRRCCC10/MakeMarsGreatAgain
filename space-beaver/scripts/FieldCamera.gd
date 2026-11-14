@@ -10,7 +10,7 @@ signal photo_transmitted(photo: Dictionary)
 const CAMERA_ITEM_ID := "field_camera"
 const MAX_ROLL_SIZE := 36
 const PHOTO_DISTANCE := 78.0
-const CAMERA_ICON_PATH := "res://assets/camera/field_camera.png"
+const CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
 
 const BIOME_NAMES := {
 	0: "Pianura di atterraggio",

@@ -1,47 +1,47 @@
 extends CanvasLayer
 
-const ROCK_ICON := preload("res://sprites/rock.png")
+const ROCK_ICON := preload("res://assets/sprites/rock.png")
 const ROCK_ICONS: Dictionary = {
-	"rock_roccia_rossa": preload("res://sprites/rocks/roccia_rossa.png"),
-	"rock_pietra_rossastra": preload("res://sprites/rocks/pietra_rossastra.png"),
-	"rock_ghiaccio_leggero": preload("res://sprites/rocks/ghiaccio_leggero.png"),
-	"rock_ghiaccio_blu": preload("res://sprites/rocks/ghiaccio_blu.png"),
-	"rock_roccia_grigia": preload("res://sprites/rocks/roccia_grigia.png"),
-	"rock_roccia_scura": preload("res://sprites/rocks/roccia_scura.png"),
-	"rock_roccia_basaltica": preload("res://sprites/rocks/roccia_basaltica.png"),
-	"rock_basalto": preload("res://sprites/rocks/basalto.png"),
-	"rock_roccia_ghiacciata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
-	"rock_ghiaccio_profondo": preload("res://sprites/rocks/ghiaccio_profondo.png"),
-	"rock_ghiaccio_profondo_primordiale": preload("res://sprites/rocks/ghiaccio_profondo.png"),
-	"rock_andesite_marziana": preload("res://sprites/rocks/roccia_grigia.png"),
-	"rock_shoshonite_olivinica": preload("res://sprites/rocks/basalto.png"),
-	"rock_ematite_nodulare": preload("res://sprites/rocks/pietra_rossastra.png"),
-	"rock_goethite_idrata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
-	"rock_breccia_da_impatto": preload("res://sprites/rocks/roccia_grigia.png"),
-	"rock_impactite_vetrosa": preload("res://sprites/rocks/roccia_scura.png"),
-	"rock_regolite_perclorata": preload("res://sprites/rocks/roccia_ghiacciata.png"),
-	"rock_sali_solfati_idrati": preload("res://sprites/rocks/ghiaccio_profondo.png"),
-	"rock_ghiaccio_laminato": preload("res://sprites/rocks/ghiaccio_leggero.png"),
-	"rock_ghiaccio_salmastro": preload("res://sprites/rocks/ghiaccio_blu.png"),
-	"rock_basalto_vescicolare": preload("res://sprites/rocks/roccia_basaltica.png"),
-	"rock_olivina_ferrifera": preload("res://sprites/rocks/basalto.png"),
+	"rock_roccia_rossa": preload("res://assets/sprites/rocks/roccia_rossa.png"),
+	"rock_pietra_rossastra": preload("res://assets/sprites/rocks/pietra_rossastra.png"),
+	"rock_ghiaccio_leggero": preload("res://assets/sprites/rocks/ghiaccio_leggero.png"),
+	"rock_ghiaccio_blu": preload("res://assets/sprites/rocks/ghiaccio_blu.png"),
+	"rock_roccia_grigia": preload("res://assets/sprites/rocks/roccia_grigia.png"),
+	"rock_roccia_scura": preload("res://assets/sprites/rocks/roccia_scura.png"),
+	"rock_roccia_basaltica": preload("res://assets/sprites/rocks/roccia_basaltica.png"),
+	"rock_basalto": preload("res://assets/sprites/rocks/basalto.png"),
+	"rock_roccia_ghiacciata": preload("res://assets/sprites/rocks/roccia_ghiacciata.png"),
+	"rock_ghiaccio_profondo": preload("res://assets/sprites/rocks/ghiaccio_profondo.png"),
+	"rock_ghiaccio_profondo_primordiale": preload("res://assets/sprites/rocks/ghiaccio_profondo.png"),
+	"rock_andesite_marziana": preload("res://assets/sprites/rocks/roccia_grigia.png"),
+	"rock_shoshonite_olivinica": preload("res://assets/sprites/rocks/basalto.png"),
+	"rock_ematite_nodulare": preload("res://assets/sprites/rocks/pietra_rossastra.png"),
+	"rock_goethite_idrata": preload("res://assets/sprites/rocks/roccia_ghiacciata.png"),
+	"rock_breccia_da_impatto": preload("res://assets/sprites/rocks/roccia_grigia.png"),
+	"rock_impactite_vetrosa": preload("res://assets/sprites/rocks/roccia_scura.png"),
+	"rock_regolite_perclorata": preload("res://assets/sprites/rocks/roccia_ghiacciata.png"),
+	"rock_sali_solfati_idrati": preload("res://assets/sprites/rocks/ghiaccio_profondo.png"),
+	"rock_ghiaccio_laminato": preload("res://assets/sprites/rocks/ghiaccio_leggero.png"),
+	"rock_ghiaccio_salmastro": preload("res://assets/sprites/rocks/ghiaccio_blu.png"),
+	"rock_basalto_vescicolare": preload("res://assets/sprites/rocks/roccia_basaltica.png"),
+	"rock_olivina_ferrifera": preload("res://assets/sprites/rocks/basalto.png"),
 }
-const WATER_ICON := preload("res://sprites/water-bottle.jpg")
-const RATION_ICON := preload("res://sprites/food-ration.jpg")
-const HAMMER_ICON := preload("res://sprites/pipe-hammer.png")
-const SOLAR_ICON := preload("res://sprites/machines/solar-panel-spritesheet.png")
-const TRANSFORMER_SHEET := preload("res://sprites/machines/transformer-spritesheet.png")
-const BATTERY_SHEET := preload("res://sprites/machines/battery-spritesheet.png")
-const ICE_DRILL_SHEET := preload("res://sprites/machines/ice-drill-spritesheet.png")
-const ROCK_DRILL_SHEET := preload("res://assets/rock_drill/rock_drill_spritesheet.png")
-const FIELD_CAMERA_ICON_PATH := "res://assets/camera/field_camera.png"
-const ELECTROLYZER_SHEET := preload("res://assets/electrolyzer.png")
-const SABATIER_SHEET := preload("res://assets/sabatier.png")
-const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
-const ROVER_SHEET := preload("res://assets/rover/rover_idle.png")
-const DOME_ICON := preload("res://assets/base_dome/small_exterior.png")
-const GREENHOUSE_ICON := preload("res://assets/greenhouse/greenhouse_base.jpg")
-const POTATO_SEED_ICON := preload("res://assets/greenhouse/potato_first_cycle.jpg")
+const WATER_ICON := preload("res://assets/sprites/water-bottle.jpg")
+const RATION_ICON := preload("res://assets/sprites/food-ration.jpg")
+const HAMMER_ICON := preload("res://assets/sprites/pipe-hammer.png")
+const SOLAR_ICON := preload("res://assets/sprites/machines/solar-panel-spritesheet.png")
+const TRANSFORMER_SHEET := preload("res://assets/sprites/machines/transformer-spritesheet.png")
+const BATTERY_SHEET := preload("res://assets/sprites/machines/battery-spritesheet.png")
+const ICE_DRILL_SHEET := preload("res://assets/sprites/machines/ice-drill-spritesheet.png")
+const ROCK_DRILL_SHEET := preload("res://assets/sprites/machines/rock_drill/rock_drill_spritesheet.png")
+const FIELD_CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
+const ELECTROLYZER_SHEET := preload("res://assets/sprites/machines/electrolyzer.png")
+const SABATIER_SHEET := preload("res://assets/sprites/machines/sabatier.png")
+const PLAYER_SHEET := preload("res://assets/sprites/player-spritesheet.png")
+const ROVER_SHEET := preload("res://assets/sprites/rover/rover_idle.png")
+const DOME_ICON := preload("res://assets/sprites/base_dome/small_exterior.png")
+const GREENHOUSE_ICON := preload("res://assets/sprites/greenhouse/greenhouse_base.jpg")
+const POTATO_SEED_ICON := preload("res://assets/sprites/greenhouse/potato_first_cycle.jpg")
 const RESEARCH_MACHINE_SCRIPT := preload("res://scripts/ResearchMachine.gd")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"

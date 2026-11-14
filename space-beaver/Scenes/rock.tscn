@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/rock.gd" id="1_script"]
-[ext_resource type="Texture2D" path="res://sprites/rock.png" id="2_texture"]
+[ext_resource type="Texture2D" path="res://assets/sprites/rock.png" id="2_texture"]
 
 [sub_resource type="Shader" id="Shader_white_transparent"]
 code = "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"

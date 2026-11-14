@@ -431,7 +431,7 @@ func _update_energy(delta: float) -> void:
 	var connected_batteries := _connected_batteries()
 	var chain_ready := has_transformer() and bool(connection_ok.get(transformer, false))
 	var solar_factor := WorldClock.get_solar_factor()
-	production_kw = _connected_panel_count() * PANEL_OUTPUT_KW * solar_factor if chain_ready else 0.0
+	production_kw = _connected_panel_output_multiplier() * PANEL_OUTPUT_KW * solar_factor if chain_ready else 0.0
 	demand_kw = 0.0
 	for consumer in consumers:
 		var node: Node = consumer.get("node")
@@ -816,6 +816,18 @@ func _connected_panel_count() -> int:
 	for panel in panels:
 		if connection_ok.get(panel, false):
 			total += 1
+	return total
+
+
+func _connected_panel_output_multiplier() -> float:
+	var total := 0.0
+	for panel in panels:
+		if not connection_ok.get(panel, false):
+			continue
+		if panel.has_method("get_solar_output_multiplier"):
+			total += float(panel.call("get_solar_output_multiplier"))
+		else:
+			total += 1.0
 	return total
 
 

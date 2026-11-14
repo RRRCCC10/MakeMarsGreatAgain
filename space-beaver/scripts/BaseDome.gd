@@ -22,8 +22,13 @@ const ROVER_PURCHASE_COST := 2_400_000_000
 const ROVER_RECALL_COST := 300_000_000
 const ROVER_PAD_CHARGE_KW := 55.0
 const ROVER_PAD_POWER_DEMAND_KW := 50.0
-const OXYGEN_PIPE_SHEET := preload("res://sprites/machines/pipe-spritesheet.png")
-const ROVER_PAD_TEXTURE := preload("res://assets/base_dome/rover_charging_pad.png")
+const OXYGEN_PIPE_SHEET := preload("res://assets/sprites/machines/pipe-spritesheet.png")
+const ROVER_PAD_TEXTURE := preload("res://assets/sprites/base_dome/rover_charging_pad.png")
+const ROVER_PAD_SAND_TEXTURES := {
+	1: preload("res://assets/sprites/base_dome/sand/dirty/rover_charging_pad.png"),
+	2: preload("res://assets/sprites/base_dome/sand/covered/rover_charging_pad.png"),
+	3: preload("res://assets/sprites/base_dome/sand/buried/rover_charging_pad.png"),
+}
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const DOOR_FRAME_SECONDS := 0.11
 const AIRLOCK_FRAMES := 4
@@ -31,32 +36,32 @@ const SEQUENCE_LENGTH := 4
 const DIRECTION_NAMES := ["right", "down", "left", "up"]
 const DIRECTION_VECTORS := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT, Vector2.UP]
 const EXTERIOR_TEXTURES := {
-	"dome_small": preload("res://assets/base_dome/small_exterior.png"),
-	"dome_medium": preload("res://assets/base_dome/medium_exterior.png"),
-	"dome_large": preload("res://assets/base_dome/large_exterior.png"),
+	"dome_small": preload("res://assets/sprites/base_dome/small_exterior.png"),
+	"dome_medium": preload("res://assets/sprites/base_dome/medium_exterior.png"),
+	"dome_large": preload("res://assets/sprites/base_dome/large_exterior.png"),
 }
 const INTERIOR_TEXTURES := {
-	"dome_small": preload("res://assets/base_dome/small_interior.png"),
-	"dome_medium": preload("res://assets/base_dome/medium_interior.png"),
-	"dome_large": preload("res://assets/base_dome/large_interior.png"),
+	"dome_small": preload("res://assets/sprites/base_dome/small_interior.png"),
+	"dome_medium": preload("res://assets/sprites/base_dome/medium_interior.png"),
+	"dome_large": preload("res://assets/sprites/base_dome/large_interior.png"),
 }
 const CORRIDOR_SHEETS := {
-	"right": preload("res://assets/base_dome/corridor_right.png"),
-	"down": preload("res://assets/base_dome/corridor_down.png"),
-	"left": preload("res://assets/base_dome/corridor_left.png"),
-	"up": preload("res://assets/base_dome/corridor_up.png"),
+	"right": preload("res://assets/sprites/base_dome/corridor_right.png"),
+	"down": preload("res://assets/sprites/base_dome/corridor_down.png"),
+	"left": preload("res://assets/sprites/base_dome/corridor_left.png"),
+	"up": preload("res://assets/sprites/base_dome/corridor_up.png"),
 }
 const DOOR_OPEN_SHEETS := {
-	"right": preload("res://assets/base_dome/door_open_right.png"),
-	"down": preload("res://assets/base_dome/door_open_down.png"),
-	"left": preload("res://assets/base_dome/door_open_left.png"),
-	"up": preload("res://assets/base_dome/door_open_up.png"),
+	"right": preload("res://assets/sprites/base_dome/door_open_right.png"),
+	"down": preload("res://assets/sprites/base_dome/door_open_down.png"),
+	"left": preload("res://assets/sprites/base_dome/door_open_left.png"),
+	"up": preload("res://assets/sprites/base_dome/door_open_up.png"),
 }
 const DOOR_CLOSE_SHEETS := {
-	"right": preload("res://assets/base_dome/door_close_right.png"),
-	"down": preload("res://assets/base_dome/door_close_down.png"),
-	"left": preload("res://assets/base_dome/door_close_left.png"),
-	"up": preload("res://assets/base_dome/door_close_up.png"),
+	"right": preload("res://assets/sprites/base_dome/door_close_right.png"),
+	"down": preload("res://assets/sprites/base_dome/door_close_down.png"),
+	"left": preload("res://assets/sprites/base_dome/door_close_left.png"),
+	"up": preload("res://assets/sprites/base_dome/door_close_up.png"),
 }
 const DIRECTION_KEYS := [KEY_D, KEY_S, KEY_A, KEY_W]
 const DIRECTION_KEY_LABELS := ["D", "S", "A", "W"]
@@ -85,6 +90,7 @@ var _sequence_feedback := ""
 var _sequence_player: Node2D
 var _first_door_crossed := false
 var _faulted_doors := {"outer_door": false, "inner_door": false}
+var _rover_pad_sand_accumulation := 0
 var network_enabled := true
 var powered := false
 var oxygen_reserve := INITIAL_OXYGEN_UNITS
@@ -116,6 +122,9 @@ func _ready() -> void:
 		if incidents != null:
 			incidents.call("register_target", self, "outer_door", "PORTA ESTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
 			incidents.call("register_target", self, "inner_door", "PORTA INTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null and has_rover_charging_pad():
+			sandstorms.call("register_target", self, "PIAZZOLA RICARICA ROVER")
 	_refresh_rover_pad()
 	_apply_door_frames()
 
@@ -622,9 +631,9 @@ func _refresh_rover_pad() -> void:
 		_rover_pad_sprite = Sprite2D.new()
 		_rover_pad_sprite.name = "RoverChargingPad"
 		_rover_pad_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_rover_pad_sprite.texture = ROVER_PAD_TEXTURE
 		_rover_pad_sprite.z_index = 3
 		add_child(_rover_pad_sprite)
+	_rover_pad_sprite.texture = ROVER_PAD_SAND_TEXTURES.get(_rover_pad_sand_accumulation, ROVER_PAD_TEXTURE)
 	_rover_pad_sprite.position = Vector2(-get_radius() - 32.0, 0.0)
 	_rover_pad_sprite.visible = true
 	if _rover_pad_area == null or not is_instance_valid(_rover_pad_area):
@@ -1067,6 +1076,24 @@ func get_incident_repair_position(target_id: String) -> Vector2:
 	return get_outer_door_position() if target_id == "outer_door" else get_inner_door_position()
 
 
+func get_sand_accumulation() -> int:
+	return _rover_pad_sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	if not has_rover_charging_pad():
+		return
+	var clamped := clampi(level, 0, 3)
+	if _rover_pad_sand_accumulation == clamped:
+		return
+	_rover_pad_sand_accumulation = clamped
+	_refresh_rover_pad()
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position + Vector2(-get_radius() - 32.0, 0.0)
+
+
 func _destroy() -> bool:
 	if _airlock_busy or _sequence_active:
 		return false
@@ -1088,6 +1115,9 @@ func _exit_tree() -> void:
 		var incidents := get_tree().root.get_node_or_null("IncidentManager")
 		if incidents != null:
 			incidents.call("unregister_target", self)
+		var sandstorms := get_tree().root.get_node_or_null("SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
 		var pipe_manager := get_tree().root.get_node_or_null("PipeManager")
 		if pipe_manager != null:
 			pipe_manager.call("unregister_fluid_source", self)

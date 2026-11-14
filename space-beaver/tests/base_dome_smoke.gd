@@ -131,7 +131,7 @@ func _run() -> void:
 	_expect(dome.get_node_or_null("HeaterPowerPortMarker") == null, "Il collegamento elettrico non deve avere un attacco visibile")
 	if oxygen_connector != null and oxygen_connector.texture is AtlasTexture:
 		var connector_frame := oxygen_connector.texture as AtlasTexture
-		_expect(connector_frame.atlas == preload("res://sprites/machines/pipe-spritesheet.png") and connector_frame.region == Rect2(32.0, 0.0, 16.0, 16.0), "L'attacco O₂ deve avere la stessa grafica della cella di tubo arancione")
+		_expect(connector_frame.atlas == preload("res://assets/sprites/machines/pipe-spritesheet.png") and connector_frame.region == Rect2(32.0, 0.0, 16.0, 16.0), "L'attacco O₂ deve avere la stessa grafica della cella di tubo arancione")
 	_expect(not dome.is_oxygen_connected(), "Senza tubo la riserva di ossigeno non deve risultare collegata")
 	# Ingresso: E apre la porta esterna, il giocatore entra a piedi nel tunnel,
 	# F avvia la sequenza WASD e F apre il portello interno a sequenza completata.

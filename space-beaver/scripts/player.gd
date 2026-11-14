@@ -2,13 +2,15 @@ extends CharacterBody2D
 
 ## Velocità in pixel del mondo al secondo. move_and_slide() applica il delta
 ## del tick fisico: questo valore resta quindi identico a 30, 60 o 144 FPS.
-## 190 risultava circa tre volte troppo rapido nel ritmo della mappa 16×16.
-const SPEED := 64.0
+## 128 px/s conserva un passo leggibile, ma evita l'andatura troppo lenta.
+const SPEED := 128.0
 const PICKUP_DISTANCE := 70.0
 const FRAME_SIZE := Vector2i(32, 32)
-const PLAYER_SHEET := preload("res://sprites/player-spritesheet.png")
-const MIN_CAMERA_ZOOM := 0.35
-const MAX_CAMERA_ZOOM := 3.0
+const PLAYER_SHEET := preload("res://assets/sprites/player-spritesheet.png")
+## La rotella resta libera, ma non può mostrare una porzione eccessiva del mondo
+## né ingrandire gli sprite oltre una visuale confortevole.
+const MIN_CAMERA_ZOOM := 0.60
+const MAX_CAMERA_ZOOM := 2.75
 const ZOOM_FACTOR := 1.18
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -219,6 +221,13 @@ func _input(event: InputEvent) -> void:
 	# prima della salita. Il veicolo va gestito nel passaggio input prioritario.
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
+	var sandstorm_manager := get_node_or_null("/root/SandstormManager")
+	if _is_control_key(event, KEY_T) and sandstorm_manager != null and bool(sandstorm_manager.call("toggle_nearby_solar_tarp", self)):
+		get_viewport().set_input_as_handled()
+		return
+	if _is_control_key(event, KEY_E) and sandstorm_manager != null and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
+		get_viewport().set_input_as_handled()
+		return
 	if not _is_control_key(event, KEY_E):
 		return
 	if _try_board_nearby_rover():
@@ -229,6 +238,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	# Una riparazione e' modale: va gestita prima del controllo generale sulle
 	# GUI, altrimenti UIState bloccherebbe proprio la sequenza WASD necessaria.
 	if event is InputEventKey and event.pressed and not event.echo:
+		var sandstorm_manager := get_node_or_null("/root/SandstormManager")
+		if sandstorm_manager != null:
+			if _is_control_key(event, KEY_T) and bool(sandstorm_manager.call("toggle_nearby_solar_tarp", self)):
+				get_viewport().set_input_as_handled()
+				return
+			if _is_control_key(event, KEY_E) and not _ui_blocks_world_actions() and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
+				get_viewport().set_input_as_handled()
+				return
 		var incident_manager := get_node_or_null("/root/IncidentManager")
 		if incident_manager != null:
 			var repair_key := _get_control_key(event)

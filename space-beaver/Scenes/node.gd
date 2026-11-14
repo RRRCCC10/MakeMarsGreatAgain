@@ -523,7 +523,14 @@ func _update_nearby_machine_ui() -> void:
 			nearby_machine_stock.text = "RISERVA  ·  %d campioni  ·  E apri deposito" % sample_count
 		else:
 			nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]
-	nearby_machine_prompt.text = "V  ·  DISCONNETTI DALLA RETE" if enabled else "V  ·  CONNETTI ALLA RETE"
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	var sand_prompt := str(sandstorms.call("get_nearby_sand_prompt", get_parent())) if sandstorms != null else ""
+	if not sand_prompt.is_empty():
+		nearby_machine_prompt.text = sand_prompt
+		nearby_machine_prompt.add_theme_color_override("font_color", Color("ffd27a"))
+	else:
+		nearby_machine_prompt.text = "V  ·  DISCONNETTI DALLA RETE" if enabled else "V  ·  CONNETTI ALLA RETE"
+		nearby_machine_prompt.add_theme_color_override("font_color", Color("7ed7ff"))
 
 
 func _find_nearest_electrical_device() -> Dictionary:

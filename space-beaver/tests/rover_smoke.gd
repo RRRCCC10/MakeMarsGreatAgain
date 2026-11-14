@@ -2,7 +2,7 @@ extends SceneTree
 
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
 const ROCK_SCENE := preload("res://Scenes/rock.tscn")
-const DRIVER_RIGHT_SHEET := preload("res://assets/rover/rover_driver_right.png")
+const DRIVER_RIGHT_SHEET := preload("res://assets/sprites/rover/rover_driver_right.png")
 
 var failures: Array[String] = []
 

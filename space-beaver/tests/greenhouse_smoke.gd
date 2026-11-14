@@ -3,8 +3,8 @@ extends SceneTree
 const GREENHOUSE_SCRIPT := preload("res://scripts/Greenhouse.gd")
 const PIPE_SCENE := preload("res://Scenes/pipe.tscn")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
-const GREENHOUSE_SOURCE := preload("res://assets/greenhouse/greenhouse_base.jpg")
-const POTATO_SOURCE := preload("res://assets/greenhouse/potato_first_cycle.jpg")
+const GREENHOUSE_SOURCE := preload("res://assets/sprites/greenhouse/greenhouse_base.jpg")
+const POTATO_SOURCE := preload("res://assets/sprites/greenhouse/potato_first_cycle.jpg")
 
 
 class FakeWaterSource:

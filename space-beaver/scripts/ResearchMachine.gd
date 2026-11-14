@@ -98,7 +98,7 @@ static func _texture_for_state(machine_id_value: String, machine_state: State) -
 		state_key = "active"
 	elif machine_state == State.COMPLETE:
 		state_key = "complete"
-	var resource_path := "res://assets/research/%s_%s.png" % [_asset_prefix_for(machine_id_value), state_key]
+	var resource_path := "res://assets/sprites/research/%s_%s.png" % [_asset_prefix_for(machine_id_value), state_key]
 	if texture_cache.has(resource_path):
 		return texture_cache[resource_path] as Texture2D
 	# Gli sprite vengono letti direttamente dal PNG: il gioco non dipende dalla

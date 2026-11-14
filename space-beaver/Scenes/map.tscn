@@ -1,11 +1,11 @@
 [gd_scene format=4]
 
-[ext_resource type="Texture2D" path="res://sprites/sand-spritesheet.jpeg" id="1_np2xp"]
-[ext_resource type="Texture2D" path="res://sprites/terrain/regolite_rossa.png" id="2_w7jjh"]
-[ext_resource type="Texture2D" path="res://sprites/terrain/pietra_rossastra.png" id="3_6q3n4"]
-[ext_resource type="Texture2D" path="res://sprites/terrain/ghiaccio_polveroso.png" id="4_4c2oa"]
-[ext_resource type="Texture2D" path="res://sprites/terrain/ghiaccio_blu.png" id="5_olcgw"]
-[ext_resource type="Texture2D" path="res://sprites/terrain/basalto_scuro.png" id="6_dlo4w"]
+[ext_resource type="Texture2D" path="res://assets/sprites/sand-spritesheet.jpeg" id="1_np2xp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/regolite_rossa.png" id="2_w7jjh"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/pietra_rossastra.png" id="3_6q3n4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/ghiaccio_polveroso.png" id="4_4c2oa"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/ghiaccio_blu.png" id="5_olcgw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/terrain/basalto_scuro.png" id="6_dlo4w"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_q6lx1"]
 texture = ExtResource("1_np2xp")

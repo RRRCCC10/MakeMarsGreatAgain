@@ -43,6 +43,7 @@ func restart_from_scratch() -> void:
 	AchievementManager.reset_for_new_mission()
 	FieldCamera.reset_for_new_mission()
 	IncidentManager.reset_for_new_mission()
+	SandstormManager.reset_for_new_mission()
 	get_tree().reload_current_scene()
 
 

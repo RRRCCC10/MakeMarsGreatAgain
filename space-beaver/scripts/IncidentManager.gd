@@ -195,7 +195,11 @@ func _roll_for_incident() -> void:
 			continue
 		if target.has_method("can_receive_incident") and not bool(target.call("can_receive_incident", str(data.get("target_id", "")))):
 			continue
-		var rate := INCIDENT_RATE_PER_SECOND * float(data.get("rate_multiplier", 1.0))
+		var storm_multiplier := 1.0
+		var sandstorm_manager := get_node_or_null("/root/SandstormManager")
+		if sandstorm_manager != null and sandstorm_manager.has_method("get_incident_rate_multiplier"):
+			storm_multiplier = float(sandstorm_manager.call("get_incident_rate_multiplier"))
+		var rate := INCIDENT_RATE_PER_SECOND * float(data.get("rate_multiplier", 1.0)) * storm_multiplier
 		var chance := 1.0 - exp(-rate * INCIDENT_CHECK_SECONDS)
 		if _rng.randf() < chance:
 			_trigger_incident(key, data, false)

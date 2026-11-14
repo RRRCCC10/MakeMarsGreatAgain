@@ -5,8 +5,13 @@ signal landing_completed
 
 enum Phase { SPACE_FLIGHT, REVEAL_MARS, DESCENT, TOUCHDOWN, COMPLETE }
 
-const ROCKET_SHEET := preload("res://sprites/rocket/rocket-landing-spritesheet.png")
-const ROCKET_PAD_TEXTURE := preload("res://sprites/rocket/rocket-pad.png")
+const ROCKET_SHEET := preload("res://assets/sprites/rocket/rocket-landing-spritesheet.png")
+const ROCKET_PAD_TEXTURE := preload("res://assets/sprites/rocket/rocket-pad.png")
+const ROCKET_PAD_SAND_TEXTURES := {
+	1: preload("res://assets/sprites/rocket/sand/dirty/rocket-pad.png"),
+	2: preload("res://assets/sprites/rocket/sand/covered/rocket-pad.png"),
+	3: preload("res://assets/sprites/rocket/sand/buried/rocket-pad.png"),
+}
 const ROCKET_FRAME_SIZE := Vector2i(32, 64)
 const ROCKET_COLUMNS := 10
 const ROCKET_FRAME_COUNT := 30
@@ -38,6 +43,7 @@ var rocket_frames: Array[Texture2D] = []
 var stars: Array[ColorRect] = []
 var star_speeds: Array[float] = []
 var gameplay_layer_visibility: Dictionary = {}
+var sand_accumulation := 0
 
 
 func _ready() -> void:
@@ -51,6 +57,9 @@ func _ready() -> void:
 	global_position = player.global_position + LANDING_SITE_OFFSET
 	_create_landed_site()
 	BuildableRegistry.register_buildable(self, "MODULO DI ATTERRAGGIO", "mission_structure", _deny_removal)
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null:
+		sandstorms.call("register_target", self, "BASE DI ATTERRAGGIO")
 
 	# I test headless non devono attendere la cinematica, ma verificano lo
 	# stesso stato finale che il giocatore ottiene dopo l'atterraggio.
@@ -349,6 +358,20 @@ func get_thermal_shelter_bonus_c() -> float:
 	return 18.0
 
 
+func get_sand_accumulation() -> int:
+	return sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	sand_accumulation = clampi(level, 0, 3)
+	if pad_sprite != null:
+		pad_sprite.texture = ROCKET_PAD_SAND_TEXTURES.get(sand_accumulation, ROCKET_PAD_TEXTURE)
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
 func _deny_removal() -> bool:
 	return false
 
@@ -359,5 +382,8 @@ func _smooth(value: float) -> float:
 
 func _exit_tree() -> void:
 	BuildableRegistry.unregister_buildable(self)
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null:
+		sandstorms.call("unregister_target", self)
 	if not landing_complete and get_tree() != null:
 		get_tree().paused = false

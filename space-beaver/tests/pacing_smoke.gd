@@ -17,7 +17,7 @@ func _run() -> void:
 	var player := get_first_node_in_group("player") as CharacterBody2D
 	_expect(player != null, "La scena principale deve avere un player")
 	if player != null:
-		_expect(is_equal_approx(float(player.get("SPEED")), 64.0), "Il player deve usare la velocità di progetto di 64 px/s")
+		_expect(is_equal_approx(float(player.get("SPEED")), 128.0), "Il player deve usare la velocità di progetto di 128 px/s")
 		player.collision_mask = 0
 		player.global_position = Vector2.ZERO
 		var start_position := player.global_position
@@ -26,7 +26,7 @@ func _run() -> void:
 			await physics_frame
 		Input.action_release("move_right")
 		var travelled := player.global_position.distance_to(start_position)
-		_expect(travelled > 57.0 and travelled < 71.0, "Un secondo di fisica deve spostare il player di circa 64 px, indipendentemente dagli FPS")
+		_expect(travelled > 121.0 and travelled < 135.0, "Un secondo di fisica deve spostare il player di circa 128 px, indipendentemente dagli FPS")
 
 	var clock := root.get_node_or_null("WorldClock")
 	var hunger := root.get_node_or_null("Hunger")

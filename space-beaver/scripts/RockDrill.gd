@@ -7,7 +7,7 @@ extends Node2D
 
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const ROCK_RESOURCE := preload("res://scripts/rock.gd")
-const DRILL_SHEET := preload("res://assets/rock_drill/rock_drill_spritesheet.png")
+const DRILL_SHEET := preload("res://assets/sprites/machines/rock_drill/rock_drill_spritesheet.png")
 
 const TILE_SIZE := 16
 const FRAME_SIZE := Vector2i(16, 48)
@@ -33,6 +33,7 @@ var placement_rotation := 0
 var network_enabled := false
 var powered := false
 var incident_faulted := false
+var sand_accumulation := 0
 var biome_source_id := 0
 var biome_label := "PIANURA DI ATTERRAGGIO"
 var extraction_elapsed := 0.0
@@ -81,6 +82,9 @@ func _ready() -> void:
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
 		incidents.call("register_target", self, "machine", "TRIVELLA MINERARIA")
+	var sandstorms := get_node_or_null("/root/SandstormManager")
+	if sandstorms != null:
+		sandstorms.call("register_target", self, "TRIVELLA MINERARIA")
 
 
 func _exit_tree() -> void:
@@ -88,6 +92,9 @@ func _exit_tree() -> void:
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
 			incidents.call("unregister_target", self, "machine")
+		var sandstorms := get_node_or_null("/root/SandstormManager")
+		if sandstorms != null:
+			sandstorms.call("unregister_target", self)
 	if storage_layer != null and is_instance_valid(storage_layer):
 		storage_layer.queue_free()
 	if storage_root != null and storage_root.visible:
@@ -135,6 +142,7 @@ func _apply_placement_rotation() -> void:
 func _refresh_texture() -> void:
 	if sprite == null:
 		return
+	sprite.modulate = Color.WHITE if sand_accumulation <= 0 else Color(1.0, 0.78 - float(sand_accumulation) * 0.10, 0.58 - float(sand_accumulation) * 0.10)
 	var frame := AtlasTexture.new()
 	frame.atlas = DRILL_SHEET
 	frame.region = Rect2(Vector2i(posmod(animation_frame, FRAME_COUNT), 0) * FRAME_SIZE, FRAME_SIZE)
@@ -411,6 +419,28 @@ func can_receive_incident(_target_id: String = "machine") -> bool:
 
 func get_incident_repair_position(_target_id: String = "machine") -> Vector2:
 	return global_position
+
+
+func get_sand_accumulation() -> int:
+	return sand_accumulation
+
+
+func set_sand_accumulation(level: int) -> void:
+	var clamped := clampi(level, 0, 3)
+	if sand_accumulation == clamped:
+		return
+	sand_accumulation = clamped
+	_refresh_texture()
+
+
+func get_sand_clean_position() -> Vector2:
+	return global_position
+
+
+func on_sand_buried() -> void:
+	var incidents := get_node_or_null("/root/IncidentManager")
+	if incidents != null:
+		incidents.call("force_incident", self, "machine")
 
 
 func _build_storage_ui() -> void:
