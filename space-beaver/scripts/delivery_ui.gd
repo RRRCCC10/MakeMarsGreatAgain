@@ -84,4 +84,3 @@ func _panel_style() -> StyleBoxFlat:
 	style.content_margin_top = 7
 	style.content_margin_bottom = 7
 	return style
-

@@ -123,4 +123,3 @@ func _button_style(color: Color) -> StyleBoxFlat:
 	style.content_margin_top = 8
 	style.content_margin_bottom = 8
 	return style
-
