@@ -45,7 +45,9 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_dismiss_current()
-		get_viewport().set_input_as_handled()
+		# L'avviso deve sparire al primo click, ma non può divorare quel click:
+		# per esempio il giocatore può chiuderlo selezionando subito un oggetto
+		# nell'inventario aperto sotto di esso.
 
 
 func _dismiss_current() -> void:
@@ -105,7 +107,9 @@ func _build_ui() -> void:
 	_root = Control.new()
 	_root.name = "AchievementSuccessRoot"
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	# È una notifica, non una finestra modale: lascia interagire con tutte le
+	# GUI sottostanti anche mentre è visibile.
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.visible = false
 	add_child(_root)
 
@@ -164,6 +168,16 @@ func _build_ui() -> void:
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rows.add_child(_hint)
+	_set_mouse_ignored_recursively(_root)
+
+
+func _set_mouse_ignored_recursively(node: Node) -> void:
+	# IGNORE non si eredita in Godot: anche i contenitori interni devono essere
+	# ignorati, altrimenti una MarginContainer trasparente fermerebbe i click.
+	if node is Control:
+		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_set_mouse_ignored_recursively(child)
 
 
 func icon_vertical_center(label: Label) -> void:

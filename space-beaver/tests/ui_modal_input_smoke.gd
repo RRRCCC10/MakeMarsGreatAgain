@@ -27,16 +27,38 @@ func _run() -> void:
 	var map_ui := current_scene.get_node_or_null("WorldMapUI")
 	var inventory_ui := current_scene.get_node_or_null("InventoryUI")
 	var shop_ui := current_scene.get_node_or_null("ShopUI")
-	_expect(ui_state != null and inventory != null and shop != null and achievements != null and registry != null and player != null and board != null and map_ui != null and inventory_ui != null and shop_ui != null, "mancano i nodi necessari alla verifica GUI")
-	if ui_state == null or inventory == null or shop == null or achievements == null or registry == null or player == null or board == null or map_ui == null or inventory_ui == null or shop_ui == null:
+	var quick_actions_ui := current_scene.get_node_or_null("QuickActionsUI")
+	var achievement_success_ui := current_scene.get_node_or_null("AchievementSuccessUI")
+	_expect(ui_state != null and inventory != null and shop != null and achievements != null and registry != null and player != null and board != null and map_ui != null and inventory_ui != null and shop_ui != null and quick_actions_ui != null and achievement_success_ui != null, "mancano i nodi necessari alla verifica GUI")
+	if ui_state == null or inventory == null or shop == null or achievements == null or registry == null or player == null or board == null or map_ui == null or inventory_ui == null or shop_ui == null or quick_actions_ui == null or achievement_success_ui == null:
 		_finish()
 		return
 
 	inventory.call("close")
 	shop.call("close")
 	ui_state.call("reset_for_new_mission")
+	inventory.call("reset_for_new_mission")
+	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi di patate", 1, false)), "I semi di prova devono entrare nello zaino")
+	var seed_index := _find_inventory_slot(inventory.get("backpack"), "potato_seeds")
+	_expect(seed_index >= 0, "I semi di prova devono avere uno slot nello zaino")
 	_expect(bool(inventory.call("open")), "l'inventario deve aprirsi quando non esiste una GUI modale")
 	_expect(str(ui_state.get("active_modal")) == "inventory", "l'inventario deve registrarsi come GUI attiva")
+	await process_frame
+	var backpack_buttons: Array = inventory_ui.get("backpack_buttons")
+	var hotbar_buttons: Array = inventory_ui.get("hotbar_buttons")
+	var quick_actions_root := quick_actions_ui.get("_root") as Control
+	var achievement_root := achievement_success_ui.get("_root") as Control
+	_expect(quick_actions_root != null and not quick_actions_root.visible, "I pulsanti rapidi devono sparire mentre lo zaino è aperto")
+	_expect(achievement_root != null and _all_controls_ignore_mouse(achievement_root), "La notifica achievement non deve intercettare click della GUI")
+	_expect(seed_index >= 0 and seed_index < backpack_buttons.size(), "Il pulsante dello slot zaino deve esistere")
+	_expect(hotbar_buttons.size() > 1, "I pulsanti della hotbar devono esistere")
+	if seed_index >= 0 and seed_index < backpack_buttons.size() and hotbar_buttons.size() > 1:
+		(backpack_buttons[seed_index] as Button).pressed.emit()
+		await process_frame
+		_expect(int(inventory.get("selected_backpack_index")) == seed_index, "Il click del pulsante zaino deve selezionare l'oggetto")
+		(hotbar_buttons[1] as Button).pressed.emit()
+		await process_frame
+		_expect(str(inventory.get("hotbar")[1].get("id", "")) == "potato_seeds", "Il click del pulsante hotbar deve spostare l'oggetto selezionato")
 	board.call("open")
 	_expect(not bool(achievements.get("is_board_open")), "la tavola non deve aprirsi sopra l'inventario")
 	_expect(not bool(map_ui.call("open_map")), "la minimappa non deve aprirsi sopra l'inventario")
@@ -92,6 +114,22 @@ func _key(keycode: Key) -> InputEventKey:
 	event.physical_keycode = keycode
 	event.pressed = true
 	return event
+
+
+func _find_inventory_slot(slots: Array, item_id: String) -> int:
+	for index in range(slots.size()):
+		if str(slots[index].get("id", "")) == item_id:
+			return index
+	return -1
+
+
+func _all_controls_ignore_mouse(node: Node) -> bool:
+	if node is Control and (node as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		return false
+	for child in node.get_children():
+		if not _all_controls_ignore_mouse(child):
+			return false
+	return true
 
 
 func _finish() -> void:

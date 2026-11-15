@@ -26,16 +26,19 @@ func _process(_delta: float) -> void:
 	var shop_open := _panel_is_open("ShopUI")
 	var power_open := _panel_is_open("PowerUI")
 	var achievements_open := AchievementManager.is_board_open
-	_root.visible = not _landing_is_active() and not shop_open and not power_open and not achievements_open
+	# La hotbar/zaino è un pannello interattivo: i tasti rapidi non devono
+	# restargli sopra né dal punto di vista visivo né da quello dell'input.
+	_root.visible = not _landing_is_active() and not Inventory.is_open and not shop_open and not power_open and not achievements_open
 
 
 func _build_ui() -> void:
 	_root = Control.new()
 	_root.name = "QuickActionsRoot"
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Il pannello a schermo intero non deve mangiare i click, ma i suoi figli
-	# devono poterli ricevere. PASS lascia attraversare le aree vuote.
-	_root.mouse_filter = Control.MOUSE_FILTER_PASS
+	# Questo layer vive sopra l'inventario: PASS intercetta comunque il mouse
+	# prima dei pannelli sottostanti. IGNORE lascia davvero passare le aree
+	# vuote, mentre i figli (la colonna con i tre pulsanti) restano cliccabili.
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
 	var row := VBoxContainer.new()
