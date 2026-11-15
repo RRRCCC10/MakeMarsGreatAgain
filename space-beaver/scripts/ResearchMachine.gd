@@ -618,10 +618,10 @@ func get_prompt_for_player(_player: Node2D) -> String:
 	if state == State.ANALYZING:
 		var analysis_status := "%s · analisi %s" % [str(get_definition(machine_id).get("short_name", "RICERCA")), _format_time(get_remaining_seconds())]
 		if sample_is_primordial_ice:
-			analysis_status += "\nSCANSIONE BIOSIGNATURE · probabilità %.0f%%" % (biosignature_chance * 100.0)
+			analysis_status += "\nMODELLO DI GIOCO · segnale compatibile %.0f%%" % (biosignature_chance * 100.0)
 		return analysis_status if powered else analysis_status + "\nIN PAUSA · COLLEGA 240 kW"
 	if state == State.COMPLETE:
-		var report_header := "BIOSIGNATURA RILEVATA" if sample_is_primordial_ice and ancient_life_detected else "RAPPORTO PRONTO"
+		var report_header := "SEGNALE COMPATIBILE RILEVATO" if sample_is_primordial_ice and ancient_life_detected else "RAPPORTO PRONTO"
 		if not report_signed:
 			return "%s · FIRMA NECESSARIA\nE · FIRMA RAPPORTO · %s" % [report_header, _format_money(get_reward())]
 		return "%s · RAPPORTO FIRMATO\nE · INVIA ALLA TERRA · %s" % [report_header, _format_money(get_reward())]
@@ -776,10 +776,10 @@ func get_machine_specs() -> Dictionary:
 		status = "ANALISI IN CORSO" if powered else "ANALISI IN PAUSA · RETE ASSENTE"
 		detail = "%s · %s · %s · restano %s" % [sample_name, sample_biome, _rarity_label(), _format_time(get_remaining_seconds())]
 		if sample_is_primordial_ice:
-			detail += " · biosignature %.0f%%" % (biosignature_chance * 100.0)
+			detail += " · segnale compatibile (modello) %.0f%%" % (biosignature_chance * 100.0)
 		color = Color("ffe38a")
 	elif state == State.COMPLETE:
-		status = "BIOSIGNATURA RILEVATA" if ancient_life_detected else "RAPPORTO PRONTO"
+		status = "SEGNALE COMPATIBILE RILEVATO" if ancient_life_detected else "RAPPORTO PRONTO"
 		detail = "%s · %s · %s · %s · %s" % [sample_name, sample_biome, _rarity_label(), "firmare il rapporto" if not report_signed else "pronto per l'invio", _format_money(get_reward())]
 		color = Color("7fffd4") if ancient_life_detected else Color("72eda0")
 	var research_multiplier := 1.0
@@ -796,7 +796,7 @@ func get_machine_specs() -> Dictionary:
 		"status": status,
 		"status_color": color,
 		"principle": str(get_definition(machine_id).get("principle", "")),
-		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f · contratti: ×%.2f" % [sample_research_multiplier, research_multiplier], "Biosignature: %s" % ("RILEVATA · bonus %s" % _format_money(ANCIENT_LIFE_REPORT_BONUS) if ancient_life_detected else ("possibilità %.0f%%" % (biosignature_chance * 100.0) if sample_is_primordial_ice else "non applicabile")), "Contratti Terra: %s" % contracts, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
+		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f · contratti: ×%.2f" % [sample_research_multiplier, research_multiplier], "Segnale compatibile (modello di gioco): %s" % ("RILEVATO · bonus %s" % _format_money(ANCIENT_LIFE_REPORT_BONUS) if ancient_life_detected else ("chance %.0f%%" % (biosignature_chance * 100.0) if sample_is_primordial_ice else "non applicabile")), "Contratti Terra: %s" % contracts, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
 	}
 
 

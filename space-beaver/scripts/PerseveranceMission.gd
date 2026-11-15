@@ -243,7 +243,7 @@ func _create_damage_report() -> void:
 	_set_state(State.REPORT_READY)
 	if _report_panel != null:
 		_report_panel.visible = true
-		_report_label.text = "RAPPORTO DANNI // PERSEVERANCE\nFotocamera mast: riallineamento richiesto\nRuota anteriore: servocomando bloccato\nPannello radio: connettore da isolare\n\nF · FIRMA RAPPORTO"
+		_report_label.text = "PERSEVERANCE (NASA, 2021)\n\n• Periodo operativo: 18 febbraio-novembre 2026;\n• Causa della cessazione delle operazioni: il progressivo deterioramento delle ruote e dei motori di trazione, dovuto alla lunga esposizione al terreno marziano e all'usura dei componenti meccanici, compromette la capacità di movimento del rover, rendendolo definitivamente impossibilitato a proseguire le operazioni.\n• Condizione finale: rimarrebbe immobilizzato nel cratere Jezero, su Marte. Prima del guasto aveva percorso oltre 45,22 km (dato dell'11 ottobre 2026), superando il record di Opportunity.\n\nF · FIRMA RAPPORTO"
 
 
 func _sign_report() -> void:
@@ -440,10 +440,10 @@ func _build_guidance_ui() -> void:
 	_report_panel.anchor_top = 0.5
 	_report_panel.anchor_right = 0.5
 	_report_panel.anchor_bottom = 0.5
-	_report_panel.offset_left = -245.0
-	_report_panel.offset_top = -135.0
-	_report_panel.offset_right = 245.0
-	_report_panel.offset_bottom = 135.0
+	_report_panel.offset_left = -430.0
+	_report_panel.offset_top = -245.0
+	_report_panel.offset_right = 430.0
+	_report_panel.offset_bottom = 245.0
 	_report_panel.add_theme_stylebox_override("panel", _report_style())
 	_report_panel.visible = false
 	_report_layer.add_child(_report_panel)
@@ -452,7 +452,7 @@ func _build_guidance_ui() -> void:
 	_report_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_report_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_report_label.add_theme_font_override("font", UI_FONT)
-	_report_label.add_theme_font_size_override("font_size", 14)
+	_report_label.add_theme_font_size_override("font_size", 13)
 	_report_label.add_theme_color_override("font_color", Color("d9eef0"))
 	_report_label.add_theme_color_override("font_outline_color", Color("061014"))
 	_report_label.add_theme_constant_override("outline_size", 2)

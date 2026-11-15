@@ -47,6 +47,8 @@ func _run() -> void:
 	_expect(int(mission.get("state")) == mission.State.AWAIT_STUDY, "Dopo la trasmissione deve iniziare lo studio danni")
 	mission.call("_create_damage_report")
 	_expect(int(mission.get("state")) == mission.State.REPORT_READY, "Lo studio deve produrre un rapporto danni firmabile")
+	var report_label := mission.get("_report_label") as Label
+	_expect(report_label != null and report_label.text.contains("PERSEVERANCE (NASA, 2021)") and report_label.text.contains("45,22 km") and report_label.text.contains("cratere Jezero"), "Il report deve usare il testo narrativo approvato per Perseverance")
 	_send_key(mission, KEY_F)
 	_expect(int(mission.get("state")) == mission.State.REPORT_SIGNED, "F deve firmare il rapporto")
 	_send_key(mission, KEY_R)

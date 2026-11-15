@@ -44,7 +44,7 @@ const CATALOG := {
 		"price": 1_800_000_000,
 		"category": "life_support",
 		"placeable": true,
-		"description": "Consuma 65 kW e acqua da una tubazione in basso a sinistra. Accumula idrogeno e ossigeno; le due uscite possono essere collegate separatamente.",
+		"description": "Consuma 65 kW e acqua da una tubazione in basso a sinistra. Produce H₂ e O₂ in continuo; le due uscite possono essere collegate separatamente e i gas non vengono accumulati nella macchina.",
 	},
 	"sabatier": {
 		"name": "Reattore Sabatier",

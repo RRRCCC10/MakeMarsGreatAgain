@@ -10,7 +10,7 @@ const CATEGORIES := [
 	{"id": "field", "label": "CAMPO", "icon": "◈", "color": Color("e6a66d"), "description": "Campioni, esplorazione e contratti eseguibili senza infrastrutture."},
 	{"id": "habitat", "label": "BASE", "icon": "⌂", "color": Color("91dfa2"), "description": "Sopravvivenza, aria, acqua, energia e coltivazioni."},
 	{"id": "science", "label": "RICERCA", "icon": "⌬", "color": Color("c6a4ff"), "description": "Laboratori, rapporti e contratti scientifici ad alto valore."},
-	{"id": "cryo", "label": "CRIOSFERA", "icon": "❄", "color": Color("9ee8f4"), "description": "Ghiaccio profondo e la possibile prova di vita antica."},
+	{"id": "cryo", "label": "CRIOSFERA", "icon": "❄", "color": Color("9ee8f4"), "description": "Ghiaccio profondo e segnali compatibili con una possibile biosignatura."},
 	{"id": "photos", "label": "IMMAGINI", "icon": "▣", "color": Color("84dced"), "description": "Archivio fotografico e trasmissioni visive verso la Terra."},
 ]
 

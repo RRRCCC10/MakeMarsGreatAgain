@@ -70,7 +70,7 @@ Un ciclo pratico tipico è:
 3. Collega il nuovo impianto alla rete elettrica e, se serve, alle reti di fluidi.
 4. Crea una cupola con aria, temperatura e accesso tramite camera di decompressione.
 5. Installa una serra e avvia una produzione di patate.
-6. Porta un campione a un macchinario scientifico; al completamento invia il rapporto alla Terra.
+6. Porta un campione a un macchinario scientifico; al completamento firma e invia il rapporto alla Terra.
 7. Investe il denaro ricevuto in nuovi moduli, protezioni, rover e capacità di ricerca.
 
 ---
@@ -149,7 +149,7 @@ La UI di sopravvivenza mostra costantemente i parametri critici. La pressione se
 
 - La sazietà parte a 100 e cala di **0,20 al secondo**.
 - Una razione recupera **30** punti di fame.
-- Il raccolto completo della serra fornisce 16 razioni di patate.
+- Il raccolto completo della serra fornisce 4 o 5 razioni di patate, con probabilità 50% per ciascun risultato.
 
 ### Freddo e ipotermia
 
@@ -248,7 +248,7 @@ La rete distingue tre flussi incompatibili: corrente grezza dai pannelli, corren
 - Senza batterie, un consumatore funziona solo se la produzione solare istantanea copre tutta la richiesta.
 - Se pannelli e batterie non coprono la domanda, la rete va in blackout.
 - Un pannello richiede due celle di sprite più una cella libera alla sua destra per l'uscita del cavo.
-- Il trasformatore è unico: non se ne può possedere più di uno tra mondo, inventario e consegne.
+- Si possono acquistare più trasformatori: ogni trasformatore avvia una rete elettrica indipendente, utile per basi lontane che non devono unirsi.
 
 ### Collegamento volontario
 
@@ -259,7 +259,7 @@ I consumatori possiedono uno stato di collegamento alla rete. Vicino a un macchi
 | Dispositivo | Prezzo | Effetto |
 |---|---:|---|
 | Pannello solare | $500 MLN | Produce fino a 100 kW di giorno. |
-| Trasformatore | $1 MLD | Trasforma e instrada la rete; uno solo. |
+| Trasformatore | $1 MLD | Trasforma e instrada una rete indipendente; se ne possono acquistare più di uno. |
 | Batteria | $750 MLN | Accumula 500 kWh per notte e picchi di domanda. |
 
 ---
@@ -297,7 +297,8 @@ L'elettrolizzatore **non è un serbatoio**: nessun gas deve accumularsi al suo i
 |---|---:|
 | Prezzo | $1,25 MLD |
 | Assorbimento | 60 kW |
-| Produzione | 40 L/h di gioco |
+| Produzione | 80 L/h di gioco |
+| Riserva interna | 500 L |
 | Raccordo acqua | Destra, cella centrale |
 
 Quando la trivella è alimentata estrae acqua. Se la sua uscita è collegata a una tubazione, l'acqua è disponibile ai consumatori. Con la borraccia selezionata, il giocatore può avvicinarsi e premere `E` per ricaricarla.
@@ -462,7 +463,7 @@ La serra cresce solo quando riceve acqua da una rete con una sorgente disponibil
 | Primo ciclo | 5 minuti reali |
 | Cicli successivi | 3 minuti reali |
 | Lotto di semi | Pianta tutte le 16 aiuole |
-| Raccolto | 16 razioni di patate |
+| Raccolto base | 4 o 5 razioni di patate, 50% ciascuno |
 
 Il tempo è registrato come lavoro di crescita. Se si disattiva la corrente, il lavoro già completato rimane completato: non viene regalato tempo collegando l'energia all'ultimo istante, né viene annullato il vantaggio già ottenuto.
 
@@ -550,13 +551,13 @@ Riscattare **Sacca campioni** consegna, oltre ai $420 MLN, una **telecamera scie
 
 La fotografia è un secondo percorso economico early game: non richiede rete, cupola, laboratorio né consumi energetici. I soggetti speciali riconosciuti sono roccia normale/rara, sei biomi, notte, alba polare, cupola, serra, laboratorio, ghiaccio profondo nell'inventario e laboratorio dopo la scoperta della vita. I contratti pagano da $150 MLN a $4 MLD e premiano il giocatore che si sposta nel mondo invece di restare vicino alla base.
 
-L'archivio conserva fino a 36 scatti. Un effetto lampo dà conferma immediata dello scatto; un messaggio separato conferma l'invio, così “foto fatta” e “foto pagata” non vengono mai confuse.
+L'archivio conserva gli scatti della missione senza un limite numerico imposto dal gioco. Un effetto lampo dà conferma immediata dello scatto; un messaggio separato conferma l'invio, così “foto fatta” e “foto pagata” non vengono mai confuse.
 
 | Strumento | Prezzo | Tempo base | Ricavo base | Dimensione |
 |---|---:|---:|---:|---|
-| Diffrattometro a raggi X (XRD) | $1,6 MLD | 2 min 30 s | $450 MLN | 32×16 px |
-| Spettrometro Raman | $2,0 MLD | 3 min | $600 MLN | 32×16 px |
-| ICP-MS | $2,8 MLD | 4 min | $900 MLN | 48×16 px |
+| Diffrattometro a raggi X (XRD) | $1,6 MLD | 2 min 30 s | $1,0 MLD + bonus | 32×16 px |
+| Spettrometro Raman | $2,0 MLD | 3 min | $1,3 MLD + bonus | 32×16 px |
+| ICP-MS | $2,8 MLD | 4 min | $1,9 MLD + bonus | 48×16 px |
 
 Tutti i laboratori assorbono **240 kW** mentre analizzano. Quando hanno finito, mostrano uno stato/animazione dedicato; la trasmissione del rapporto richiede 4 secondi.
 
@@ -574,19 +575,19 @@ Da vicino, `U` acquista un upgrade se ci sono fondi. Ogni laboratorio può arriv
 
 Gli upgrade riducono gradualmente il tempo di analisi. Al massimo livello, qualunque macchina arriva a **40 secondi** di analisi. Il pannello del laboratorio mostra campione, livello, durata attuale, prossimo costo, assorbimento, stato della rete e ricavo del rapporto.
 
-### Ghiaccio profondo primordiale e vita antica
+### Ghiaccio profondo e segnali compatibili
 
-La trivella mineraria può trovare il **ghiaccio profondo primordiale** in ogni bioma con probabilità dell'**1%** per estrazione. Sul bioma del ghiaccio polare la probabilità sale al **10%**: è il posto da cui parte la spedizione più rischiosa e redditizia.
+La trivella mineraria può trovare il **ghiaccio profondo primordiale** in ogni bioma con probabilità dell'**1%** per estrazione. Sul bioma del ghiaccio polare la probabilità sale al **10%**: sono valori di bilanciamento del gioco, non stime geologiche reali e non implicano che sia stata confermata acqua o vita in quegli strati.
 
-Il campione si può inserire in qualunque laboratorio. Durante lo studio viene mostrata la probabilità di rilevare una biosignatura; il risultato è deciso una volta, all'avvio della scansione, e non cambia con blackout o salvataggi.
+Il campione si può inserire in qualunque laboratorio. Durante lo studio viene mostrata una probabilità di gioco per ottenere un segnale compatibile con una biosignatura; il risultato è deciso una volta, all'avvio della scansione, e non cambia con blackout o salvataggi. Nella scienza reale nessuno dei tre strumenti, da solo, dimostrerebbe la presenza di vita.
 
-| Strumento | Probabilità di vita antica | Perché |
+| Strumento | Chance nel modello di gioco | Cosa misura davvero |
 |---|---:|---|
-| XRD | 20% (1 su 5) | Può distinguere microstrutture minerali compatibili con attività biologica. |
-| Raman | 35% | Riconosce meglio composti organici intrappolati nel ghiaccio. |
-| ICP-MS | 55% | Misura firme isotopiche e tracce organiche con maggiore sensibilità. |
+| XRD | 20% (1 su 5) | Identifica fasi minerali e struttura cristallina tramite la diffrazione dei raggi X; non identifica la vita da solo. |
+| Raman | 35% | Rileva modi vibrazionali e aiuta a caratterizzare minerali e alcune molecole; un segnale organico richiede controlli e contesto. |
+| ICP-MS | 55% | Misura elementi e, se configurato per farlo, rapporti isotopici dopo preparazione/ionizzazione del campione; non è una prova autonoma di vita. |
 
-Una biosignatura aggiunge **$10 MLD** al pagamento immediato del rapporto, oltre al valore normale del campione e ai bonus attivi. Attiva anche la sequenza a catena: **Carota polare → Ghiaccio primordiale → Strati del tempo → Vita antica → Messaggio vivente**, con borse da $1,8 a $25 MLD. La ricompensa più alta resta sempre incatenata: non può essere riscossa prima della scoperta di vita.
+Un segnale compatibile aggiunge **$10 MLD** al pagamento immediato del rapporto, oltre al valore normale del campione e ai bonus attivi: è una ricompensa narrativa, non un prezzo scientifico. Attiva anche la sequenza a catena: **Campionamento polare → Ghiaccio profondo → Strati del tempo → Segnale compatibile → Messaggio da verificare**, con borse da $1,8 a $25 MLD. La ricompensa più alta resta sempre incatenata: non può essere riscossa prima del segnale nel modello di gioco.
 
 ---
 
@@ -657,8 +658,8 @@ ORIZZONTE APERTO ── TRE COLORI ── LINEA DI ORIZZONTE ── SPEDIZIONE P
 PRIMA BASE ── ACCESSO SICURO ── PRIMA TRIVELLA ── BORRACCIA RICARICATA
     └─ RETE ELETTRICA ── SERRA ── PIANTAGIONE ── RACCOLTO
                      └─ PRIMO LAB ── SEGNALE DA MARTE ── CATENA DI CUSTODIA
-                          ├─ CAROTA GEOLOGICA ── CAROTA POLARE ── GHIACCIO PRIMORDIALE
-                          │                                      └─ STRATI DEL TEMPO ── VITA ANTICA ── MESSAGGIO VIVENTE
+                          ├─ CAMPIONAMENTO GEOLOGICO ── CAMPIONAMENTO POLARE ── GHIACCIO PROFONDO
+                          │                                      └─ STRATI DEL TEMPO ── SEGNALE COMPATIBILE ── MESSAGGIO DA VERIFICARE
                           └─ RAPPORTI ── XRD / RAMAN / ICP-MS ── BREVETTI ─┐
                                        ├─ ATLANTE ── ARCHIVIO PLANETARIO ─┤─ DIRETTORATO ── DIVIDENDO MARZIANO
                                        └─ CONVOGLIO DATI ── PONTE TERRA ──┘
@@ -677,11 +678,11 @@ La sequenza esatta dei prerequisiti principali è:
 | Ritratto minerale / Lente sull'anomalia | Foto di roccia / di roccia rara | Primo scatto / Ritratto | +$240 / $750 MLN |
 | Galleria di biomi / Sei orizzonti | Foto da 3 / 6 biomi | Primo scatto / Galleria | +$360 MLN / $1,2 MLD |
 | Ghiaccio all'alba / Luce polare | Foto criosfera all'alba / dal polo | Galleria / Spedizione polare + Galleria | +$520 MLN / $1,05 MLD |
-| Cielo senza atmosfera | Foto notturna | Primo scatto | +$430 MLN |
+| Cielo notturno marziano | Foto notturna | Primo scatto | +$430 MLN |
 | Primo avamposto | Foto esterna della cupola | Prima base + Primo scatto | +$610 MLN |
 | Vetro e clorofilla / Scienza in campo | Foto serra / laboratorio | Serra o laboratorio + Primo scatto | +$800 / $950 MLN |
-| Tempo nel ghiaccio | Foto con ghiaccio primordiale custodito | Ghiaccio primordiale + Primo scatto | +$2 MLD |
-| Testimone della vita | Foto laboratorio dopo biosignatura | Vita antica + Scienza in campo | +$4 MLD + Badge Occhio di Marte |
+| Tempo nel ghiaccio | Foto con ghiaccio profondo custodito | Ghiaccio profondo + Primo scatto | +$2 MLD |
+| Testimone del segnale | Foto laboratorio dopo un segnale compatibile | Segnale compatibile + Scienza in campo | +$4 MLD + Badge Occhio di Marte |
 | Catalogo di superficie | Raccogli 3 tipi differenti a piedi | Taccuino | +$600 MLN |
 | Luce nella polvere | Raccogli una rara naturale a piedi | Taccuino | +$900 MLN |
 | Orizzonte aperto | Esplora il primo bioma | — | +$100 MLN |
@@ -697,19 +698,19 @@ La sequenza esatta dei prerequisiti principali è:
 | Prima piantagione | Semina il primo lotto | Serra operativa | Crescita colture +5% |
 | Primo raccolto | Raccogli 16 patate | Prima piantagione | +$300 MLN |
 | Primo laboratorio | Installa uno strumento scientifico | Rete elettrica | +$250 MLN |
-| Carota geologica | Posiziona la trivella mineraria | Prima trivella + Primo laboratorio | +$350 MLN |
-| Carota polare | Posiziona la trivella mineraria sul ghiaccio polare | Spedizione polare + Carota geologica | +$1,8 MLD |
-| Ghiaccio primordiale | Estrai il ghiaccio profondo primordiale | Carota polare | +$3 MLD |
-| Strati del tempo | Avvia lo studio del ghiaccio primordiale | Ghiaccio primordiale + Primo laboratorio | +$4,5 MLD |
-| Vita antica | Rileva una biosignatura nel ghiaccio | Strati del tempo | +$15 MLD + Badge Scopritore di vita |
-| Messaggio vivente | Trasmetti la prova alla Terra | Vita antica | +$25 MLD, rapporti +25% |
+| Campionamento geologico | Posiziona la trivella mineraria | Prima trivella + Primo laboratorio | +$350 MLN |
+| Campionamento polare | Posiziona la trivella mineraria sul ghiaccio polare | Spedizione polare + Campionamento geologico | +$1,8 MLD |
+| Ghiaccio profondo | Estrai il ghiaccio profondo del modello di gioco | Campionamento polare | +$3 MLD |
+| Strati del tempo | Avvia lo studio del ghiaccio profondo | Ghiaccio profondo + Primo laboratorio | +$4,5 MLD |
+| Segnale compatibile | Rileva un segnale compatibile con una biosignatura nel ghiaccio | Strati del tempo | +$15 MLD + Badge Scopritore di vita |
+| Messaggio da verificare | Trasmetti alla Terra il segnale, senza chiamarlo prova definitiva | Segnale compatibile | +$25 MLD, rapporti +25% |
 | Segnale da Marte | Primo rapporto trasmesso | Primo laboratorio | +$400 MLN, ricavi ricerca +10% |
 | Catena di custodia | 3 rapporti | Segnale da Marte | +$550 MLN |
 | Reticoli rivelati | 3 rapporti XRD | Segnale da Marte | +$650 MLN, valore XRD +15% |
 | Impronte luminose | 3 rapporti Raman | Segnale da Marte | +$800 MLN, valore Raman +15% |
 | Tracce nel plasma | 3 rapporti ICP-MS | Catena di custodia | +$1 MLD, valore ICP-MS +15% |
-| Segnale anomalo | Primo campione raro trasmesso | Carota geologica + Segnale da Marte | +$1,1 MLD |
-| Atlante di Ares | 3 biomi distinti | Carota geologica + Catena di custodia | +$1,25 MLD, dati multi-bioma +10% |
+| Segnale anomalo | Primo campione raro trasmesso | Campionamento geologico + Segnale da Marte | +$1,1 MLD |
+| Atlante di Ares | 3 biomi distinti | Campionamento geologico + Catena di custodia | +$1,25 MLD, dati multi-bioma +10% |
 | Convoglio dati | 8 rapporti | Catena di custodia | +$1,4 MLD |
 | XRD / Raman / ICP-MS di precisione | Porta il relativo strumento al livello 5 | Contratto della disciplina | +$1 / $1,25 / $1,6 MLD |
 | Costellazione rara | 3 campioni rari trasmessi | Segnale anomalo + Raman | +$1,9 MLD, rari +25% |
@@ -733,7 +734,7 @@ Il giocatore è libero di sperimentare, ma il percorso didattico naturale è:
 5. Installare l'elettrolizzatore per creare una linea O₂ per la cupola e una linea H₂ per il Sabatier.
 6. Scegliere se investire in una serra per autonomia alimentare o in un laboratorio per ricavi più rapidi.
 7. Spostare la trivella mineraria tra biomi e usare i rapporti per finanziare gli upgrade.
-8. Raggiungere il polo: la trivella lì ha il 10% di trovare ghiaccio profondo primordiale; scegliere ICP-MS massimizza la probabilità della biosignatura.
+8. Raggiungere il polo: nel modello di gioco la trivella lì ha il 10% di trovare ghiaccio profondo; scegliere ICP-MS aumenta solo la chance simulata del segnale compatibile, non dimostra vita.
 9. Portare gli strumenti scientifici al livello massimo e completare il Direttorato scientifico.
 
 Questa sequenza evita che il giocatore senta il bisogno di comprare tutto insieme: ogni nuovo sistema risolve un problema concreto e introduce il successivo.

@@ -353,7 +353,7 @@ func get_machine_specs() -> Dictionary:
 		"category": "VEICOLO SCIENTIFICO E LOGISTICO",
 		"status": status,
 		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if battery_energy_kwh > 0.0 else Color("ff776d")),
-		"principle": "Un pacco batteria dedicato alimenta trazione e sistemi di bordo. I pannelli fotovoltaici dispiegabili riconvertono la luce marziana in energia durante il giorno, senza gravare sulla rete della base.",
+		"principle": "Un pacco batteria dedicato alimenta trazione e sistemi di bordo. I pannelli fotovoltaici dispiegabili convertono la luce marziana in energia durante il giorno, senza gravare sulla rete della base.",
 		"specs": [
 			"Batteria dedicata: %.1f / %.0f kWh · %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(get_battery_percent())],
 			"Trazione: %.1f kW durante la marcia" % DRIVING_DEMAND_KW,

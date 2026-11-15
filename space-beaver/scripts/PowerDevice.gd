@@ -534,7 +534,7 @@ func get_machine_specs() -> Dictionary:
 				"category": "ISRU - UTILIZZO RISORSE IN SITU",
 				"status": drill_connection if not network_enabled else ("OPERATIVA" if powered else drill_connection),
 				"status_color": Color("72eda0") if powered else Color("ff655d"),
-				"principle": "La testa di perforazione frantuma il regolite marziano ghiacciato; un sistema termico interno separa e fonde il ghiaccio, ottenendo acqua liquida.",
+				"principle": "Modello ISRU del gioco: la testa perfora regolite marziana contenente ghiaccio; il ghiaccio recuperato viene separato e fuso per ottenere acqua liquida.",
 				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f / %.0f L" % [water_storage_liters, ICE_DRILL_WATER_STORAGE_CAPACITY_L], "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
 			}
 	return {"title": "MACCHINARIO", "category": "SISTEMA", "status": "SCONOSCIUTO", "status_color": Color.WHITE, "principle": "", "specs": []}

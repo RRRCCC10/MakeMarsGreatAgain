@@ -288,7 +288,7 @@ func _rebuild_graph() -> void:
 	_add_branch_label("ESPLORAZIONE  /  MAPPA", Vector2(18.0, 193.0), Color("81d8ff"))
 	_add_branch_label("SOPRAVVIVENZA  /  HABITAT", Vector2(18.0, 288.0), Color("9ce66f"))
 	_add_branch_label("RICERCA  /  CONTRATTI TERRA", Vector2(682.0, 13.0), Color("d4b6ff"))
-	_add_branch_label("CRIOSFERA  /  VITA ANTICA", Vector2(998.0, 13.0), Color("a8f3ff"))
+	_add_branch_label("CRIOSFERA  /  SEGNALI COMPATIBILI", Vector2(998.0, 13.0), Color("a8f3ff"))
 	_add_branch_label("STRUMENTI  /  BREVETTI", Vector2(1_168.0, 193.0), Color("d48cff"))
 	_add_branch_label("ARCHIVIO FOTOGRAFICO  /  CONTRATTI SENZA RETE", Vector2(18.0, 573.0), Color("93e8f6"))
 

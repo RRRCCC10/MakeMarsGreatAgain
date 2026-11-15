@@ -313,7 +313,7 @@ func get_machine_specs() -> Dictionary:
 			"category": "PRODUZIONE DI PROPELLENTI",
 			"status": status,
 			"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and water_connected and has_output else Color("ffb45d")),
-			"principle": "L'elettrolisi scinde l'acqua in H₂ e O₂ e li fornisce in continuo sulle rispettive linee, senza serbatoi interni.",
+			"principle": "L'elettrolisi usa energia per scindere l'acqua in H₂ e O₂ e li fornisce in continuo sulle rispettive linee, senza serbatoi interni.",
 			"specs": ["Consumo elettrico: %.0f kW" % ELECTROLYZER_DEMAND_KW, "Ingresso acqua: basso-sinistra (%s)" % ("collegato" if water_connected else "non collegato"), "Consumo nominale: %.0f L/h acqua" % WATER_L_PER_HOUR, "Produzione nominale: H₂ %.1f kg/h · O₂ %.1f kg/h" % [HYDROGEN_KG_PER_HOUR, OXYGEN_KG_PER_HOUR], "Funzionamento: flusso diretto, senza serbatoi", "Uscite indipendenti: H₂ %s · O₂ %s" % ["collegato" if hydrogen_connected else "scollegato", "collegato" if oxygen_connected else "scollegato"]],
 		}
 	var rocket := _find_landing_sequence()
@@ -323,8 +323,8 @@ func get_machine_specs() -> Dictionary:
 		"category": "PRODUZIONE DI PROPELLENTI",
 		"status": "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("CARICAMENTO RAZZO" if powered and h2_connected and rocket != null else get_connection_label()),
 		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and h2_connected else Color("ffb45d")),
-		"principle": "La reazione di Sabatier combina idrogeno e anidride carbonica per sintetizzare metano. Il metano viene trasferito direttamente al razzo, senza tubazioni d'uscita.",
-		"specs": ["Consumo elettrico: %.0f kW" % SABATIER_DEMAND_KW, "Ingresso H₂: lato sinistro (%s)" % ("collegato" if h2_connected else "non collegato"), "Produzione nominale: %.1f kg/h CH₄" % SABATIER_METHANE_KG_PER_HOUR, "Uscita CH₄: caricamento diretto del razzo", "Carburante razzo: %.1f / %.0f kg" % [rocket.methane_kg, rocket.get_methane_capacity_kg()] if rocket != null else "Razzo non disponibile", "Posizione vincolata: immediatamente a sinistra del razzo"],
+		"principle": "La reazione di Sabatier combina CO₂ atmosferica e idrogeno per sintetizzare metano e acqua: CO₂ + 4 H₂ → CH₄ + 2 H₂O. Nel modello di gioco il metano viene trasferito direttamente al razzo.",
+		"specs": ["Consumo elettrico: %.0f kW" % SABATIER_DEMAND_KW, "Ingresso H₂: lato sinistro (%s)" % ("collegato" if h2_connected else "non collegato"), "CO₂: fornita dall'atmosfera marziana (modello di gioco)", "Produzione nominale: %.1f kg/h CH₄" % SABATIER_METHANE_KG_PER_HOUR, "Uscita CH₄: caricamento diretto del razzo", "Carburante razzo: %.1f / %.0f kg" % [rocket.methane_kg, rocket.get_methane_capacity_kg()] if rocket != null else "Razzo non disponibile", "Posizione vincolata: immediatamente a sinistra del razzo"],
 	}
 
 

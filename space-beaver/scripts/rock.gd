@@ -73,7 +73,7 @@ const ROCK_DEFINITIONS: Dictionary = {
 		"item_id": "rock_ghiaccio_profondo", "name": "Ghiaccio profondo", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 1.90,
 	},
 	"ghiaccio_profondo_primordiale": {
-		"item_id": "rock_ghiaccio_profondo_primordiale", "name": "Ghiaccio profondo primordiale", "biome": "Strati profondi marziani", "rarity": "ultra_rare", "research_multiplier": 4.50, "deep_ice": true,
+		"item_id": "rock_ghiaccio_profondo_primordiale", "name": "Campione di ghiaccio profondo (modello)", "biome": "Strati profondi marziani", "rarity": "ultra_rare", "research_multiplier": 4.50, "deep_ice": true,
 	},
 	# Nuovi campioni della trivella mineraria: due comuni e una scoperta al 5%
 	# per ciascuno dei sei biomi della mappa.
@@ -161,7 +161,7 @@ static func get_icon_texture_for_item_id(item_id: String) -> Texture2D:
 
 
 static func drill_variant_for_biome(source_id: int, roll_percent: float, common_roll: float) -> String:
-	## Il ghiaccio profondo primordiale è una carota che può comparire ovunque
+	## Il ghiaccio profondo primordiale è un campione di perforazione che può comparire ovunque
 	## (1%), ma sui poli sale al 10%. Viene controllato prima del raro locale:
 	## nella calotta il giocatore rinuncia a un po' di varietà in cambio della
 	## migliore probabilità di una scoperta biologica straordinaria.

@@ -531,12 +531,12 @@ func _build_storage_ui() -> void:
 func _refresh_storage_ui() -> void:
 	if storage_root == null or storage_rows == null:
 		return
-	storage_summary.text = "%s · alimentazione %s · riserva %d/%d · ghiaccio primordiale %.0f%%" % [biome_label, "ATTIVA" if powered else "NON ATTIVA", get_stock_count(), STORAGE_CAPACITY, ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0]
+	storage_summary.text = "%s · alimentazione %s · riserva %d/%d · ghiaccio profondo (modello) %.0f%%" % [biome_label, "ATTIVA" if powered else "NON ATTIVA", get_stock_count(), STORAGE_CAPACITY, ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0]
 	for child in storage_rows.get_children():
 		child.queue_free()
 	if sample_stock.is_empty():
 		var empty := Label.new()
-		empty.text = "La riserva è vuota. Collega la trivella alla rete e attendi la prima carota geologica."
+		empty.text = "La riserva è vuota. Collega la trivella alla rete e attendi il primo campione geologico."
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty.custom_minimum_size = Vector2(730, 100)
@@ -556,7 +556,7 @@ func _refresh_storage_ui() -> void:
 		info.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var stock_rarity := str(stock.get("rarity", "common"))
-		var rarity := "ULTRA RARO · GHIACCIO PRIMORDIALE" if stock_rarity == "ultra_rare" else ("RARO · 5%" if stock_rarity == "rare" else "COMUNE")
+		var rarity := "ULTRA RARO · GHIACCIO PROFONDO" if stock_rarity == "ultra_rare" else ("RARO · 5%" if stock_rarity == "rare" else "COMUNE")
 		info.text = "%s x%d\n%s · %s · valore ricerca ×%.2f" % [str(stock.get("name", "Campione")).to_upper(), int(stock.get("count", 0)), str(stock.get("biome", biome_label)), rarity, float(stock.get("research_multiplier", 1.0))]
 		info.add_theme_font_size_override("font_size", 11)
 		info.add_theme_color_override("font_color", Color("a8fff0") if rarity.begins_with("ULTRA") else (Color("ffe18b") if rarity.begins_with("RARO") else Color("d3e3e6")))
