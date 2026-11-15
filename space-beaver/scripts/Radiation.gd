@@ -11,6 +11,10 @@ const GCR_AMBIENT_RATE_MSV_H := 0.03
 const ACUTE_HALF_LIFE_HOURS := 24.0
 const WARNING_HOURS := 1.5
 const EXTREME_EVENTS_ENABLED := false
+const FIRST_EVENT_MIN_HOURS := 72.0
+const FIRST_EVENT_MAX_HOURS := 96.0
+const REPEAT_EVENT_MIN_HOURS := 72.0
+const REPEAT_EVENT_MAX_HOURS := 120.0
 const EVENT_DEFINITIONS := {
 	"minor": {
 		"label": "PICCO SOLARE MINORE",
@@ -170,8 +174,8 @@ func reset_for_new_mission() -> void:
 	current_event_id = ""
 	event_elapsed_hours = 0.0
 	event_time_remaining_hours = 0.0
-	# Almeno due sol completi senza eventi; il primo sara' sempre minore.
-	time_to_next_event_hours = 48.0 + _rng.randf_range(0.0, 12.0)
+	# Tre o quattro Sol protetti: nessun feed esterno puo' interrompere il tutorial.
+	time_to_next_event_hours = _rng.randf_range(FIRST_EVENT_MIN_HOURS, FIRST_EVENT_MAX_HOURS)
 	current_ambient_rate_msv_h = GCR_AMBIENT_RATE_MSV_H
 	current_received_rate_msv_h = GCR_AMBIENT_RATE_MSV_H * (1.0 - SuitSystem.get_cosmic_protection())
 	acute_dose_msv = 0.0
@@ -184,14 +188,20 @@ func reset_for_new_mission() -> void:
 
 
 func _choose_next_event() -> String:
+	var fallback_profile := "minor"
 	if events_completed == 0:
-		return "minor"
-	var roll := _rng.randf()
-	if roll < 0.65:
-		return "minor"
-	if roll < 0.95 or not EXTREME_EVENTS_ENABLED:
-		return "major"
-	return "extreme"
+		fallback_profile = "minor"
+	else:
+		var roll := _rng.randf()
+		if roll < 0.65:
+			fallback_profile = "minor"
+		elif roll < 0.95 or not EXTREME_EVENTS_ENABLED:
+			fallback_profile = "major"
+		else:
+			fallback_profile = "extreme"
+	if SpaceWeatherService != null and SpaceWeatherService.has_method("choose_event_profile"):
+		return str(SpaceWeatherService.choose_event_profile(fallback_profile, events_completed, WorldClock.sol))
+	return fallback_profile
 
 
 func _begin_warning(event_id: String) -> void:
@@ -219,7 +229,6 @@ func _end_active_event() -> void:
 	current_event_id = ""
 	event_elapsed_hours = 0.0
 	event_time_remaining_hours = 0.0
-	time_to_next_event_hours = _rng.randf_range(72.0, 120.0)
+	time_to_next_event_hours = _rng.randf_range(REPEAT_EVENT_MIN_HOURS, REPEAT_EVENT_MAX_HOURS)
 	event_ended.emit()
 	changed.emit(get_data())
-

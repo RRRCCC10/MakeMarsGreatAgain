@@ -33,6 +33,7 @@ func restart_from_scratch() -> void:
 	Hunger.reset_for_new_mission()
 	Hydration.reset_for_new_mission()
 	WorldClock.reset_for_new_mission()
+	SpaceWeatherService.reset_for_new_mission()
 	Radiation.reset_for_new_mission()
 	Temperature.reset_for_new_mission()
 	Shop.reset_for_new_mission()
