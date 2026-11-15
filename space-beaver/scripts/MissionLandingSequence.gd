@@ -74,6 +74,10 @@ func _ready() -> void:
 	get_tree().paused = true
 
 
+func is_active() -> bool:
+	return not landing_complete
+
+
 func _process(delta: float) -> void:
 	if landing_complete:
 		return
@@ -244,47 +248,6 @@ func _create_intro_overlay() -> void:
 	caption.add_theme_constant_override("outline_size", 4)
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	intro_root.add_child(caption)
-	_create_camera_tutorial()
-
-
-func _create_camera_tutorial() -> void:
-	# È l'unica GUI visibile durante il viaggio: spiega la telecamera prima che
-	# HUD e pannelli operativi vengano ripristinati al termine dell'atterraggio.
-	var panel := PanelContainer.new()
-	panel.name = "CameraTutorial"
-	panel.anchor_left = 1.0
-	panel.anchor_top = 0.0
-	panel.anchor_right = 1.0
-	panel.anchor_bottom = 0.0
-	panel.offset_left = -354.0
-	panel.offset_top = 22.0
-	panel.offset_right = -22.0
-	panel.offset_bottom = 148.0
-	panel.add_theme_stylebox_override("panel", _camera_tutorial_style())
-	intro_root.add_child(panel)
-	var label := Label.new()
-	label.text = "TELECAMERA SCIENTIFICA\nCompleta SACCA CAMPIONI per riceverla.\nQuando è equipaggiata:\nP · scatta     O · invia alla Terra     C · archivio"
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_override("font", UI_FONT)
-	label.add_theme_font_size_override("font_size", 12)
-	label.add_theme_color_override("font_color", Color("c9f3ff"))
-	label.add_theme_color_override("font_outline_color", Color("031116"))
-	label.add_theme_constant_override("outline_size", 2)
-	panel.add_child(label)
-
-
-func _camera_tutorial_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("071820e8")
-	style.border_color = Color("65cce8")
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(6)
-	style.content_margin_left = 12.0
-	style.content_margin_right = 12.0
-	style.content_margin_top = 9.0
-	style.content_margin_bottom = 9.0
-	return style
 
 
 func _create_stars() -> void:

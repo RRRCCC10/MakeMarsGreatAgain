@@ -38,12 +38,15 @@ var _notice: Label
 
 
 func _ready() -> void:
+	# L'atterraggio mette in pausa il mondo, ma questo autoload deve comunque
+	# poter nascondere il proprio HUD prima che appaia la cinematica.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 68
 	_build_ui()
 
 
 func _process(_delta: float) -> void:
-	var active := _camera_is_equipped() and not _other_modal_is_open()
+	var active := _camera_is_equipped() and not _other_modal_is_open() and not _landing_is_active()
 	if _status_panel != null:
 		_status_panel.visible = active
 	if active:
@@ -58,7 +61,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			close_archive()
 			get_viewport().set_input_as_handled()
 		return
-	if not _camera_is_equipped() or _other_modal_is_open():
+	if not _camera_is_equipped() or _other_modal_is_open() or _landing_is_active():
 		return
 	if event.keycode == KEY_P:
 		take_photo()
@@ -83,7 +86,7 @@ func reset_for_new_mission() -> void:
 
 
 func take_photo() -> Dictionary:
-	if not _camera_is_equipped() or _other_modal_is_open():
+	if not _camera_is_equipped() or _other_modal_is_open() or _landing_is_active():
 		return {}
 	var photo := _build_photo_context()
 	if photo.is_empty():
@@ -98,7 +101,7 @@ func take_photo() -> Dictionary:
 
 
 func transmit_oldest_photo() -> bool:
-	if not _camera_is_equipped() or _other_modal_is_open():
+	if not _camera_is_equipped() or _other_modal_is_open() or _landing_is_active():
 		return false
 	for photo in photo_roll:
 		if bool(photo.get("sent", false)):
@@ -142,6 +145,18 @@ func _camera_is_equipped() -> bool:
 
 func _other_modal_is_open() -> bool:
 	return _ui_blocks_world_actions()
+
+
+func _landing_is_active() -> bool:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return false
+	var landing := tree.current_scene.get_node_or_null("LandingSequence")
+	if landing == null:
+		return false
+	if landing.has_method("is_active"):
+		return bool(landing.call("is_active"))
+	return not bool(landing.get("landing_complete"))
 
 
 func _build_photo_context() -> Dictionary:
@@ -223,11 +238,29 @@ func _nearest_group_node(group_name: String, point: Vector2) -> Node2D:
 
 
 func _nearest_photo_structure(point: Vector2) -> Node2D:
+	# Le cupole medie e grandi devono poter essere fotografate dall'esterno:
+	# il raggio utile segue l'impronta della struttura. Scegliamo inoltre il
+	# soggetto più vicino tra tutti i gruppi, non il primo gruppo non vuoto.
+	var closest: Node2D
+	var closest_distance := INF
+	var seen: Dictionary = {}
 	for group_name in ["greenhouses", "research_machines", "base_domes", "perseverance_rover", "rovers"]:
-		var node := _nearest_group_node(group_name, point)
-		if node != null:
-			return node
-	return null
+		for candidate in get_tree().get_nodes_in_group(group_name):
+			if not candidate is Node2D:
+				continue
+			var node := candidate as Node2D
+			var node_key := node.get_instance_id()
+			if seen.has(node_key):
+				continue
+			seen[node_key] = true
+			var distance := point.distance_to(node.global_position)
+			var reach := PHOTO_DISTANCE
+			if node.has_method("get_radius"):
+				reach = maxf(reach, float(node.call("get_radius")) + 32.0)
+			if distance <= reach and distance < closest_distance:
+				closest = node
+				closest_distance = distance
+	return closest
 
 
 func _capture_view_to_archive(photo_id: int) -> void:
@@ -274,9 +307,10 @@ func _build_ui() -> void:
 	_status_panel.anchor_left = 0.62
 	_status_panel.anchor_right = 1.0
 	_status_panel.offset_left = 0.0
-	_status_panel.offset_top = 16.0
+	# Il saldo resta nella fascia superiore a destra; la telecamera parte sotto.
+	_status_panel.offset_top = 88.0
 	_status_panel.offset_right = -16.0
-	_status_panel.offset_bottom = 108.0
+	_status_panel.offset_bottom = 180.0
 	_status_panel.add_theme_stylebox_override("panel", _box(Color("091720e8"), Color("67cde5"), 2, 5))
 	_root.add_child(_status_panel)
 	var row := HBoxContainer.new()
@@ -389,7 +423,7 @@ func _build_archive_ui() -> void:
 
 
 func open_archive() -> void:
-	if is_archive_open or _ui_has_open_modal():
+	if is_archive_open or _ui_has_open_modal() or not _camera_is_equipped() or _landing_is_active():
 		return
 	if not _try_open_ui_modal():
 		return

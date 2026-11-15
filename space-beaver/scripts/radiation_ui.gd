@@ -1,5 +1,12 @@
 extends CanvasLayer
 
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
+const BACKGROUND_COLOR := Color("#151B25ee")
+const TEXT_COLOR := Color("E0F8EE")
+const HUNGER_COLOR := Color("E88F33")
+const THIRST_COLOR := Color("4191b1")
+const OXYGEN_COLOR := Color("8AC4E1")
+
 var rate_label: Label
 var dose_label: Label
 var condition_label: Label
@@ -19,23 +26,24 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	var root := Control.new()
+	root.add_theme_font_override("font", UI_FONT)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(16, 202)
+	panel.position = Vector2(16, 16)
 	panel.custom_minimum_size = Vector2(274, 112)
-	panel.add_theme_stylebox_override("panel", _panel_style(Color("586f80")))
+	panel.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(panel)
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	panel.add_child(rows)
-	rows.add_child(_label("// DOSIMETRO PERSONALE //", 13, Color("e3f1ee")))
-	rate_label = _label("", 12, Color("6fc9e8"))
+	rows.add_child(_label("DOSIMETRO PERSONALE", 13, TEXT_COLOR))
+	rate_label = _label("", 12, THIRST_COLOR)
 	rows.add_child(rate_label)
-	dose_label = _label("", 11, Color("cbd8dc"))
+	dose_label = _label("", 11, TEXT_COLOR)
 	rows.add_child(dose_label)
-	condition_label = _label("", 11, Color("75e5a1"))
+	condition_label = _label("", 11, OXYGEN_COLOR)
 	rows.add_child(condition_label)
 	suit_label = _label("", 10, Color("a9c9d4"))
 	suit_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -70,7 +78,7 @@ func _refresh(data: Dictionary) -> void:
 	if not alert_panel.visible:
 		return
 	var color: Color = data["event_color"]
-	alert_panel.add_theme_stylebox_override("panel", _panel_style(color))
+	alert_panel.add_theme_stylebox_override("panel", _panel_style())
 	alert_title.add_theme_color_override("font_color", color)
 	var time_text := _format_game_time(float(data["time_remaining_hours"]))
 	if state == Radiation.EventState.WARNING:
@@ -97,16 +105,17 @@ func _format_game_time(hours: float) -> String:
 
 func _condition_color(dose: float) -> Color:
 	if dose < 500.0:
-		return Color("75e5a1")
+		return OXYGEN_COLOR
 	if dose < 1000.0:
-		return Color("ffd36a")
+		return Color("F6BC5D")
 	if dose < 2000.0:
-		return Color("ff956b")
+		return HUNGER_COLOR
 	return Color("ef6cff")
 
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var label := Label.new()
+	label.add_theme_font_override("font", UI_FONT)
 	label.text = text
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
@@ -115,11 +124,9 @@ func _label(text: String, size: int, color: Color) -> Label:
 	return label
 
 
-func _panel_style(border: Color) -> StyleBoxFlat:
+func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("101820ed")
-	style.border_color = border
-	style.set_border_width_all(3)
+	style.bg_color = BACKGROUND_COLOR
 	style.content_margin_left = 10
 	style.content_margin_right = 10
 	style.content_margin_top = 7

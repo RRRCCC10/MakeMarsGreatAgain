@@ -2,6 +2,8 @@ extends Node
 
 ## Budget della missione NASA. Tutti i valori sono espressi in dollari.
 signal balance_changed(current: int)
+## Positivo per le entrate, negativo per le spese.
+signal transaction_changed(current: int, delta: int)
 
 const STARTING_BALANCE := 10_000_000_000
 
@@ -21,6 +23,8 @@ func spend(amount: int) -> bool:
 		return false
 	balance -= amount
 	balance_changed.emit(balance)
+	if amount > 0:
+		transaction_changed.emit(balance, -amount)
 	return true
 
 
@@ -29,6 +33,7 @@ func add_funds(amount: int) -> void:
 		return
 	balance += amount
 	balance_changed.emit(balance)
+	transaction_changed.emit(balance, amount)
 
 
 func format_money(amount: int = balance) -> String:

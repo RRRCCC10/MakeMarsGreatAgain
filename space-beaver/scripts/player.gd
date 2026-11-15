@@ -204,7 +204,7 @@ func is_driving_rover() -> bool:
 
 
 func _try_board_nearby_rover() -> bool:
-	if is_driving_rover() or _ui_blocks_world_actions():
+	if is_driving_rover() or _ui_blocks_world_actions() or _has_dusty_rover_nearby() or _has_dirty_water_drill_nearby():
 		return false
 	var nearby_rover := nearest_rover()
 	return nearby_rover != null and bool(nearby_rover.call("board", self))
@@ -219,6 +219,26 @@ func _poll_rover_board_hotkey() -> void:
 	_rover_board_key_down = e_down
 
 
+func _has_dusty_rover_nearby() -> bool:
+	for candidate in get_tree().get_nodes_in_group("rovers"):
+		if not candidate is Node2D or not candidate.has_method("get_sand_accumulation"):
+			continue
+		var rover := candidate as Node2D
+		if int(rover.call("get_sand_accumulation")) > 0 and global_position.distance_to(rover.global_position) <= 94.0:
+			return true
+	return false
+
+
+func _has_dirty_water_drill_nearby() -> bool:
+	for candidate in get_tree().get_nodes_in_group("ice_drills"):
+		if not candidate is Node2D or not candidate.has_method("get_sand_accumulation"):
+			continue
+		var drill := candidate as Node2D
+		if int(drill.call("get_sand_accumulation")) > 0 and global_position.distance_to(drill.global_position) <= 94.0:
+			return true
+	return false
+
+
 func _input(event: InputEvent) -> void:
 	# Il gestore del macchinario è un figlio del player e usa _unhandled_input:
 	# se il rover veniva controllato lì, un macchinario vicino poteva consumare E
@@ -229,7 +249,7 @@ func _input(event: InputEvent) -> void:
 	if _is_control_key(event, KEY_T) and sandstorm_manager != null and bool(sandstorm_manager.call("toggle_nearby_solar_tarp", self)):
 		get_viewport().set_input_as_handled()
 		return
-	if _is_control_key(event, KEY_E) and sandstorm_manager != null and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
+	if _is_control_key(event, KEY_E) and not _has_dusty_rover_nearby() and not _has_dirty_water_drill_nearby() and sandstorm_manager != null and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
 		get_viewport().set_input_as_handled()
 		return
 	if not _is_control_key(event, KEY_E):
@@ -239,6 +259,12 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F11:
+		var game_window := get_window()
+		if game_window != null:
+			game_window.mode = Window.MODE_WINDOWED if game_window.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
+		get_viewport().set_input_as_handled()
+		return
 	# Una riparazione e' modale: va gestita prima del controllo generale sulle
 	# GUI, altrimenti UIState bloccherebbe proprio la sequenza WASD necessaria.
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -247,7 +273,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _is_control_key(event, KEY_T) and bool(sandstorm_manager.call("toggle_nearby_solar_tarp", self)):
 				get_viewport().set_input_as_handled()
 				return
-			if _is_control_key(event, KEY_E) and not _ui_blocks_world_actions() and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
+			if _is_control_key(event, KEY_E) and not _has_dusty_rover_nearby() and not _has_dirty_water_drill_nearby() and not _ui_blocks_world_actions() and bool(sandstorm_manager.call("begin_nearby_cleaning", self)):
 				get_viewport().set_input_as_handled()
 				return
 		var incident_manager := get_node_or_null("/root/IncidentManager")
@@ -258,7 +284,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			if bool(incident_manager.call("handle_repair_key", repair_key)):
 				get_viewport().set_input_as_handled()
 				return
-			if repair_key == KEY_E and not _ui_blocks_world_actions() and bool(incident_manager.call("begin_nearby_repair", self)):
+			var active_incident: Dictionary = incident_manager.call("get_active_incident")
+			var incident_target := active_incident.get("node") as Node2D
+			if repair_key == KEY_E and not _ui_blocks_world_actions() and not _external_target_blocked_inside_dome(incident_target) and bool(incident_manager.call("begin_nearby_repair", self)):
 				get_viewport().set_input_as_handled()
 				return
 	if _ui_is_minimap_active():
@@ -289,9 +317,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				if is_instance_valid(dome) and dome.has_method("handle_airlock_key") and bool(dome.call("handle_airlock_key", self, control_key)):
 					get_viewport().set_input_as_handled()
 					return
+		if control_key == KEY_E and (_has_dusty_rover_nearby() or _has_dirty_water_drill_nearby()):
+			return
 		if control_key == KEY_U and not is_driving_rover():
 			var upgrade_machine := nearest_research_machine()
-			if upgrade_machine != null and bool(upgrade_machine.call("try_upgrade", self)):
+			if upgrade_machine != null and not _external_target_blocked_inside_dome(upgrade_machine) and bool(upgrade_machine.call("try_upgrade", self)):
 				get_viewport().set_input_as_handled()
 				return
 		if control_key != KEY_E:
@@ -300,26 +330,44 @@ func _unhandled_input(event: InputEvent) -> void:
 		if is_driving_rover():
 			return
 		var capsule := nearest_delivery_capsule()
-		if capsule != null:
+		if capsule != null and not _external_target_blocked_inside_dome(capsule as Node2D):
 			capsule.call("collect_all")
 			get_viewport().set_input_as_handled()
 			return
 		var drill := nearest_ice_drill()
-		if drill != null and str(Inventory.get_selected_item().get("id", "")) == "water_bottle":
+		if drill != null and not _external_target_blocked_inside_dome(drill) and str(Inventory.get_selected_item().get("id", "")) == "water_bottle":
 			if bool(drill.call("try_refill_selected_bottle", self)):
 				get_viewport().set_input_as_handled()
 				return
 		var rock_drill := nearest_rock_drill()
-		if rock_drill != null and bool(rock_drill.call("open_storage", self)):
+		if rock_drill != null and not _external_target_blocked_inside_dome(rock_drill) and bool(rock_drill.call("open_storage", self)):
 			get_viewport().set_input_as_handled()
 			return
 		var research_machine := nearest_research_machine()
-		if research_machine != null and bool(research_machine.call("try_interact", self)):
+		if research_machine != null and not _external_target_blocked_inside_dome(research_machine) and bool(research_machine.call("try_interact", self)):
 			get_viewport().set_input_as_handled()
 			return
 		var rock := nearest_rock()
-		if rock != null and rock.has_method("collect") and bool(rock.call("collect")):
+		if rock != null and not _external_target_blocked_inside_dome(rock) and rock.has_method("collect") and bool(rock.call("collect")):
 			get_viewport().set_input_as_handled()
+
+
+func _external_target_blocked_inside_dome(target: Node2D) -> bool:
+	var containing_dome: Node2D
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if not is_instance_valid(dome) or not dome.has_method("contains_world_point"):
+			continue
+		if not bool(dome.call("contains_world_point", global_position)):
+			continue
+		if dome.has_method("is_in_corridor") and bool(dome.call("is_in_corridor", global_position)):
+			continue
+		containing_dome = dome as Node2D
+		break
+	if containing_dome == null:
+		return false
+	if target == null or not is_instance_valid(target):
+		return true
+	return not bool(containing_dome.call("contains_world_point", target.global_position))
 
 
 func _set_camera_zoom(value: float) -> void:

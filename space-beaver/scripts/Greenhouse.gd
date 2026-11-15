@@ -51,6 +51,8 @@ var _system_incident_faulted := false
 var _sand_accumulation := 0
 var _crop_seed_yield_level := 0
 var _crop_seed_speed_level := 0
+var _harvest_food := HARVEST_FOOD
+var _rng := RandomNumberGenerator.new()
 const VISUAL_ASSET_REVISION := 2
 
 
@@ -71,6 +73,7 @@ func _ready() -> void:
 	super._ready()
 	if is_preview:
 		return
+	_rng.randomize()
 	oxygen_reserve = GREENHOUSE_INITIAL_OXYGEN
 	add_to_group("greenhouses")
 	var registry := get_node_or_null("/root/BuildableRegistry")
@@ -327,7 +330,7 @@ func handle_airlock_key(player: Node2D, keycode: int) -> bool:
 		return false
 	var replacement_lot: Dictionary = inventory.call("take_best_potato_seed_lot", _crop_seed_yield_level, _crop_seed_speed_level)
 	if not replacement_lot.is_empty():
-		_plant_crop(replacement_lot)
+		_plant_crop(replacement_lot, true)
 		return true
 	return false
 
@@ -620,7 +623,7 @@ func _update_crop_growth(delta: float) -> void:
 	_refresh_crop_visuals()
 
 
-func _plant_crop(seed_lot: Dictionary = {}) -> void:
+func _plant_crop(seed_lot: Dictionary = {}, is_replacement: bool = false) -> void:
 	_planted = true
 	_ready_to_harvest = false
 	_completed_cycles = 0
@@ -629,7 +632,10 @@ func _plant_crop(seed_lot: Dictionary = {}) -> void:
 	var configuration: Dictionary = seed_lot.get("configuration", {})
 	_crop_seed_yield_level = clampi(int(configuration.get("yield_level", 0)), 0, 5)
 	_crop_seed_speed_level = clampi(int(configuration.get("speed_level", 0)), 0, 5)
+	_harvest_food = _roll_harvest_food()
 	_record_achievement("first_planting")
+	if is_replacement:
+		_record_achievement("genetic_replacement")
 	_refresh_crop_visuals()
 
 
@@ -645,6 +651,7 @@ func _try_harvest_nearby() -> bool:
 		_completed_cycles += 1
 		_growth_seconds = 0.0
 		_remaining_growth_seconds = _cycle_duration()
+		_harvest_food = _roll_harvest_food()
 		_record_achievement("first_harvest")
 		_refresh_crop_visuals()
 		return true
@@ -656,7 +663,15 @@ func _cycle_duration() -> float:
 
 
 func get_harvest_food() -> int:
-	return roundi(float(HARVEST_FOOD) * (1.0 + float(_crop_seed_yield_level) * 0.20))
+	return _harvest_food
+
+
+func _roll_harvest_food() -> int:
+	# Ogni lotto base produce 4 o 5 razioni con probabilità uguale. Il bonus
+	# genetico viene applicato dopo il tiro, quindi resta legato al lotto e non
+	# cambia retroattivamente quando lo shop sblocca un livello nuovo.
+	var base_amount := HARVEST_FOOD if _rng.randi_range(0, 1) == 1 else HARVEST_FOOD - 1
+	return maxi(1, roundi(float(base_amount) * (1.0 + float(_crop_seed_yield_level) * 0.20)))
 
 
 func get_crop_seed_configuration() -> Dictionary:

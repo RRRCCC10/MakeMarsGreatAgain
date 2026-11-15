@@ -30,7 +30,7 @@ func reset_for_new_mission() -> void:
 	# Slot 1: strumento tubi. Gli ultimi due slot sono le scorte personali.
 	hotbar[0] = {"id": "pipe_hammer", "name": "Tubi", "placeable": false, "tool": true}
 	hotbar[3] = {"id": "water_bottle", "name": "Acqua", "liters": 2.0, "capacity_liters": 2.0, "placeable": false}
-	hotbar[4] = {"id": "food_ration", "name": "Razioni", "count": 3, "placeable": false}
+	hotbar[4] = {"id": "food_ration", "name": "Razioni", "count": 5, "placeable": false}
 	selected_hotbar_index = 0
 	selected_backpack_index = -1
 	is_open = false
@@ -60,21 +60,47 @@ func get_first_rock_sample() -> Dictionary:
 	return {}
 
 
-func take_first_rock_sample() -> Dictionary:
-	## Estrae un singolo campione da qualunque slot, preservando lo stack delle
-	## pietre dello stesso tipo. I laboratori non dipendono dallo slot selezionato.
+func get_rock_sample_choices() -> Array[Dictionary]:
+	"""Restituisce tutte le pile di pietre selezionabili nei laboratori."""
+	var choices: Array[Dictionary] = []
+	for collection_name in ["hotbar", "backpack"]:
+		var collection: Array[Dictionary] = hotbar if collection_name == "hotbar" else backpack
+		for index in collection.size():
+			var item: Dictionary = collection[index]
+			var item_id := str(item.get("id", ""))
+			if not is_rock_item(item_id) or int(item.get("count", 0)) <= 0:
+				continue
+			choices.append({
+				"id": item_id,
+				"name": str(item.get("name", "Pietra")),
+				"count": int(item.get("count", 0)),
+				"slot": index,
+				"collection": collection_name,
+			})
+	return choices
+
+
+func take_rock_sample(item_id: String = "") -> Dictionary:
+	"""Estrae una singola pietra dalla pila indicata, o dalla prima disponibile."""
 	for collection in [hotbar, backpack]:
 		for index in collection.size():
 			var item: Dictionary = collection[index]
-			if not is_rock_item(str(item.get("id", ""))) or int(item.get("count", 0)) <= 0:
+			var current_id := str(item.get("id", ""))
+			if not is_rock_item(current_id) or int(item.get("count", 0)) <= 0:
 				continue
-			var sample := {"id": str(item.get("id", "")), "name": str(item.get("name", "Pietra"))}
+			if not item_id.is_empty() and current_id != item_id:
+				continue
+			var sample := {"id": current_id, "name": str(item.get("name", "Pietra"))}
 			item["count"] = int(item.get("count", 0)) - 1
 			if int(item["count"]) <= 0:
 				collection[index] = {}
 			changed.emit()
 			return sample
 	return {}
+
+
+func take_first_rock_sample() -> Dictionary:
+	return take_rock_sample()
 
 
 func can_add_item(item_id: String) -> bool:

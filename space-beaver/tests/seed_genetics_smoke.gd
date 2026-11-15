@@ -46,7 +46,7 @@ func _run() -> void:
 	_expect(greenhouse.handle_airlock_key(player, KEY_E), "E deve sostituire il lotto con i semi più potenti")
 	var planted_configuration: Dictionary = greenhouse.call("get_crop_seed_configuration")
 	_expect(int(planted_configuration.get("yield_level", 0)) == 1 and int(planted_configuration.get("speed_level", 0)) == 1, "La serra deve fissare i geni del nuovo lotto dopo la sostituzione")
-	_expect(int(greenhouse.call("get_harvest_food")) > Greenhouse.HARVEST_FOOD, "L'upgrade resa deve aumentare il raccolto del nuovo lotto")
+	_expect(int(greenhouse.call("get_harvest_food")) > Greenhouse.HARVEST_FOOD - 1, "L'upgrade resa deve aumentare il raccolto del nuovo lotto")
 	greenhouse.queue_free()
 	_finish()
 

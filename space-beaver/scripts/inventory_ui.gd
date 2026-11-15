@@ -315,20 +315,28 @@ func _slot_style(background: Color, border: Color) -> StyleBoxFlat:
 
 
 func _process(_delta: float) -> void:
+	if _landing_is_active():
+		pickup_label.text = ""
+		return
 	if Inventory.is_open or Shop.is_open:
 		pickup_label.text = ""
 		return
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if selected_id == "field_camera":
-		pickup_label.text = "TELECAMERA: P · scatta     O · invia alla Terra     C · archivio"
+		# La telecamera ha un solo HUD dedicato (FieldCamera). Non mostrare più
+		# il vecchio prompt duplicato della hotbar.
+		pickup_label.text = ""
 	elif selected_id == "water_bottle" and player != null and player.has_method("nearest_ice_drill"):
 		# Vicino alla trivella dell'acqua la borraccia ha priorità assoluta: non
 		# alternare il suggerimento di raccolta con il comando di ricarica.
 		var ice_drill := player.call("nearest_ice_drill") as Node
 		var refill_prompt := str(ice_drill.call("get_bottle_refill_prompt")) if ice_drill != null and ice_drill.has_method("get_bottle_refill_prompt") else ""
 		if not refill_prompt.is_empty():
-			pickup_label.text = refill_prompt
+			if ice_drill.has_method("get_sand_accumulation") and int(ice_drill.call("get_sand_accumulation")) > 0:
+				pickup_label.text = "E breve · RIEMPI BORRACCIA\nE tenuto · SPOLVERA TRIVELLA"
+			else:
+				pickup_label.text = refill_prompt
 			return
 	elif selected_id == "pipe_hammer" and player != null:
 		var builder := player.get_node_or_null("Node")
@@ -358,6 +366,18 @@ func _process(_delta: float) -> void:
 				pickup_label.text = "E  ·  APRI RISERVA TRIVELLA MINERARIA"
 			else:
 				pickup_label.text = "E  ·  Raccogli pietra" if player != null and player.nearest_rock() != null else "TAB  ·  Inventario     B  ·  Emporio"
+
+
+func _landing_is_active() -> bool:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return false
+	var landing := tree.current_scene.get_node_or_null("LandingSequence")
+	if landing == null:
+		return false
+	if landing.has_method("is_active"):
+		return bool(landing.call("is_active"))
+	return not bool(landing.get("landing_complete"))
 
 
 func _refresh() -> void:

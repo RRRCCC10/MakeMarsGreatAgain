@@ -409,10 +409,18 @@ func get_rover_pad_position() -> Vector2:
 func _player_is_at_rover_pad(player: Node2D) -> bool:
 	if player == null or not is_instance_valid(player) or not has_rover_charging_pad():
 		return false
+	if _player_is_inside_main_room(player):
+		return false
 	# Il collider fisico ferma il player appena fuori dalla piattaforma; l'area
 	# di utilizzo deve includere quel bordo, altrimenti E non arriva al dock.
 	var bounds := Rect2(get_rover_pad_position() - Vector2(36.0, 36.0), Vector2(72.0, 72.0))
 	return bounds.has_point(player.global_position)
+
+
+func _player_is_inside_main_room(player: Node2D) -> bool:
+	if player == null or not is_instance_valid(player) or not contains_world_point(player.global_position):
+		return false
+	return not is_in_corridor(player.global_position)
 
 
 func _get_rover_parking_position() -> Vector2:
@@ -485,6 +493,10 @@ func get_prompt_for_player(player: Node2D) -> String:
 		return "PORTA ESTERNA IN GUASTO · E  ·  RIPARA"
 	if is_incident_faulted("inner_door") and player.global_position.distance_to(get_inner_door_position()) <= 58.0:
 		return "PORTA INTERNA IN GUASTO · E  ·  RIPARA"
+	# Dall'interno si possono usare solo le azioni della camera d'aria: i
+	# comandi del dock e del rover esterno non devono attraversare la cupola.
+	if _player_is_inside_main_room(player) and player.global_position.distance_to(get_inner_door_position()) > 34.0:
+		return ""
 	if _player_is_at_rover_pad(player):
 		var rover := _get_existing_rover()
 		if rover == null:
@@ -708,7 +720,7 @@ func _get_existing_rover() -> Node2D:
 
 
 func _handle_rover_pad_action(player: Node2D) -> bool:
-	if not _player_is_at_rover_pad(player):
+	if _player_is_inside_main_room(player) or not _player_is_at_rover_pad(player):
 		return false
 	_rover_pad_feedback = ""
 	var rover := _get_existing_rover()

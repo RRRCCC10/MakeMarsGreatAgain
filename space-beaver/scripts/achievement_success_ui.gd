@@ -17,6 +17,7 @@ var _reward: Label
 var _hint: Label
 var _queue: Array[Dictionary] = []
 var _showing := false
+var _display_generation := 0
 
 
 func _ready() -> void:
@@ -39,11 +40,32 @@ func _on_achievement_reached(achievement_id: String, claimable_now: bool) -> voi
 		_show_next()
 
 
+func _input(event: InputEvent) -> void:
+	if not _showing or _root == null or not _root.visible:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_dismiss_current()
+		get_viewport().set_input_as_handled()
+
+
+func _dismiss_current() -> void:
+	if not _showing:
+		return
+	_display_generation += 1
+	_showing = false
+	_root.visible = false
+	if not _queue.is_empty():
+		_queue.pop_front()
+	if not _queue.is_empty():
+		call_deferred("_show_next")
+
+
 func _show_next() -> void:
 	if _queue.is_empty():
 		_showing = false
 		return
 	_showing = true
+	var generation := _display_generation
 	var entry: Dictionary = _queue.front()
 	var definition := AchievementManager.get_definition(str(entry.get("id", "")))
 	var color: Color = definition.get("color", Color("ffd36a"))
@@ -65,12 +87,17 @@ func _show_next() -> void:
 	appear.tween_property(_card, "modulate:a", 1.0, 0.20)
 	appear.parallel().tween_property(_card, "scale", Vector2.ONE, 0.28)
 	await get_tree().create_timer(DISPLAY_SECONDS, true).timeout
+	if generation != _display_generation or not _showing:
+		return
 	var vanish := create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	vanish.tween_property(_card, "modulate:a", 0.0, 0.20)
 	vanish.parallel().tween_property(_card, "scale", Vector2(0.96, 0.96), 0.20)
 	await vanish.finished
+	if generation != _display_generation or not _showing:
+		return
 	_root.visible = false
 	_queue.pop_front()
+	_showing = false
 	_show_next()
 
 
@@ -78,7 +105,7 @@ func _build_ui() -> void:
 	_root = Control.new()
 	_root.name = "AchievementSuccessRoot"
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.visible = false
 	add_child(_root)
 

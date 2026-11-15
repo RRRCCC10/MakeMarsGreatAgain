@@ -226,6 +226,11 @@ func _input(event: InputEvent) -> void:
 			exit_rover()
 			get_viewport().set_input_as_handled()
 			return
+		var nearby_player := get_tree().get_first_node_in_group("player") as Node2D
+		if sand_accumulation > 0 and nearby_player != null and nearby_player.global_position.distance_to(global_position) <= 94.0:
+			# RoverInteraction decide' dopo una pressione breve/lunga: non
+			# salire immediatamente mentre il giocatore sta iniziando a spolverare.
+			return
 		# Ridondanza intenzionale rispetto al player: il rover è responsabile
 		# anche del proprio ingresso, così nessun pannello o macchinario può
 		# sottrarre E prima dell'imbarco.
@@ -241,7 +246,7 @@ func _input(event: InputEvent) -> void:
 
 
 func can_board(player: Node2D) -> bool:
-	return not is_preview and not incident_faulted and not is_instance_valid(driver) and panel_state == PanelState.CLOSED and battery_energy_kwh > 0.01 and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
+	return not is_preview and not incident_faulted and not is_instance_valid(driver) and panel_state == PanelState.CLOSED and battery_energy_kwh > 0.01 and not _player_inside_pressurized_dome(player) and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
 
 
 func board(player: Node2D) -> bool:
@@ -569,6 +574,20 @@ func _is_player_nearby() -> bool:
 	return player != null and is_instance_valid(player) and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
 
 
+func _player_inside_pressurized_dome(player: Node2D) -> bool:
+	if player == null or not is_instance_valid(player):
+		return false
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if not is_instance_valid(dome) or not dome.has_method("contains_world_point"):
+			continue
+		if not bool(dome.call("contains_world_point", player.global_position)):
+			continue
+		if dome.has_method("is_in_corridor") and bool(dome.call("is_in_corridor", player.global_position)):
+			continue
+		return true
+	return false
+
+
 func _charge_from_solar(delta: float) -> void:
 	if incident_faulted or battery_energy_kwh >= BATTERY_CAPACITY_KWH:
 		return
@@ -641,7 +660,11 @@ func _update_interaction_label() -> void:
 		interaction_label.text = "E / CLICK · SCENDI\nSCENDI PRIMA DI APRIRE I PANNELLI · %d%%" % roundi(get_battery_percent())
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	var nearby := player != null and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
+	if player != null and _player_inside_pressurized_dome(player):
+		interaction_label.visible = false
+		return
+	var interaction_distance := 94.0 if sand_accumulation > 0 else INTERACTION_DISTANCE
+	var nearby := player != null and player.global_position.distance_to(global_position) <= interaction_distance
 	interaction_label.visible = nearby
 	if not nearby:
 		return
@@ -649,7 +672,10 @@ func _update_interaction_label() -> void:
 		interaction_label.text = "ROVER IN GUASTO\nE · RIPARA SISTEMI DI BORDO"
 		return
 	if panel_state == PanelState.CLOSED:
-		interaction_label.text = "E / CLICK · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())
+		if sand_accumulation > 0:
+			interaction_label.text = "E breve · SALI   E tenuto · SPOLVERA\nBATTERIA %d%%" % roundi(get_battery_percent())
+		else:
+			interaction_label.text = "E / CLICK · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())
 	elif panel_state == PanelState.OPEN:
 		interaction_label.text = "F · CHIUDI PANNELLI\nRICARICA %d%%" % roundi(get_battery_percent())
 	else:

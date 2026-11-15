@@ -1,5 +1,12 @@
 extends CanvasLayer
 
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
+const BACKGROUND_COLOR := Color("#151B25ee")
+const TEXT_COLOR := Color("E0F8EE")
+const HUNGER_COLOR := Color("E88F33")
+const THIRST_COLOR := Color("4191b1")
+const OXYGEN_COLOR := Color("8AC4E1")
+
 var ambient_label: Label
 var core_label: Label
 var status_label: Label
@@ -15,25 +22,26 @@ func _ready() -> void:
 
 func _build_ui() -> void:
 	var root := Control.new()
+	root.add_theme_font_override("font", UI_FONT)
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 	var panel := PanelContainer.new()
-	panel.position = Vector2(16, 326)
+	panel.position = Vector2(16, 141)
 	panel.custom_minimum_size = Vector2(274, 126)
-	panel.add_theme_stylebox_override("panel", _panel_style(Color("70c9ea")))
+	panel.add_theme_stylebox_override("panel", _panel_style())
 	root.add_child(panel)
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	panel.add_child(rows)
-	rows.add_child(_label("// GESTIONE TERMICA EVA //", 13, Color("e3f1ee")))
-	ambient_label = _label("", 11, Color("9fc7d5"))
+	rows.add_child(_label("GESTIONE TERMICA EVA", 13, TEXT_COLOR))
+	ambient_label = _label("", 12, Color("9fc7d5"))
 	rows.add_child(ambient_label)
-	core_label = _label("", 15, Color("7fe3ba"))
+	core_label = _label("", 12, OXYGEN_COLOR)
 	rows.add_child(core_label)
-	status_label = _label("", 11, Color("7fe3ba"))
+	status_label = _label("", 14, OXYGEN_COLOR)
 	rows.add_child(status_label)
-	effects_label = _label("", 10, Color("b9c8ca"))
+	effects_label = _label("", 10, TEXT_COLOR)
 	effects_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	rows.add_child(effects_label)
 
@@ -57,19 +65,18 @@ func _refresh(data: Dictionary) -> void:
 
 func _label(text: String, size: int, color: Color) -> Label:
 	var label := Label.new()
+	label.add_theme_font_override("font", UI_FONT)
 	label.text = text
 	label.add_theme_font_size_override("font_size", size)
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_outline_color", Color("04070a"))
+	label.add_theme_color_override("font_outline_color", BACKGROUND_COLOR)
 	label.add_theme_constant_override("outline_size", 2)
 	return label
 
 
-func _panel_style(border: Color) -> StyleBoxFlat:
+func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("101820ed")
-	style.border_color = border
-	style.set_border_width_all(3)
+	style.bg_color = BACKGROUND_COLOR
 	style.content_margin_left = 10
 	style.content_margin_right = 10
 	style.content_margin_top = 7

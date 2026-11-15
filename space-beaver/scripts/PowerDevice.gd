@@ -22,6 +22,7 @@ const ICE_DRILL_FRAME_SIZE := Vector2i(32, 48)
 const BATTERY_CAPACITY_KWH := 500.0
 const ICE_DRILL_DEMAND_KW := 60.0
 const ICE_DRILL_WATER_L_PER_HOUR := 80.0
+const ICE_DRILL_WATER_STORAGE_CAPACITY_L := 500.0
 const WATER_BOTTLE_REFILL_DISTANCE := 58.0
 const TILE_SIZE := 16
 
@@ -102,10 +103,11 @@ func _process(delta: float) -> void:
 		fluid_output_connected = pipe_manager != null and bool(pipe_manager.call("is_source_connected", self))
 		if powered:
 			var produced := ICE_DRILL_WATER_L_PER_HOUR * WorldClock.get_game_hours_for_real_delta(delta)
-			water_extracted_liters += produced
-			water_storage_liters += produced
+			var storable := minf(maxf(0.0, produced), maxf(0.0, ICE_DRILL_WATER_STORAGE_CAPACITY_L - water_storage_liters))
+			water_extracted_liters += storable
+			water_storage_liters += storable
 			if fluid_output_connected:
-				water_transported_liters += produced
+				water_transported_liters += storable
 	if is_preview or device_id == "solar_panel":
 		return
 	var should_animate := device_id == "transformer" and powered
@@ -533,7 +535,7 @@ func get_machine_specs() -> Dictionary:
 				"status": drill_connection if not network_enabled else ("OPERATIVA" if powered else drill_connection),
 				"status_color": Color("72eda0") if powered else Color("ff655d"),
 				"principle": "La testa di perforazione frantuma il regolite marziano ghiacciato; un sistema termico interno separa e fonde il ghiaccio, ottenendo acqua liquida.",
-				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f L" % water_storage_liters, "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
+				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f / %.0f L" % [water_storage_liters, ICE_DRILL_WATER_STORAGE_CAPACITY_L], "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
 			}
 	return {"title": "MACCHINARIO", "category": "SISTEMA", "status": "SCONOSCIUTO", "status_color": Color.WHITE, "principle": "", "specs": []}
 

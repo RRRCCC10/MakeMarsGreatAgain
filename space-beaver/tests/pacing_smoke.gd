@@ -53,7 +53,7 @@ func _run() -> void:
 	current_scene.add_child(drill)
 	drill.set_power_state(true)
 	drill._process(20.0)
-	_expect(is_equal_approx(drill.water_extracted_liters, 40.0), "La trivella deve produrre 40 L per ora di gioco, quindi 40 L in 20 secondi reali")
+	_expect(is_equal_approx(drill.water_extracted_liters, 80.0), "La trivella deve produrre 80 L per ora di gioco, quindi 80 L in 20 secondi reali")
 	drill.queue_free()
 	_finish()
 

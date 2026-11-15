@@ -1,5 +1,6 @@
 extends CanvasLayer
 
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const TILE_SIZE := 16
 const REVEAL_RADIUS_TILES := 10
 const DRAW_BLOCK_TILES := 4
@@ -15,6 +16,7 @@ const TERRAIN_COLORS := {
 
 class MapCanvas extends Control:
 	var map_ui: Node
+	var minimap := false
 
 	func _draw() -> void:
 		if map_ui != null:
@@ -28,6 +30,9 @@ var explored_blocks: Dictionary = {}
 var last_revealed_cell := Vector2i(999999, 999999)
 var map_root: Control
 var map_canvas: MapCanvas
+var minimap_root: PanelContainer
+var minimap_canvas: MapCanvas
+var minimap_clock: Label
 var is_open := false
 var map_zoom := 1.0
 var map_view_center_cell := Vector2.ZERO
@@ -38,6 +43,7 @@ var last_pan_mouse_position := Vector2.ZERO
 const MIN_MAP_ZOOM := 1.0
 const MAX_MAP_ZOOM := 8.0
 const MAP_ZOOM_FACTOR := 1.25
+const MINIMAP_ZOOM := 24.0
 const STRUCTURE_ICON_SIZE := 15.0
 const AIRDROP_ICON_SIZE := 14.0
 
@@ -65,6 +71,12 @@ func _setup() -> void:
 
 func _process(_delta: float) -> void:
 	_reveal_around_player()
+	if minimap_root != null:
+		minimap_root.visible = not is_open and not _landing_is_active()
+	if minimap_clock != null:
+		minimap_clock.text = _format_clock()
+	if minimap_canvas != null:
+		minimap_canvas.queue_redraw()
 	if is_open and map_canvas != null:
 		# Finche' il giocatore non trascina la carta, questa continua a seguirlo
 		# anche mentre resta aperta e il personaggio si muove.
@@ -136,6 +148,11 @@ func open_map() -> bool:
 		map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
 	map_canvas.queue_redraw()
 	return true
+
+
+func _landing_is_active() -> bool:
+	var landing := get_tree().current_scene.get_node_or_null("LandingSequence") if get_tree().current_scene != null else null
+	return landing != null and landing.has_method("is_active") and bool(landing.call("is_active"))
 
 
 func close_map() -> void:
@@ -262,6 +279,68 @@ func _build_ui() -> void:
 	legend.add_theme_font_size_override("font_size", 11)
 	legend.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(legend)
+	_build_minimap_ui()
+
+
+func _build_minimap_ui() -> void:
+	minimap_root = PanelContainer.new()
+	minimap_root.name = "MinimapPanel"
+	minimap_root.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	minimap_root.offset_left = -252.0
+	minimap_root.offset_top = -224.0
+	minimap_root.offset_right = -16.0
+	minimap_root.offset_bottom = -16.0
+	minimap_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("091218e8")
+	style.border_color = Color("54bfd8")
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(5)
+	minimap_root.add_theme_stylebox_override("panel", style)
+	add_child(minimap_root)
+	var margins := MarginContainer.new()
+	margins.add_theme_constant_override("margin_left", 7)
+	margins.add_theme_constant_override("margin_right", 7)
+	margins.add_theme_constant_override("margin_top", 5)
+	margins.add_theme_constant_override("margin_bottom", 6)
+	minimap_root.add_child(margins)
+	var rows := VBoxContainer.new()
+	rows.add_theme_constant_override("separation", 3)
+	margins.add_child(rows)
+	minimap_clock = _map_label("--:-- AM  ·  GIORNO 1", 12, Color("ffe38a"))
+	minimap_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rows.add_child(minimap_clock)
+	minimap_canvas = MapCanvas.new()
+	minimap_canvas.name = "MinimapCanvas"
+	minimap_canvas.map_ui = self
+	minimap_canvas.minimap = true
+	minimap_canvas.custom_minimum_size = Vector2(220, 168)
+	minimap_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rows.add_child(minimap_canvas)
+	var hint := _map_label("PREMI M PER APRIRE LA MAPPA", 9, Color("8ee7f2"))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rows.add_child(hint)
+
+
+func _map_label(text: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
+
+
+func _format_clock() -> String:
+	var data := WorldClock.get_time_data()
+	var hour_24 := clampi(int(data.get("whole_hour", 0)), 0, 23)
+	var minute := clampi(int(data.get("minute", 0)), 0, 59)
+	var suffix := "AM" if hour_24 < 12 else "PM"
+	var hour_12 := hour_24 % 12
+	if hour_12 == 0:
+		hour_12 = 12
+	return "%02d:%02d %s  ·  GIORNO %d" % [hour_12, minute, suffix, int(data.get("day", 1))]
 
 
 func _draw_map(canvas: Control) -> void:
@@ -271,8 +350,11 @@ func _draw_map(canvas: Control) -> void:
 	canvas.draw_rect(map_rect, Color("10181d"), true)
 	if map_provider == null or world_rect.size.x <= 0 or world_rect.size.y <= 0:
 		return
-	var visible_tiles := _get_visible_tiles()
-	var visible_rect := _get_visible_rect(visible_tiles)
+	var is_minimap := canvas == minimap_canvas
+	var draw_zoom := MINIMAP_ZOOM if is_minimap else map_zoom
+	var center := Vector2(map_provider.call("world_to_cell", player.global_position)) if is_minimap and player != null else map_view_center_cell
+	var visible_tiles := _get_visible_tiles(draw_zoom)
+	var visible_rect := _get_visible_rect(visible_tiles, center)
 	var pixels_per_tile := map_size / float(visible_tiles)
 	for block in explored_blocks:
 		var cell := Vector2i(block) * DRAW_BLOCK_TILES
@@ -284,7 +366,7 @@ func _draw_map(canvas: Control) -> void:
 		var block_size := Vector2.ONE * (pixels_per_tile * DRAW_BLOCK_TILES + 0.35)
 		var draw_block := Rect2(map_rect.position + relative, block_size).intersection(map_rect)
 		canvas.draw_rect(draw_block, color, true)
-	_draw_structure_markers(canvas, map_rect, visible_rect, pixels_per_tile)
+	_draw_structure_markers(canvas, map_rect, visible_rect, pixels_per_tile, draw_zoom)
 	_draw_airdrop_markers(canvas, map_rect, visible_rect, pixels_per_tile)
 	if player != null:
 		var player_cell: Vector2i = map_provider.call("world_to_cell", player.global_position)
@@ -295,12 +377,12 @@ func _draw_map(canvas: Control) -> void:
 	canvas.draw_rect(map_rect, Color("6bd8ed"), false, 1.5)
 
 
-func _draw_structure_markers(canvas: Control, map_rect: Rect2, visible_rect: Rect2i, pixels_per_tile: float) -> void:
+func _draw_structure_markers(canvas: Control, map_rect: Rect2, visible_rect: Rect2i, pixels_per_tile: float, draw_zoom: float) -> void:
 	for marker in get_structure_map_markers():
 		var point := _marker_point(marker.get("world_position", Vector2.ZERO), map_rect, visible_rect, pixels_per_tile)
 		if point == Vector2.INF:
 			continue
-		var icon_size := clampf(STRUCTURE_ICON_SIZE + map_zoom * 1.5, 12.0, 26.0)
+		var icon_size := clampf(STRUCTURE_ICON_SIZE + draw_zoom * 1.5, 12.0, 26.0)
 		canvas.draw_circle(point, icon_size * 0.62, Color("06151adf"), true)
 		var icon := marker.get("texture") as Texture2D
 		if icon != null:
@@ -394,8 +476,9 @@ func get_map_view_center_cell() -> Vector2:
 	return map_view_center_cell
 
 
-func _get_visible_tiles() -> int:
-	return maxi(1, roundi(float(world_rect.size.x) / map_zoom))
+func _get_visible_tiles(zoom: float = -1.0) -> int:
+	var resolved_zoom := map_zoom if zoom <= 0.0 else zoom
+	return maxi(1, roundi(float(world_rect.size.x) / resolved_zoom))
 
 
 func _get_map_size(canvas: Control) -> float:
@@ -403,8 +486,9 @@ func _get_map_size(canvas: Control) -> float:
 	return maxf(80.0, minf(available.x, available.y))
 
 
-func _get_visible_rect(visible_tiles: int) -> Rect2i:
-	var center := _clamp_map_view_center(map_view_center_cell, visible_tiles)
+func _get_visible_rect(visible_tiles: int, requested_center: Vector2 = Vector2.INF) -> Rect2i:
+	var center_to_use := map_view_center_cell if requested_center == Vector2.INF else requested_center
+	var center := _clamp_map_view_center(center_to_use, visible_tiles)
 	var max_top_left := world_rect.end - Vector2i.ONE * visible_tiles
 	return Rect2i(
 		Vector2i(

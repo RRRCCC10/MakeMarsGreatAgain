@@ -64,7 +64,7 @@ func _run() -> void:
 	current_scene.add_child(machine_panel)
 	storms.call("_update_weather_ui")
 	var weather_panel := storms.get("_weather_panel") as Control
-	_expect(weather_panel != null and is_equal_approx(weather_panel.offset_left, 16.0) and is_equal_approx(weather_panel.offset_top, 202.0), "L'avviso della tempesta deve spostarsi lontano dalle informazioni dei macchinari")
+	_expect(weather_panel != null and is_equal_approx(weather_panel.offset_left, 16.0) and is_equal_approx(weather_panel.offset_top, 282.0), "L'avviso della tempesta deve spostarsi lontano dalle informazioni dei macchinari e dai nuovi pannelli EVA")
 	machine_panel.queue_free()
 	shelter.queue_free()
 	storms.call("force_deposit_for_test", panel)

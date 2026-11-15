@@ -5,6 +5,7 @@ extends Node2D
 ## un singolo campione di roccia e genera un rapporto da trasmettere alla Terra.
 
 const TILE_SIZE := 16
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 const INTERACTION_DISTANCE := 58.0
 const ANIMATION_FRAME_SECONDS := 0.16
@@ -21,7 +22,7 @@ const DEFINITIONS := {
 		"short_name": "DIFFRATTOMETRO XRD",
 		"size": Vector2i(32, 16),
 		"seconds": 150.0,
-		"reward": 900_000_000,
+		"reward": 1_000_000_000,
 		"biosignature_chance": 0.20,
 		"principle": "La diffrazione dei raggi X identifica le fasi cristalline del campione dalla geometria del reticolo atomico.",
 	},
@@ -30,7 +31,7 @@ const DEFINITIONS := {
 		"short_name": "SPETTROMETRO RAMAN",
 		"size": Vector2i(32, 16),
 		"seconds": 180.0,
-		"reward": 1_200_000_000,
+		"reward": 1_300_000_000,
 		"biosignature_chance": 0.35,
 		"principle": "Lo scattering Raman del laser rivela i legami molecolari e la composizione mineralogica senza distruggere il campione.",
 	},
@@ -39,7 +40,7 @@ const DEFINITIONS := {
 		"short_name": "ICP-MS",
 		"size": Vector2i(48, 16),
 		"seconds": 240.0,
-		"reward": 1_800_000_000,
+		"reward": 1_900_000_000,
 		"biosignature_chance": 0.55,
 		"principle": "Il plasma accoppiato induttivamente ionizza il campione; lo spettrometro di massa misura gli elementi e le loro abbondanze.",
 	},
@@ -68,11 +69,16 @@ var sample_research_multiplier := 1.0
 var sample_is_primordial_ice := false
 var biosignature_chance := 0.0
 var ancient_life_detected := false
+var report_signed := false
 var last_report_reward := 0
 var sprite: Sprite2D
 var physics_body: StaticBody2D
 var interaction_label: Label
 var _life_rng := RandomNumberGenerator.new()
+var _sample_picker_layer: CanvasLayer
+var _sample_picker_root: Control
+var _sample_picker_rows: VBoxContainer
+var _sample_picker_player: Node2D
 
 
 func setup(new_machine_id: String, preview: bool = false, new_placement_rotation: int = 0) -> void:
@@ -229,6 +235,7 @@ func _ready() -> void:
 	add_to_group("research_machines")
 	_setup_collision()
 	_setup_interaction_label()
+	_build_sample_picker_ui()
 	var registry := get_node_or_null("/root/BuildableRegistry")
 	if registry != null:
 		registry.call("register_buildable", self, get_display_name(), "research", Callable(self, "pickup"))
@@ -236,6 +243,11 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if _sample_picker_layer != null and is_instance_valid(_sample_picker_layer):
+		var ui_state := get_node_or_null("/root/UIState")
+		if ui_state != null:
+			ui_state.call("close_modal", &"research_sample_picker")
+		_sample_picker_layer.queue_free()
 	if not is_preview:
 		var power_grid := get_node_or_null("/root/PowerGrid")
 		if power_grid != null:
@@ -262,9 +274,6 @@ func _process(delta: float) -> void:
 			_register_power_consumer()
 	elif state == State.COMPLETE:
 		_animation_step(delta)
-		report_elapsed += maxf(delta, 0.0)
-		if report_elapsed >= REPORT_TRANSMISSION_SECONDS:
-			_deliver_report()
 	_update_interaction_label()
 	if state == State.ANALYZING:
 		if powered:
@@ -306,6 +315,150 @@ func _setup_interaction_label() -> void:
 	interaction_label.add_theme_color_override("font_outline_color", Color("071118"))
 	interaction_label.add_theme_constant_override("outline_size", 3)
 	add_child(interaction_label)
+
+
+func _build_sample_picker_ui() -> void:
+	_sample_picker_layer = CanvasLayer.new()
+	_sample_picker_layer.name = "ResearchSamplePickerLayer"
+	_sample_picker_layer.layer = 125
+	get_tree().current_scene.add_child(_sample_picker_layer)
+	_sample_picker_root = Control.new()
+	_sample_picker_root.name = "ResearchSamplePicker"
+	_sample_picker_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sample_picker_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_sample_picker_root.visible = false
+	_sample_picker_layer.add_child(_sample_picker_root)
+	var shade := ColorRect.new()
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.color = Color("02070acc")
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	_sample_picker_root.add_child(shade)
+	var panel := PanelContainer.new()
+	panel.anchor_left = 0.5
+	panel.anchor_right = 0.5
+	panel.anchor_top = 0.5
+	panel.anchor_bottom = 0.5
+	panel.offset_left = -360.0
+	panel.offset_right = 360.0
+	panel.offset_top = -245.0
+	panel.offset_bottom = 245.0
+	panel.add_theme_font_override("font", UI_FONT)
+	panel.add_theme_stylebox_override("panel", _sample_picker_panel_style())
+	_sample_picker_root.add_child(panel)
+	var contents := VBoxContainer.new()
+	contents.add_theme_constant_override("separation", 8)
+	panel.add_child(contents)
+	var title := _picker_label("// SELEZIONA CAMPIONE DA ANALIZZARE //", 17, Color("ffe38a"))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	contents.add_child(title)
+	var hint := _picker_label("Hai più pietre: scegli la pila da consumare nel laboratorio.", 11, Color("b8d0d6"))
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	contents.add_child(hint)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(680.0, 360.0)
+	contents.add_child(scroll)
+	_sample_picker_rows = VBoxContainer.new()
+	_sample_picker_rows.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sample_picker_rows.add_theme_constant_override("separation", 6)
+	scroll.add_child(_sample_picker_rows)
+	var close := Button.new()
+	close.text = "[ ANNULLA · ESC ]"
+	close.custom_minimum_size = Vector2(220.0, 34.0)
+	close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	close.add_theme_font_override("font", UI_FONT)
+	close.pressed.connect(_close_sample_picker)
+	contents.add_child(close)
+
+
+func _open_sample_picker(player: Node2D, choices: Array) -> void:
+	if _sample_picker_root == null or _sample_picker_rows == null:
+		return
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null and not bool(ui_state.call("try_open_modal", &"research_sample_picker")):
+		return
+	_sample_picker_player = player
+	for child in _sample_picker_rows.get_children():
+		child.queue_free()
+	for choice_variant in choices:
+		var choice: Dictionary = choice_variant
+		var item_id := str(choice.get("id", ""))
+		var definition: Dictionary = ROCK_RESOURCE.definition_for_item_id(item_id)
+		var rarity := str(definition.get("rarity", "common"))
+		var rarity_label := "ULTRA RARO" if rarity == "ultra_rare" else ("RARO" if rarity == "rare" else "COMUNE")
+		var button := Button.new()
+		button.text = "%s  ×%d\n%s · %s · valore ricerca ×%.2f" % [str(choice.get("name", "Pietra")).to_upper(), int(choice.get("count", 0)), str(definition.get("biome", "provenienza sconosciuta")), rarity_label, float(definition.get("research_multiplier", 1.0))]
+		button.custom_minimum_size = Vector2(660.0, 58.0)
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		button.add_theme_font_override("font", UI_FONT)
+		button.add_theme_font_size_override("font_size", 12)
+		button.add_theme_color_override("font_color", Color("dcecef"))
+		button.add_theme_stylebox_override("normal", _sample_picker_button_style(Color("12232d"), Color("477786")))
+		button.add_theme_stylebox_override("hover", _sample_picker_button_style(Color("214653"), Color("8ee7f2")))
+		button.add_theme_stylebox_override("pressed", _sample_picker_button_style(Color("315f6d"), Color("ffe38a")))
+		button.pressed.connect(_select_sample.bind(item_id))
+		_sample_picker_rows.add_child(button)
+	_sample_picker_root.visible = true
+
+
+func _select_sample(item_id: String) -> void:
+	var player := _sample_picker_player
+	_close_sample_picker()
+	if player == null or not is_instance_valid(player):
+		return
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory == null or not inventory.has_method("take_rock_sample"):
+		return
+	var sample: Dictionary = inventory.call("take_rock_sample", item_id)
+	if not sample.is_empty():
+		_start_analysis(sample)
+
+
+func _close_sample_picker() -> void:
+	if _sample_picker_root != null:
+		_sample_picker_root.visible = false
+	_sample_picker_player = null
+	var ui_state := get_node_or_null("/root/UIState")
+	if ui_state != null:
+		ui_state.call("close_modal", &"research_sample_picker")
+
+
+func _picker_label(text: String, font_size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_override("font", UI_FONT)
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color("02070a"))
+	label.add_theme_constant_override("outline_size", 2)
+	return label
+
+
+func _sample_picker_panel_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("0c1720f5")
+	style.border_color = Color("6ed2e6")
+	style.set_border_width_all(3)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 18
+	style.content_margin_right = 18
+	style.content_margin_top = 14
+	style.content_margin_bottom = 14
+	return style
+
+
+func _sample_picker_button_style(background: Color, border: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	return style
 
 
 func _update_interaction_label() -> void:
@@ -432,7 +585,9 @@ func get_prompt_for_player(_player: Node2D) -> String:
 		return analysis_status if powered else analysis_status + "\nIN PAUSA · COLLEGA 240 kW"
 	if state == State.COMPLETE:
 		var report_header := "BIOSIGNATURA RILEVATA" if sample_is_primordial_ice and ancient_life_detected else "RAPPORTO PRONTO"
-		return "%s · invio Terra %s\nE · INVIA ORA · %s" % [report_header, _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
+		if not report_signed:
+			return "%s · FIRMA NECESSARIA\nE · FIRMA RAPPORTO · %s" % [report_header, _format_money(get_reward())]
+		return "%s · RAPPORTO FIRMATO\nE · INVIA ALLA TERRA · %s" % [report_header, _format_money(get_reward())]
 	if upgrade_level >= MAX_UPGRADE_LEVEL:
 		return "E · ANALIZZA UNA PIETRA\nUPGRADE MASSIMO · 40 s"
 	var inventory := get_node_or_null("/root/Inventory")
@@ -448,6 +603,10 @@ func try_interact(player: Node2D) -> bool:
 	if is_preview or player == null or player.global_position.distance_to(global_position) > INTERACTION_DISTANCE:
 		return false
 	if state == State.COMPLETE:
+		if not report_signed:
+			report_signed = true
+			_update_interaction_label()
+			return true
 		_deliver_report()
 		return true
 	if state != State.IDLE:
@@ -455,7 +614,17 @@ func try_interact(player: Node2D) -> bool:
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory == null:
 		return false
-	var sample: Dictionary = inventory.call("take_first_rock_sample")
+	var choices: Array = inventory.call("get_rock_sample_choices") if inventory.has_method("get_rock_sample_choices") else []
+	if choices.is_empty():
+		return false
+	if choices.size() > 1:
+		_open_sample_picker(player, choices)
+		return true
+	var sample: Dictionary = inventory.call("take_rock_sample", str(choices[0].get("id", ""))) if inventory.has_method("take_rock_sample") else inventory.call("take_first_rock_sample")
+	return _start_analysis(sample)
+
+
+func _start_analysis(sample: Dictionary) -> bool:
 	if sample.is_empty():
 		return false
 	sample_id = str(sample.get("id", ""))
@@ -473,6 +642,7 @@ func try_interact(player: Node2D) -> bool:
 			achievements.call("record_deep_ice_study")
 	state = State.ANALYZING
 	study_elapsed = 0.0
+	report_signed = false
 	animation_elapsed = 0.0
 	animation_frame = 0
 	_refresh_visual()
@@ -531,6 +701,7 @@ func _deliver_report() -> void:
 	state = State.IDLE
 	study_elapsed = 0.0
 	report_elapsed = 0.0
+	report_signed = false
 	animation_elapsed = 0.0
 	animation_frame = 0
 	sample_id = ""
@@ -567,7 +738,7 @@ func get_machine_specs() -> Dictionary:
 		color = Color("ffe38a")
 	elif state == State.COMPLETE:
 		status = "BIOSIGNATURA RILEVATA" if ancient_life_detected else "RAPPORTO PRONTO"
-		detail = "%s · %s · %s · invio Terra tra %s · %s" % [sample_name, sample_biome, _rarity_label(), _format_time(maxf(0.0, REPORT_TRANSMISSION_SECONDS - report_elapsed)), _format_money(get_reward())]
+		detail = "%s · %s · %s · %s · %s" % [sample_name, sample_biome, _rarity_label(), "firmare il rapporto" if not report_signed else "pronto per l'invio", _format_money(get_reward())]
 		color = Color("7fffd4") if ancient_life_detected else Color("72eda0")
 	var research_multiplier := 1.0
 	var contracts := "in attesa del primo rapporto"

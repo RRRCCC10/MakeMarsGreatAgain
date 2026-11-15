@@ -132,6 +132,10 @@ func is_source_connected(source: Node, category: int = -1) -> bool:
 		var required_opening := Vector2i(definition.get("required_opening", Vector2i.LEFT))
 		var source_category := int(definition.get("category", PipeSegment.Category.GENERIC))
 		var pipe := get_pipe(cell)
+		if pipe != null:
+			# Una partita caricata o una registrazione tardiva può lasciare per un
+			# frame la rete grigia: la riclassifichiamo prima di dichiararla persa.
+			_recalculate_component(cell)
 		return pipe != null and pipe.has_opening(required_opening) and pipe.category == source_category
 	return false
 
@@ -141,6 +145,8 @@ func consume_connected_resource(input_cell: Vector2i, opening_toward_machine: Ve
 	if amount <= 0.0:
 		return 0.0
 	var input_pipe := get_pipe(input_cell)
+	if input_pipe != null:
+		_recalculate_component(input_cell)
 	if input_pipe == null or input_pipe.category != category or not input_pipe.has_opening(opening_toward_machine):
 		return 0.0
 	var network := get_network(input_cell)
@@ -172,6 +178,8 @@ func is_input_connected(input_cell: Vector2i, opening_toward_machine: Vector2i, 
 func get_connected_source_nodes(input_cell: Vector2i, opening_toward_machine: Vector2i, category: int) -> Array[Node]:
 	var result: Array[Node] = []
 	var input_pipe := get_pipe(input_cell)
+	if input_pipe != null:
+		_recalculate_component(input_cell)
 	if input_pipe == null or input_pipe.category != category or not input_pipe.has_opening(opening_toward_machine):
 		return result
 	var network := get_network(input_cell)

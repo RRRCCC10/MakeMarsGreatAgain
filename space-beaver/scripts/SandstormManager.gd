@@ -10,6 +10,7 @@ signal sand_level_changed(target: Node2D, level: int)
 
 enum State { CALM, WARNING, ACTIVE }
 
+const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const MIN_CALM_SECONDS := 600.0
 const MAX_CALM_SECONDS := 1200.0
 const WARNING_SECONDS := 45.0
@@ -195,8 +196,10 @@ func get_remaining_seconds() -> float:
 	return _state_remaining
 
 
-func begin_nearby_cleaning(player: Node2D) -> bool:
+func begin_nearby_cleaning(player: Node2D, preferred_target: Node2D = null) -> bool:
 	if player == null or not is_instance_valid(player) or not _clean_target_key.is_empty():
+		return false
+	if _player_inside_pressurized_dome(player):
 		return false
 	var closest_key := ""
 	var closest_distance := CLEAN_DISTANCE
@@ -211,6 +214,8 @@ func begin_nearby_cleaning(player: Node2D) -> bool:
 		if level <= 0 or not _can_clean(target):
 			continue
 		var distance := player.global_position.distance_to(_clean_position(target))
+		if preferred_target != null and target != preferred_target:
+			continue
 		if distance <= closest_distance:
 			closest_key = key
 			closest_distance = distance
@@ -232,6 +237,8 @@ func begin_nearby_cleaning(player: Node2D) -> bool:
 func toggle_nearby_solar_tarp(player: Node2D) -> bool:
 	if player == null or not is_instance_valid(player) or not _clean_target_key.is_empty():
 		return false
+	if _player_inside_pressurized_dome(player):
+		return false
 	var closest: Node2D
 	var closest_distance := CLEAN_DISTANCE
 	for data_variant in _targets.values():
@@ -252,6 +259,8 @@ func toggle_nearby_solar_tarp(player: Node2D) -> bool:
 
 func get_nearby_sand_prompt(player: Node2D) -> String:
 	if player == null or not is_instance_valid(player):
+		return ""
+	if _player_inside_pressurized_dome(player):
 		return ""
 	var closest: Node2D
 	var closest_distance := CLEAN_DISTANCE
@@ -398,7 +407,7 @@ func _process_cleaning(delta: float) -> void:
 		# invece di costringere il giocatore a ripetere E una volta per livello.
 		target.call("set_sand_accumulation", 0)
 		sand_level_changed.emit(target, 0)
-	_show_notice("SABBIA RIMOSSA\n%s: PULITO (-%d livelli)" % [str(data.get("display_name", "MACCHINARIO")), level])
+	_show_notice("SABBIA RIMOSSA\n%s: PULITO" % str(data.get("display_name", "MACCHINARIO")))
 	_finish_cleaning(true)
 
 
@@ -428,6 +437,15 @@ func _clean_position(target: Node2D) -> Vector2:
 
 func _clean_duration_for_level(level: int) -> float:
 	return 1.5 + float(clampi(level, 1, 3)) * 1.5
+
+
+func _player_inside_pressurized_dome(player: Node2D) -> bool:
+	for dome in get_tree().get_nodes_in_group("pressurized_interiors"):
+		if not is_instance_valid(dome) or not dome.has_method("contains_world_point"):
+			continue
+		if bool(dome.call("contains_world_point", player.global_position)) and (not dome.has_method("is_in_corridor") or not bool(dome.call("is_in_corridor", player.global_position))):
+			return true
+	return false
 
 
 func _sand_label(level: int) -> String:
@@ -507,6 +525,7 @@ func _make_panel(border_color: Color) -> PanelContainer:
 
 func _make_label(font_size: int, color: Color) -> Label:
 	var label := Label.new()
+	label.add_theme_font_override("font", UI_FONT)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color("210b03"))
@@ -553,8 +572,10 @@ func _update_weather_panel_position() -> void:
 		_weather_panel.anchor_bottom = 0.0
 		_weather_panel.offset_left = 16.0
 		_weather_panel.offset_right = 386.0
-		_weather_panel.offset_top = 202.0
-		_weather_panel.offset_bottom = 294.0
+		# Le GUI allegati spostano temperatura a 141..267 px: qui restiamo
+		# sotto quel pannello, senza coprire né la scheda macchina né i dati EVA.
+		_weather_panel.offset_top = 282.0
+		_weather_panel.offset_bottom = 374.0
 	else:
 		_weather_panel.anchor_left = 0.5
 		_weather_panel.anchor_right = 0.5

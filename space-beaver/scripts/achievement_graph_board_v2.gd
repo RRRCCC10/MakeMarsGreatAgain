@@ -28,8 +28,9 @@ const CATEGORY_LAYOUTS := {
 		"nodes": {
 			"first_base": Vector2(60, 276), "airlock_cycle": Vector2(290, 112), "ice_drill": Vector2(520, 112), "refill_bottle": Vector2(750, 112),
 			"stable_grid": Vector2(290, 420), "greenhouse": Vector2(520, 420), "first_planting": Vector2(750, 354), "first_harvest": Vector2(980, 420),
+			"genetic_modification": Vector2(1_190, 354), "genetic_replacement": Vector2(1_190, 480),
 		},
-		"sections": [["CICLO DI ACCESSO E ACQUA", Vector2(290, 44)], ["HABITAT E CIBO", Vector2(290, 350)]],
+		"sections": [["CICLO DI ACCESSO E ACQUA", Vector2(290, 44)], ["HABITAT E CIBO", Vector2(290, 350)], ["BIOINGEGNERIA", Vector2(1_190, 292)]],
 	},
 	"science": {
 		"nodes": {

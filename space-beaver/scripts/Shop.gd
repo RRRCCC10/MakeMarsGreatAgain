@@ -319,6 +319,9 @@ func purchase_seed_upgrade(track: String) -> bool:
 		potato_seed_yield_level += 1
 	else:
 		potato_seed_speed_level += 1
+	var achievements := get_node_or_null("/root/AchievementManager")
+	if achievements != null and achievements.has_method("record"):
+		achievements.call("record", "genetic_modification")
 	message_changed.emit("Semi GM aggiornati: %s livello %d. I nuovi lotti mantengono il miglioramento." % ["resa" if track == "yield" else "velocità", get_seed_upgrade_level(track)], false)
 	state_changed.emit()
 	return true

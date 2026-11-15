@@ -42,7 +42,7 @@ func _run() -> void:
 	shop.toggle()
 	await process_frame
 	var shop_tabs := shop_ui.get("catalog_view") as TabContainer
-	_expect(shop_tabs != null and shop_tabs.get_tab_count() == 3, "Lo shop deve avere esattamente tre sezioni navigabili")
+	_expect(shop_tabs != null and shop_tabs.get_tab_count() == 4, "Lo shop deve avere esattamente quattro sezioni navigabili")
 	if shop_tabs != null:
 		_expect(shop_tabs.get_tab_title(0) == "TUTE", "La prima sezione dello shop deve chiamarsi TUTE")
 		_expect(not shop_tabs.get_tab_title(0).contains("VEICOLI"), "Lo shop non deve più mostrare una sezione veicoli")
@@ -55,7 +55,7 @@ func _run() -> void:
 	var shop_viewport_size := root.get_viewport().get_visible_rect().size
 	var shop_panel := shop_ui.get_child(0).get_child(0).get_child(0) as PanelContainer
 	_expect(shop_panel != null and shop_panel.size.y <= shop_viewport_size.y, "Il pannello shop deve restare entro l'altezza visibile")
-	_expect(shop_tabs != null and shop_tabs.visible and shop_tabs.size.y <= shop_viewport_size.y, "Le tre sezioni shop devono rimanere visibili nel viewport")
+	_expect(shop_tabs != null and shop_tabs.visible and shop_tabs.size.y <= shop_viewport_size.y, "Le quattro sezioni shop devono rimanere visibili nel viewport")
 	shop.close()
 
 	var player := current_scene.get_node("player") as Node2D
