@@ -50,6 +50,24 @@ func _run() -> void:
 	_expect(not far_path.is_empty(), "Un collegamento elettrico molto lontano deve restare raggiungibile")
 	_expect(far_path.size() >= int(power_grid.call("_manhattan", far_start, far_goal)) + 1, "Il percorso lontano deve coprire l'intera distanza tra i due dispositivi")
 
+	# Le tre sezioni di un trasformatore possono dover passare molto vicine.
+	# Un cavo già calcolato non deve trasformarsi in una parete che rende
+	# irraggiungibile batteria o macchinario: l'incrocio resta soltanto visivo,
+	# perché ogni sezione mantiene un network_id distinto.
+	var foreign_wall: Dictionary = {}
+	for y in range(4, 197):
+		foreign_wall[Vector2i(100, y)] = true
+	power_grid.cable_cells_by_network["foreign_cable_test"] = foreign_wall
+	var crossing_path: Array = power_grid.call("_find_path", Vector2i(96, 100), Vector2i(104, 100), "crossing_cable_test")
+	_expect(not crossing_path.is_empty(), "Un percorso non deve essere bloccato artificialmente da un altro cavo")
+	var crosses_foreign_cable := false
+	for cell_variant in crossing_path:
+		if foreign_wall.has(Vector2i(cell_variant)):
+			crosses_foreign_cable = true
+			break
+	_expect(crosses_foreign_cable, "Se non esiste deviazione, il cavo deve poter incrociare un altro canale")
+	power_grid.cable_cells_by_network.erase("foreign_cable_test")
+
 	var inventory: Node = root.get_node("Inventory")
 	var suits: Node = root.get_node("SuitSystem")
 	_expect(_backpack_has_no_suits(inventory, suits), "Le tute non devono occupare slot dello zaino")

@@ -31,6 +31,15 @@ func _run() -> void:
 
 
 func _check_clock(clock: Node) -> void:
+	clock.reset_for_new_mission()
+	var starting_time: Dictionary = clock.get_time_data()
+	_expect(int(starting_time.get("sol", 0)) == 1, "Il calendario marziano deve iniziare al SOL 1")
+	_expect(is_equal_approx(float(clock.get_mars_hour_earth_minutes()), 61.649475), "Un'ora marziana deve durare circa 61 minuti e 39 secondi terrestri")
+	_expect(str(clock.format_local_solar_time()).ends_with("LMST"), "L'orologio deve indicare il tempo solare locale marziano")
+	clock.set_game_hour(23.99)
+	clock._process(0.3)
+	var next_sol_time: Dictionary = clock.get_time_data()
+	_expect(int(next_sol_time.get("sol", 0)) == 2, "Dopo 24 ore marziane il contatore deve avanzare al SOL successivo")
 	clock.set_game_hour(4.99)
 	_expect(clock.get_phase_label() == "NOTTE", "04:59 deve essere NOTTE")
 	_expect(is_zero_approx(clock.get_solar_factor()), "Il solare deve essere zero di notte")

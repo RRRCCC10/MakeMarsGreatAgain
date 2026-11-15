@@ -307,7 +307,7 @@ func _build_minimap_ui() -> void:
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	margins.add_child(rows)
-	minimap_clock = _map_label("--:-- AM  ·  GIORNO 1", 12, Color("ffe38a"))
+	minimap_clock = _map_label("--:-- AM LMST  ·  SOL 1", 12, Color("ffe38a"))
 	minimap_clock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(minimap_clock)
 	minimap_canvas = MapCanvas.new()
@@ -334,13 +334,7 @@ func _map_label(text: String, font_size: int, color: Color) -> Label:
 
 func _format_clock() -> String:
 	var data := WorldClock.get_time_data()
-	var hour_24 := clampi(int(data.get("whole_hour", 0)), 0, 23)
-	var minute := clampi(int(data.get("minute", 0)), 0, 59)
-	var suffix := "AM" if hour_24 < 12 else "PM"
-	var hour_12 := hour_24 % 12
-	if hour_12 == 0:
-		hour_12 = 12
-	return "%02d:%02d %s  ·  GIORNO %d" % [hour_12, minute, suffix, int(data.get("day", 1))]
+	return "%s  ·  SOL %d" % [WorldClock.format_local_solar_time(), int(data.get("sol", 1))]
 
 
 func _draw_map(canvas: Control) -> void:

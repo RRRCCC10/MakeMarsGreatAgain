@@ -19,6 +19,10 @@ const PATH_NEW_CELL_COST := 1.0
 const PATH_EXISTING_CELL_COST := 0.82
 const PATH_TURN_COST := 0.42
 const PATH_PARALLEL_COST := 0.28
+## L'incrocio di due canali elettrici è consentito: i canali restano separati
+## nella logica della rete, ma non devono trasformarsi in un muro invisibile.
+## Il costo elevato fa scegliere una deviazione libera ogni volta che esiste.
+const PATH_FOREIGN_CABLE_CROSSING_COST := 4.0
 ## Con il peso pieno la ricerca procede subito verso il traguardo anche su
 ## distanze molto grandi. I tratti di cavo già esistenti restano comunque
 ## favoriti dal loro costo inferiore.
@@ -294,8 +298,8 @@ func rebuild_network() -> void:
 		return
 
 	# Ogni trasformatore crea tre canali propri (pannelli, trasformata,
-	# batteria). I cavi di un'altra rete restano ostacoli: due basi lontane non
-	# possono unirsi per caso, ma ciascuna può crescere senza limiti di distanza.
+	# batteria). I cavi possono incrociarsi graficamente, ma non vengono mai
+	# collegati fra loro nella logica: le reti restano indipendenti.
 	var failed_routing_nodes: Array = []
 	for panel in panels:
 		if not _device_network_enabled(panel):
@@ -784,16 +788,17 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 	if start == goal:
 		return [start]
 	var blocked := _get_blocked_cells(true)
-	# Un cavo puo' riutilizzare soltanto celle della propria corrente.
-	# Le celle appartenenti alle altre sezioni sono ostacoli, cosi' due
-	# correnti diverse non diventano mai una singola giunzione grafica/logica.
+	# Un cavo riusa volentieri le celle della propria corrente. Quelli delle
+	# altre sezioni non sono ostacoli fisici: un incrocio mantiene comunque i
+	# due network_id distinti e quindi non può fondere due reti per errore.
+	var foreign_cable_cells: Dictionary = {}
 	for other_network_id_variant in cable_cells_by_network.keys():
 		var other_network_id := str(other_network_id_variant)
 		if other_network_id == network_id:
 			continue
 		var other_cells: Dictionary = cable_cells_by_network.get(other_network_id, {})
 		for other_cell in other_cells.keys():
-			blocked[other_cell] = true
+			foreign_cable_cells[other_cell] = true
 	blocked.erase(start)
 	blocked.erase(goal)
 	var own_cells: Dictionary = cable_cells_by_network.get(network_id, {})
@@ -850,6 +855,8 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 			# Il riuso resta vantaggioso, ma non abbastanza da giustificare
 			# serpentine molto piu' lunghe del collegamento diretto.
 			var step_cost := PATH_EXISTING_CELL_COST if own_cells.has(neighbor) else PATH_NEW_CELL_COST
+			if foreign_cable_cells.has(neighbor):
+				step_cost += PATH_FOREIGN_CABLE_CROSSING_COST
 			var is_turn := current_state.z != PATH_START_DIRECTION and current_state.z != direction_index
 			if is_turn:
 				step_cost += PATH_TURN_COST
@@ -1038,10 +1045,11 @@ func _clear_cables() -> void:
 
 func _get_blocked_cells(block_dome_interiors: bool = false) -> Dictionary:
 	var blocked: Dictionary = {}
-	# Un dispositivo non può comparire sotto l'astronauta. Riserviamo il suo
-	# collider completo, non soltanto la cella centrale del click.
+	# Un dispositivo non può comparire sotto l'astronauta. Questo vale solo per
+	# il piazzamento: un cavo può passare sotto il giocatore e non deve smettere
+	# di funzionare quando l'astronauta si ferma accanto a una batteria.
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	if player != null:
+	if player != null and not block_dome_interiors:
 		var player_min := Vector2i(floori((player.global_position.x - 12.0) / CELL_SIZE), floori((player.global_position.y - 12.0) / CELL_SIZE))
 		var player_max := Vector2i(floori((player.global_position.x + 12.0) / CELL_SIZE), floori((player.global_position.y + 12.0) / CELL_SIZE))
 		for y in range(player_min.y, player_max.y + 1):

@@ -1,15 +1,30 @@
 extends Node
 
-signal minute_changed(hour: int, minute: int, day: int)
+signal minute_changed(hour: int, minute: int, sol: int)
 signal phase_changed(phase: int, phase_label: String)
 
 enum Phase { NIGHT, DAWN, DAY, DUSK }
 
-const HOURS_PER_DAY := 24.0
+## Un sol marziano dura 24 h 39 m 35 s terrestri. Per convenzione l'orologio
+## locale lo divide in 24 ore marziane, quindi una di esse dura ~61 m 39,8 s
+## terrestri. Il gioco resta compresso a otto minuti reali per sol: cambiano
+## la nomenclatura e il riferimento scientifico, non il ritmo di sopravvivenza.
+const HOURS_PER_SOL := 24.0
+const HOURS_PER_DAY := HOURS_PER_SOL # compatibilità con i sistemi preesistenti
+const MARS_SOL_EARTH_SECONDS := 88_775.244
+const MARS_HOUR_EARTH_MINUTES := MARS_SOL_EARTH_SECONDS / HOURS_PER_SOL / 60.0
+const LOCAL_SOLAR_TIME_LABEL := "LMST"
 const DEFAULT_GAME_HOURS_PER_REAL_SECOND := 0.05
 
 var game_hour := 8.0
-var day := 1
+var sol := 1
+## Alias tecnico per salvataggi e script meno recenti: l'interfaccia e i dati
+## nuovi espongono sempre il nome corretto, `sol`.
+var day: int:
+	get:
+		return sol
+	set(value):
+		sol = maxi(1, value)
 var time_scale := 1.0
 var running := true
 
@@ -27,14 +42,14 @@ func _process(delta: float) -> void:
 	if advanced_hours <= 0.0:
 		return
 	var total_hours := game_hour + advanced_hours
-	if total_hours >= HOURS_PER_DAY:
-		day += floori(total_hours / HOURS_PER_DAY)
-	game_hour = fmod(total_hours, HOURS_PER_DAY)
+	if total_hours >= HOURS_PER_SOL:
+		sol += floori(total_hours / HOURS_PER_SOL)
+	game_hour = fmod(total_hours, HOURS_PER_SOL)
 	_emit_clock_state(false)
 
 
 func set_game_hour(value: float) -> void:
-	game_hour = fposmod(value, HOURS_PER_DAY)
+	game_hour = fposmod(value, HOURS_PER_SOL)
 	_emit_clock_state(true)
 
 
@@ -111,9 +126,11 @@ func get_time_data() -> Dictionary:
 	var minute := floori((game_hour - whole_hour) * 60.0)
 	return {
 		"hour": game_hour,
+		"mars_hour": game_hour,
 		"whole_hour": whole_hour,
 		"minute": minute,
-		"day": day,
+		"sol": sol,
+		"day": sol, # compatibilità con archivi foto esistenti
 		"phase": get_phase(),
 		"phase_label": get_phase_label(),
 		"solar_factor": get_solar_factor(),
@@ -121,15 +138,32 @@ func get_time_data() -> Dictionary:
 	}
 
 
+func format_local_solar_time(use_am_pm: bool = true) -> String:
+	var data := get_time_data()
+	var hour_24 := clampi(int(data.get("whole_hour", 0)), 0, 23)
+	var minute := clampi(int(data.get("minute", 0)), 0, 59)
+	if not use_am_pm:
+		return "%02d:%02d %s" % [hour_24, minute, LOCAL_SOLAR_TIME_LABEL]
+	var suffix := "AM" if hour_24 < 12 else "PM"
+	var hour_12 := hour_24 % 12
+	if hour_12 == 0:
+		hour_12 = 12
+	return "%02d:%02d %s %s" % [hour_12, minute, suffix, LOCAL_SOLAR_TIME_LABEL]
+
+
+func get_mars_hour_earth_minutes() -> float:
+	return MARS_HOUR_EARTH_MINUTES
+
+
 func _emit_clock_state(force: bool) -> void:
 	var phase := get_phase()
 	if force or phase != _last_phase:
 		_last_phase = phase
 		phase_changed.emit(phase, get_phase_label(phase))
-	var minute_of_day := floori(game_hour * 60.0) % 1440
-	if force or minute_of_day != _last_minute:
-		_last_minute = minute_of_day
-		minute_changed.emit(minute_of_day / 60, minute_of_day % 60, day)
+	var minute_of_sol := floori(game_hour * 60.0) % 1440
+	if force or minute_of_sol != _last_minute:
+		_last_minute = minute_of_sol
+		minute_changed.emit(minute_of_sol / 60, minute_of_sol % 60, sol)
 
 
 func _smoothstep(edge_start: float, edge_end: float, value: float) -> float:
@@ -139,7 +173,7 @@ func _smoothstep(edge_start: float, edge_end: float, value: float) -> float:
 
 func reset_for_new_mission() -> void:
 	game_hour = 8.0
-	day = 1
+	sol = 1
 	time_scale = 1.0
 	running = true
 	_last_minute = -1

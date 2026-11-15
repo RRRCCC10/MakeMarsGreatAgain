@@ -46,6 +46,20 @@ func _run() -> void:
 	clock.set_game_hour(12.0)
 	grid._update_energy(0.1)
 	_expect(consumer.powered, "La rete lunga deve alimentare il macchinario alla sua estremità")
+
+	# L'astronauta non deve mai chiudere il primo passo del cavo. È il caso
+	# reale della batteria vicina al trasformatore mentre il giocatore gli passa
+	# sopra o si ferma accanto al connettore.
+	grid.reset_for_new_mission()
+	var close_transformer = grid.place_device(current_scene, "transformer", Vector2i(40, 40))
+	var close_battery = grid.place_device(current_scene, "battery", Vector2i(36, 40))
+	_expect(close_transformer != null and close_battery != null, "Trasformatore e batteria vicini devono essere piazzabili")
+	if close_transformer != null and close_battery != null:
+		close_transformer.set_network_enabled(true)
+		close_battery.set_network_enabled(true)
+		player.global_position = grid.cell_to_world(close_transformer.get_power_output_cell())
+		grid.rebuild_network()
+		_expect(bool(grid.connection_ok.get(close_battery, false)), "Una batteria vicina deve collegarsi anche con l'astronauta sul connettore")
 	clock.running = false
 	_finish()
 
