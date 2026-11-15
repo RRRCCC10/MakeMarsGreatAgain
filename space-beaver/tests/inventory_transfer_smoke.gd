@@ -31,6 +31,11 @@ func _run() -> void:
 	_expect(bool(inventory.call("move_selected_to_hotbar", 2)), "Mettere un macchinario su uno slot già occupato deve scambiarli")
 	_expect(str(inventory.get("hotbar")[2].get("id", "")) == "xrd_diffractometer", "Lo scambio deve equipaggiare l'oggetto selezionato")
 	_expect(_find_slot(inventory.get("backpack"), "raman_spectrometer") >= 0, "Lo scambio deve riportare il vecchio macchinario nello zaino")
+	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi di patate", 1, false)), "Un oggetto non piazzabile deve entrare nello zaino")
+	var seeds_index := _find_slot(inventory.get("backpack"), "potato_seeds")
+	inventory.call("select_backpack", seeds_index)
+	_expect(bool(inventory.call("move_selected_to_hotbar", 4)), "Anche semi e scorte devono potersi spostare in qualunque slot rapido")
+	_expect(str(inventory.get("hotbar")[4].get("id", "")) == "potato_seeds", "L'oggetto non piazzabile deve occupare lo slot rapido scelto")
 	_finish()
 
 

@@ -378,11 +378,11 @@ func select_backpack(index: int) -> void:
 func move_selected_to_hotbar(index: int) -> bool:
 	if selected_backpack_index < 0 or index < 0 or index >= HOTBAR_SIZE:
 		return false
-	# Slot 1, 4 e 5 sono riservati allo strumento e alle scorte di sopravvivenza.
-	if index == 0 or index >= 3:
-		return false
 	var item := backpack[selected_backpack_index]
-	if item.is_empty() or (not bool(item.get("placeable", false)) and not bool(item.get("tool", false))):
+	# Ogni oggetto dell'inventario può essere equipaggiato: non limitiamo più il
+	# trasferimento ai soli costruibili, perché anche camera, semi e scorte sono
+	# oggetti utilizzabili dalla hotbar.
+	if item.is_empty():
 		return false
 	var previous := hotbar[index]
 	hotbar[index] = item
@@ -397,7 +397,7 @@ func can_move_hotbar_to_backpack(index: int) -> bool:
 	if index < 0 or index >= HOTBAR_SIZE:
 		return false
 	var item := hotbar[index]
-	if item.is_empty() or (not bool(item.get("placeable", false)) and not bool(item.get("tool", false))):
+	if item.is_empty():
 		return false
 	for slot in backpack:
 		if slot.is_empty():
@@ -406,9 +406,9 @@ func can_move_hotbar_to_backpack(index: int) -> bool:
 
 
 func move_hotbar_to_backpack(index: int) -> bool:
-	## Con l'inventario aperto un click su un macchinario nella hotbar lo ripone
-	## nello zaino. Gli slot riservati (tubi, acqua, razioni) non sono quindi
-	## spostabili per errore, mentre tutti i costruibili lo sono.
+	## Con l'inventario aperto un click su un oggetto nella hotbar lo ripone
+	## nello zaino. Tutti gli slot sono trasferibili, così la hotbar resta
+	## completamente personalizzabile.
 	if not can_move_hotbar_to_backpack(index):
 		return false
 	for backpack_index in BACKPACK_SIZE:
