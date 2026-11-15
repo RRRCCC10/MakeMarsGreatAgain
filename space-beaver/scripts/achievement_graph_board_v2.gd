@@ -5,12 +5,13 @@ extends CanvasLayer
 
 const CARD_SIZE := Vector2(156.0, 88.0)
 const GRAPH_SIZE := Vector2(1_500.0, 620.0)
+const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 
 const CATEGORIES := [
 	{"id": "field", "label": "CAMPO", "icon": "◈", "color": Color("e6a66d"), "description": "Campioni, esplorazione e contratti eseguibili senza infrastrutture."},
 	{"id": "habitat", "label": "BASE", "icon": "⌂", "color": Color("91dfa2"), "description": "Sopravvivenza, aria, acqua, energia e coltivazioni."},
 	{"id": "science", "label": "RICERCA", "icon": "⌬", "color": Color("c6a4ff"), "description": "Laboratori, rapporti e contratti scientifici ad alto valore."},
-	{"id": "cryo", "label": "CRIOSFERA", "icon": "❄", "color": Color("9ee8f4"), "description": "Ghiaccio profondo e segnali compatibili con una possibile biosignatura."},
+	{"id": "return", "label": "RITORNO", "icon": "▲", "color": Color("ffe07a"), "description": "Dalla possibile biosignatura al manifesto completo e al lancio verso la Terra."},
 	{"id": "photos", "label": "IMMAGINI", "icon": "▣", "color": Color("84dced"), "description": "Archivio fotografico e trasmissioni visive verso la Terra."},
 ]
 
@@ -19,7 +20,7 @@ const CATEGORY_LAYOUTS := {
 		"nodes": {
 			"first_field_sample": Vector2(72, 126), "field_notes": Vector2(300, 126), "sample_satchel": Vector2(528, 126),
 			"surface_catalog": Vector2(756, 52), "surface_anomaly": Vector2(756, 202),
-			"first_horizon": Vector2(72, 406), "biome_survey": Vector2(300, 406), "long_range_survey": Vector2(528, 340), "polar_expedition": Vector2(528, 484),
+			"first_horizon": Vector2(72, 406), "biome_survey": Vector2(300, 406), "long_range_survey": Vector2(528, 340), "exploration_suit": Vector2(756, 340), "polar_expedition": Vector2(528, 484),
 			"perseverance_photo": Vector2(1_020, 126), "perseverance_report": Vector2(1_020, 276), "perseverance_repair": Vector2(1_020, 426),
 		},
 		"sections": [["RACCOLTA IN SUPERFICIE", Vector2(72, 52)], ["ESPLORAZIONE", Vector2(72, 332)], ["MISSIONE PERSEVERANCE", Vector2(1_020, 52)]],
@@ -45,11 +46,12 @@ const CATEGORY_LAYOUTS := {
 		},
 		"sections": [["FONDAZIONE", Vector2(48, 224)], ["STRUMENTI", Vector2(714, 28)], ["TRASMISSIONE", Vector2(714, 382)], ["DIRETTORATO", Vector2(1_158, 108)]],
 	},
-	"cryo": {
+	"return": {
 		"nodes": {
-			"polar_drill": Vector2(116, 264), "primordial_ice": Vector2(354, 264), "deep_ice_study": Vector2(592, 264), "ancient_life": Vector2(830, 264), "life_relay": Vector2(1_068, 264),
+			"polar_drill": Vector2(36, 74), "primordial_ice": Vector2(252, 74), "deep_ice_study": Vector2(468, 74), "ancient_life": Vector2(684, 74), "life_relay": Vector2(900, 74), "life_sample_secured": Vector2(1_116, 74),
+			"return_manifest": Vector2(144, 258), "sabatier_online": Vector2(410, 258), "rocket_fueled": Vector2(676, 258), "return_launch": Vector2(942, 258),
 		},
-		"sections": [["SOTTOSUOLO POLARE", Vector2(116, 194)], ["SEQUENZA DI SCOPERTA", Vector2(592, 194)]],
+		"sections": [["SCOPERTA E CONTENIMENTO", Vector2(36, 30)], ["PREPARAZIONE AL RITORNO", Vector2(144, 216)], ["CATALOGO CAMPIONI RICHIESTI", Vector2(36, 382)]],
 	},
 	"photos": {
 		"nodes": {
@@ -380,6 +382,8 @@ func _rebuild_graph() -> void:
 		card.name = "AchievementNode_" + achievement_id
 		card.position = Vector2(positions[achievement_id])
 		_graph.add_child(card)
+	if _selected_category == "return":
+		_add_return_catalog_panel()
 	var initial_id := _first_category_node(positions)
 	if not initial_id.is_empty():
 		_show_detail(initial_id)
@@ -396,6 +400,48 @@ func _add_section_label(text: String, position_value: Vector2, color: Color) -> 
 	label.add_theme_constant_override("outline_size", 3)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_graph.add_child(label)
+
+
+func _add_return_catalog_panel() -> void:
+	var panel := PanelContainer.new()
+	panel.name = "ReturnSampleCatalog"
+	panel.position = Vector2(36, 408)
+	panel.size = Vector2(1_420, 184)
+	panel.add_theme_stylebox_override("panel", _box(Color("0c1a21"), Color("6d9aad"), 1, 6))
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_graph.add_child(panel)
+	var margins := MarginContainer.new()
+	margins.add_theme_constant_override("margin_left", 10)
+	margins.add_theme_constant_override("margin_right", 10)
+	margins.add_theme_constant_override("margin_top", 7)
+	margins.add_theme_constant_override("margin_bottom", 7)
+	panel.add_child(margins)
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 1)
+	margins.add_child(grid)
+	for definition in ROCK_RESOURCE.get_return_mission_catalog():
+		var item := Label.new()
+		item.custom_minimum_size = Vector2(448, 17)
+		item.text = "%s · %s · %s" % [str(definition.get("name", "Campione")), str(definition.get("biome", "Bioma")), _catalog_rarity(str(definition.get("rarity", "common")))]
+		item.add_theme_font_size_override("font_size", 9)
+		item.add_theme_color_override("font_color", Color("c7d9df"))
+		grid.add_child(item)
+	var life_item := Label.new()
+	life_item.custom_minimum_size = Vector2(448, 17)
+	life_item.text = "Campione di vita aliena · laboratorio ghiaccio profondo · UNICO"
+	life_item.add_theme_font_size_override("font_size", 9)
+	life_item.add_theme_color_override("font_color", Color("80ffcf"))
+	grid.add_child(life_item)
+
+
+func _catalog_rarity(rarity: String) -> String:
+	if rarity == "ultra_rare":
+		return "ULTRA-RARA"
+	if rarity == "rare":
+		return "RARA"
+	return "COMUNE"
 
 
 func _build_links(definitions: Array, positions: Dictionary) -> Array[Dictionary]:

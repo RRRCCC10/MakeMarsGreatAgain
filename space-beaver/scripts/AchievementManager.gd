@@ -63,6 +63,12 @@ const ACHIEVEMENTS := [
 		"reward": {"funds": 800_000_000, "label": "+ $800 MLN · rotta di esplorazione"},
 	},
 	{
+		"id": "exploration_suit", "title": "EVA OLTRE L'ORIZZONTE", "icon": "◈", "color": Color("a9f0c0"),
+		"description": "Acquista una tuta EVA più potente della tuta standard: rinforzata, Explorer o Storm.", "target": 1,
+		"prerequisites": ["long_range_survey"],
+		"reward": {"funds": 500_000_000, "label": "+ $500 MLN · protocollo esplorazione EVA"},
+	},
+	{
 		"id": "polar_expedition", "title": "SPEDIZIONE POLARE", "icon": "❄", "color": Color("a8f3ff"),
 		"description": "Raggiungi ed esplora il ghiaccio polare.", "target": 1,
 		"prerequisites": ["biome_survey"],
@@ -285,6 +291,39 @@ const ACHIEVEMENTS := [
 		"description": "Trasmetti alla Terra il primo segnale compatibile con una possibile biosignatura marziana; non è una prova definitiva di vita.", "target": 1,
 		"prerequisites": ["ancient_life"],
 		"reward": {"funds": 25_000_000_000, "effect": "life_patent", "badge": "MESSAGGERO DI MARTE", "label": "+ $25 MLD · messaggero di Marte"},
+	},
+	# Ritorno campioni: questa è la conclusione della spedizione. I contratti
+	# registrano i passaggi, ma il manifesto e il lancio restano azioni fisiche
+	# eseguite dal giocatore accanto al razzo.
+	{
+		"id": "life_sample_secured", "title": "CAMPIONE BIOLOGICO", "icon": "✺", "color": Color("80ffcf"),
+		"description": "Metti in sicurezza il campione di vita aliena nel contenitore di vetro per il ritorno alla Terra.", "target": 1,
+		"prerequisites": ["ancient_life"],
+		"reward": {"funds": 5_000_000_000, "label": "+ $5 MLD · protocollo di contenimento"},
+	},
+	{
+		"id": "return_manifest", "title": "MANIFESTO GEOLOGICO", "icon": "▤", "color": Color("d8e9f2"),
+		"description": "Carica nel razzo un campione per ogni roccia disponibile nel gioco e il campione biologico. La tab Ritorno elenca bioma e rarità di tutti i campioni.", "target": 1,
+		"prerequisites": ["life_sample_secured"],
+		"reward": {"funds": 8_000_000_000, "label": "+ $8 MLD · catena di custodia interplanetaria"},
+	},
+	{
+		"id": "sabatier_online", "title": "PROPELLENTE MARZIANO", "icon": "ϟ", "color": Color("ffb86d"),
+		"description": "Posiziona accanto al razzo e rendi produttivo il reattore Sabatier: corrente e tubo H₂ devono essere collegati.", "target": 1,
+		"prerequisites": ["life_relay", "stable_grid", "first_extraction"],
+		"reward": {"funds": 4_000_000_000, "label": "+ $4 MLD · impianto di propellente"},
+	},
+	{
+		"id": "rocket_fueled", "title": "SERBATOIO PIENO", "icon": "▲", "color": Color("ffe079"),
+		"description": "Riempi il serbatoio del razzo con 400 kg di metano prodotti dal Sabatier.", "target": 1,
+		"prerequisites": ["sabatier_online"],
+		"reward": {"funds": 6_000_000_000, "label": "+ $6 MLD · finestra di lancio"},
+	},
+	{
+		"id": "return_launch", "title": "RITORNO ALLA TERRA", "icon": "▲", "color": Color("fff0a2"),
+		"description": "Avvia il razzo con il manifesto completo e il serbatoio pieno: i campioni di Marte sono in viaggio verso la Terra.", "target": 1,
+		"prerequisites": ["return_manifest", "rocket_fueled"],
+		"reward": {"funds": 20_000_000_000, "badge": "RITORNO DA MARTE", "label": "MISSIONE COMPLETATA · campioni in viaggio"},
 	},
 	{
 		"id": "first_report", "title": "SEGNALE DA MARTE", "icon": "▤", "color": Color("79d9ff"),
@@ -670,6 +709,9 @@ func record_ancient_life_discovery() -> void:
 	# della scoperta scientifica.
 	record("ancient_life")
 	record("life_relay")
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory != null and inventory.has_method("add_alien_life_sample") and bool(inventory.call("add_alien_life_sample")):
+		record("life_sample_secured")
 
 
 func get_research_contract_summary(machine_id: String) -> String:

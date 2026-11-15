@@ -347,6 +347,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if research_machine != null and not _external_target_blocked_inside_dome(research_machine) and bool(research_machine.call("try_interact", self)):
 			get_viewport().set_input_as_handled()
 			return
+		var landing := get_tree().current_scene.get_node_or_null("LandingSequence") as Node2D
+		if landing != null and not _external_target_blocked_inside_dome(landing) and landing.has_method("try_open_return_manifest") and bool(landing.call("try_open_return_manifest", self)):
+			get_viewport().set_input_as_handled()
+			return
 		var rock := nearest_rock()
 		if rock != null and not _external_target_blocked_inside_dome(rock) and rock.has_method("collect") and bool(rock.call("collect")):
 			get_viewport().set_input_as_handled()

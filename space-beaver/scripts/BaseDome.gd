@@ -873,8 +873,9 @@ func _build_prompt() -> void:
 	_prompt_panel = PanelContainer.new()
 	_prompt_panel.anchor_left = 0.5
 	_prompt_panel.anchor_right = 0.5
-	_prompt_panel.anchor_top = 0.77
-	_prompt_panel.anchor_bottom = 0.77
+	# Lascia libere barre di sete, ossigeno e fame in fondo allo schermo.
+	_prompt_panel.anchor_top = 0.66
+	_prompt_panel.anchor_bottom = 0.66
 	_prompt_panel.offset_left = -240.0
 	_prompt_panel.offset_right = 240.0
 	_prompt_panel.offset_top = -38.0

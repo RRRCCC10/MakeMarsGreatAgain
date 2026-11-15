@@ -47,6 +47,11 @@ func _run() -> void:
 		await process_frame
 		graph = _find_named(root_ui, "MissionGraph") as Control
 		_expect(graph != null and graph.get_node_or_null("AchievementNode_first_lab") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_first_field_sample") == null, "La scheda ricerca deve mostrare laboratori e nodo finale senza mescolare gli altri rami")
+		board.call("_select_category", "return")
+		await process_frame
+		graph = _find_named(root_ui, "MissionGraph") as Control
+		_expect(graph != null and graph.get_node_or_null("AchievementNode_return_manifest") != null and graph.get_node_or_null("AchievementNode_return_launch") != null, "La scheda Ritorno deve mostrare manifesto e lancio finale")
+		_expect(graph != null and graph.get_node_or_null("ReturnSampleCatalog") != null, "La scheda Ritorno deve elencare luogo e rarità dei campioni richiesti")
 	board.call("close")
 	_expect((achievements == null or not bool(achievements.get("is_board_open"))) and not root_ui.visible, "Chiudere la tavola deve riattivare il gioco")
 	_expect(survival_ui != null and survival_ui.visible and power_ui != null and power_ui.visible, "Chiudere la tavola deve ripristinare gli HUD")

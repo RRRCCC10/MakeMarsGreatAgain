@@ -82,6 +82,10 @@ func acquire_suit(suit_id: String) -> bool:
 		return false
 	owned_suits[suit_id] = true
 	owned_suits_changed.emit()
+	if suit_id != STANDARD_SUIT_ID:
+		var achievements := get_node_or_null("/root/AchievementManager")
+		if achievements != null:
+			achievements.call("record", "exploration_suit")
 	return true
 
 
@@ -133,4 +137,3 @@ func reset_for_new_mission() -> void:
 		Oxygen.set_suit_capacity(100.0, 100.0)
 	owned_suits_changed.emit()
 	equipped_changed.emit(equipped_suit_id, get_equipped_definition())
-

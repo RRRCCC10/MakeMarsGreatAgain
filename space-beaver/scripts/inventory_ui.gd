@@ -43,6 +43,7 @@ const ROVER_SHEET := preload("res://assets/sprites/rover/rover_idle.png")
 const DOME_ICON := preload("res://assets/sprites/base_dome/small_exterior.png")
 const GREENHOUSE_ICON := preload("res://assets/sprites/greenhouse/greenhouse_base.jpg")
 const POTATO_SEED_ICON := preload("res://assets/sprites/greenhouse/potato_first_cycle.jpg")
+const ALIEN_LIFE_SAMPLE_ICON := preload("res://assets/sprites/items/alien_life_sample.png")
 const RESEARCH_MACHINE_SCRIPT := preload("res://scripts/ResearchMachine.gd")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const ROCK_MASK_CODE := "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) {\n        pixel.a = 0.0;\n    }\n    COLOR = pixel;\n}\n"
@@ -504,6 +505,8 @@ func _item_icon(item: Dictionary) -> Texture2D:
 			return TRANSPARENCY.without_white_background(GREENHOUSE_ICON)
 		"potato_seeds":
 			return _first_frame(TRANSPARENCY.without_white_background(POTATO_SEED_ICON))
+		"alien_life_sample":
+			return ALIEN_LIFE_SAMPLE_ICON
 		"rock":
 			return ROCK_ICON
 		"suit_standard", "suit_reinforced", "suit_explorer", "suit_storm":

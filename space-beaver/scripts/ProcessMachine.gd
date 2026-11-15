@@ -178,7 +178,12 @@ func _process_sabatier(hours: float) -> void:
 	if hydrogen <= 0.0:
 		return
 	var methane := minf(hydrogen * SABATIER_METHANE_KG_PER_HOUR / SABATIER_HYDROGEN_KG_PER_HOUR, room)
-	methane_produced_kg += rocket.load_methane_kg(methane)
+	var loaded := rocket.load_methane_kg(methane)
+	methane_produced_kg += loaded
+	if loaded > 0.0 and rocket.has_method("register_sabatier_operation"):
+		# Il razzo registra solo una produzione reale: attesta insieme posa,
+		# alimentazione e collegamento H₂, non il semplice acquisto della macchina.
+		rocket.call("register_sabatier_operation", self)
 
 
 func set_powered(value: bool) -> void:

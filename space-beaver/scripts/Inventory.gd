@@ -6,6 +6,7 @@ const HOTBAR_SIZE := 5
 const BACKPACK_SIZE := 20
 const ROVER_ITEM_ID := "rover"
 const FIELD_CAMERA_ITEM_ID := "field_camera"
+const ALIEN_LIFE_SAMPLE_ITEM_ID := "alien_life_sample"
 const ROVER_STARTING_BATTERY_KWH := 72.0
 const RockResource = preload("res://scripts/rock.gd")
 
@@ -46,6 +47,12 @@ func add_rock(rock_variant: String = "roccia_rossa") -> bool:
 		1,
 		false,
 	)
+
+
+func add_alien_life_sample() -> bool:
+	if count_item(ALIEN_LIFE_SAMPLE_ITEM_ID) > 0:
+		return true
+	return add_item(ALIEN_LIFE_SAMPLE_ITEM_ID, "Campione di vita aliena", 1, false)
 
 
 func is_rock_item(item_id: String) -> bool:

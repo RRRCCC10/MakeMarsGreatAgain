@@ -115,6 +115,20 @@ const ROCK_DEFINITIONS: Dictionary = {
 	},
 }
 
+## Il manifesto di ritorno richiede una sola aliquota di ogni litologia che il
+## gioco permette di raccogliere. L'ordine è intenzionale: è lo stesso usato
+## dal razzo e dalla tavola missioni, quindi non dipende dall'ordine casuale di
+## una Dictionary.
+const RETURN_MISSION_VARIANTS: Array[String] = [
+	"roccia_base", "roccia_rossa", "pietra_rossastra",
+	"roccia_grigia", "roccia_scura", "roccia_basaltica", "basalto",
+	"roccia_ghiacciata", "ghiaccio_profondo", "ghiaccio_leggero", "ghiaccio_blu",
+	"andesite_marziana", "shoshonite_olivinica", "ematite_nodulare", "goethite_idrata",
+	"breccia_da_impatto", "impactite_vetrosa", "regolite_perclorata", "sali_solfati_idrati",
+	"ghiaccio_laminato", "ghiaccio_salmastro", "basalto_vescicolare", "olivina_ferrifera",
+	"ghiaccio_profondo_primordiale",
+]
+
 @export_enum("roccia_base", "roccia_ghiacciata", "roccia_scura", "roccia_basaltica", "roccia_grigia", "ghiaccio_profondo", "ghiaccio_profondo_primordiale", "roccia_rossa", "pietra_rossastra", "ghiaccio_leggero", "ghiaccio_blu", "basalto", "andesite_marziana", "shoshonite_olivinica", "ematite_nodulare", "goethite_idrata", "breccia_da_impatto", "impactite_vetrosa", "regolite_perclorata", "sali_solfati_idrati", "ghiaccio_laminato", "ghiaccio_salmastro", "basalto_vescicolare", "olivina_ferrifera") var rock_variant := "roccia_rossa"
 @export var is_authored := true
 var resource_key := ""
@@ -144,6 +158,15 @@ static func definition_for_item_id(item_id: String) -> Dictionary:
 		if str(definition.get("item_id", "")) == item_id:
 			return definition.duplicate(true)
 	return {}
+
+
+static func get_return_mission_catalog() -> Array[Dictionary]:
+	var catalog: Array[Dictionary] = []
+	for variant in RETURN_MISSION_VARIANTS:
+		var definition := definition_for(variant)
+		definition["variant"] = variant
+		catalog.append(definition)
+	return catalog
 
 
 static func get_icon_texture_for_item_id(item_id: String) -> Texture2D:
