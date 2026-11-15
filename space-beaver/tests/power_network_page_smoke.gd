@@ -72,6 +72,21 @@ func _run() -> void:
 	_expect(bool(dome.call("is_network_enabled")), "la pagina deve poter ricollegare una singola cupola")
 	page.call("_unhandled_input", _key(KEY_ESCAPE))
 	_expect(not page_root.visible and not bool(ui_state.call("has_open_modal")), "Esc deve chiudere la pagina e liberare il mondo")
+	var anonymous_consumer := Node2D.new()
+	anonymous_consumer.name = "@Node2D@1345"
+	current_scene.add_child(anonymous_consumer)
+	grid.call("register_consumer", anonymous_consumer, Vector2i(999, 999), 10.0, Vector2i.LEFT)
+	var anonymous_entry: Dictionary = {}
+	for entry_variant in grid.call("get_network_devices"):
+		var entry: Dictionary = entry_variant
+		if entry.get("node") == anonymous_consumer:
+			anonymous_entry = entry
+	_expect(not anonymous_entry.is_empty(), "Ogni consumatore registrato deve comparire nel pannello elettrico")
+	_expect(str(grid.call("_network_device_display_name", anonymous_consumer, "CONSUMO")) == "DISPOSITIVO DI CONSUMO", "Un nome tecnico del nodo deve diventare una descrizione leggibile")
+	if not anonymous_entry.is_empty():
+		_expect(str(anonymous_entry.get("name", "")).contains("@") == false and str(anonymous_entry.get("name", "")) == "DISPOSITIVO DI CONSUMO", "Il pannello elettrico non deve mai mostrare nomi tecnici come @Node2D@1345")
+	grid.call("unregister_consumer", anonymous_consumer)
+	anonymous_consumer.queue_free()
 	_finish()
 
 

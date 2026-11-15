@@ -2,6 +2,18 @@ extends SceneTree
 
 const DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 
+
+class ExternalOxygenSource:
+	extends Node2D
+	var available_kg := 1.0
+
+	func consume_fluid_resource_for_category(category: int, requested_kg: float) -> float:
+		if category != PipeSegment.Category.OXYGEN:
+			return 0.0
+		var supplied := minf(available_kg, requested_kg)
+		available_kg -= supplied
+		return supplied
+
 var failures: Array[String] = []
 
 
@@ -48,6 +60,24 @@ func _run() -> void:
 	_expect(port_pipe != null, "Il tubo sul raccordo O₂ della cupola deve poter essere posato")
 	_expect(bool(pipes.call("is_source_connected", machine, PipeSegment.Category.OXYGEN)), "L'uscita O₂ dell'elettrolizzatore deve riconoscere il percorso")
 	_expect(bool(dome.call("is_oxygen_connected")), "La cupola deve riconoscere l'ossigeno dall'elettrolizzatore anche su un percorso con curva")
+
+	# Il raccordo visibile non deve obbligare a piazzare un tubo sopra lo sprite
+	# del terminale: anche un tubo subito fuori dal raccordo deve chiudere la
+	# rete. È il caso più naturale quando si collega una cupola dall'esterno.
+	var external_source := ExternalOxygenSource.new()
+	scene.add_child(external_source)
+	var external_sink := Node2D.new()
+	scene.add_child(external_sink)
+	var source_port := Vector2i(180, 130)
+	var sink_port := Vector2i(188, 130)
+	pipes.register_fluid_source(external_source, source_port, PipeSegment.Category.OXYGEN, Vector2i.LEFT)
+	pipes.register_fluid_input(external_sink, sink_port, PipeSegment.Category.OXYGEN, Vector2i.LEFT)
+	for x in range(source_port.x + 1, sink_port.x + 2):
+		var external_pipe = pipes.place_pipe(scene, Vector2i(x, source_port.y), PipeSegment.ShapeType.STRAIGHT, false)
+		_expect(external_pipe != null, "Il tubo esterno al raccordo O₂ deve poter essere posato")
+	_expect(bool(pipes.call("is_source_connected", external_source, PipeSegment.Category.OXYGEN)), "La sorgente O₂ deve riconoscere un tubo piazzato subito fuori dal raccordo")
+	_expect(bool(pipes.call("is_input_connected", sink_port, Vector2i.LEFT, PipeSegment.Category.OXYGEN)), "Un raccordo O₂ deve riconoscere il tubo che lo raggiunge dal bordo esterno")
+	_expect(is_equal_approx(float(pipes.call("consume_connected_resource", sink_port, Vector2i.LEFT, PipeSegment.Category.OXYGEN, 0.25)), 0.25), "Il tubo esterno deve poter trasferire davvero l'ossigeno alla cupola")
 	_finish()
 
 

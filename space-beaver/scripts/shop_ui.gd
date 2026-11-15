@@ -381,9 +381,7 @@ func _refresh_buttons() -> void:
 	for item_id in buy_buttons:
 		var definition := Shop.get_definition(item_id)
 		var disabled := not Economy.can_afford(int(definition["price"]))
-		if item_id == "transformer":
-			disabled = disabled or PowerGrid.has_transformer() or Inventory.count_item("transformer") > 0 or DeliveryManager.count_uncollected("transformer") > 0
-		elif SuitSystem.is_suit(item_id):
+		if SuitSystem.is_suit(item_id):
 			disabled = disabled or SuitSystem.owns_suit(item_id) or DeliveryManager.count_uncollected(item_id) > 0
 		buy_buttons[item_id].disabled = disabled
 

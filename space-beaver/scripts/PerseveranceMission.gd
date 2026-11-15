@@ -23,6 +23,15 @@ const REPEAT_BREAK_MAX_GAME_HOURS := 10.0 * 24.0
 const MAX_BREAK_DISTANCE_TILES := 500.0
 const MIN_BREAK_DISTANCE_TILES := 140.0
 const INTERACTION_DISTANCE := 88.0
+## Il segnalatore serve a ritrovare il rover, non a coprire l'azione quando
+## l'obiettivo è già davanti al giocatore.
+const GUIDANCE_HIDE_DISTANCE_TILES := 15.0
+const GUIDANCE_HIDE_DISTANCE := GUIDANCE_HIDE_DISTANCE_TILES * TILE_SIZE
+## Dopo la riparazione Perseverance non deve restare per sempre nel mondo.
+## Aspettiamo però che esca davvero dall'inquadratura, con un margine ampio,
+## così non scompare mentre il giocatore gli è ancora vicino.
+const REPAIRED_DESPAWN_VIEW_MARGIN_TILES := 12.0
+const REPAIRED_DESPAWN_FALLBACK_DISTANCE_TILES := 64.0
 const STUDY_SECONDS := 2.8
 const REPAIR_KEYS := [KEY_W, KEY_D, KEY_S, KEY_A]
 const REPAIR_KEY_LABELS := {KEY_W: "W", KEY_A: "A", KEY_S: "S", KEY_D: "D"}
@@ -59,6 +68,8 @@ func _process(delta: float) -> void:
 	_elapsed_game_hours += WorldClock.get_game_hours_for_real_delta(delta)
 	if state in [State.WAITING, State.REPAIRED] and _elapsed_game_hours >= _next_break_at_game_hours:
 		_spawn_broken_rover()
+	if state == State.REPAIRED and _repaired_rover_is_far_outside_view():
+		_remove_rover()
 	if state == State.AWAIT_STUDY:
 		_process_damage_study(delta)
 	_update_guidance()
@@ -299,13 +310,33 @@ func _update_guidance() -> void:
 	if player == null:
 		return
 	var direction := rover.global_position - player.global_position
-	if direction.length_squared() < 1.0:
+	if direction.length() <= GUIDANCE_HIDE_DISTANCE:
 		_arrow.visible = false
 		return
 	var viewport_size := get_viewport().get_visible_rect().size
 	_arrow.position = viewport_size * 0.5 + direction.normalized() * minf(viewport_size.x, viewport_size.y) * 0.34
 	_arrow.rotation = direction.angle() + PI * 0.5
 	_arrow.text = "▲\nPERSEVERANCE"
+
+
+func _repaired_rover_is_far_outside_view() -> bool:
+	if rover == null or not is_instance_valid(rover):
+		return false
+	var player := _player()
+	if player == null:
+		return false
+	var fallback_distance := REPAIRED_DESPAWN_FALLBACK_DISTANCE_TILES * TILE_SIZE
+	var camera := player.get_node_or_null("Camera2D") as Camera2D
+	if camera == null:
+		return player.global_position.distance_to(rover.global_position) > fallback_distance
+	var viewport_size := get_viewport().get_visible_rect().size
+	var zoom := camera.zoom
+	if zoom.x <= 0.0 or zoom.y <= 0.0:
+		return player.global_position.distance_to(rover.global_position) > fallback_distance
+	var half_visible_world := viewport_size * 0.5 / zoom
+	var visible_world := Rect2(camera.get_screen_center_position() - half_visible_world, half_visible_world * 2.0)
+	var safe_margin := TILE_SIZE * REPAIRED_DESPAWN_VIEW_MARGIN_TILES
+	return not visible_world.grow(safe_margin).has_point(rover.global_position)
 
 
 func _update_rover_prompt() -> void:

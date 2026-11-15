@@ -308,7 +308,7 @@ func get_build_help_text() -> String:
 	if selected_id == "solar_panel":
 		return "PANNELLO: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "transformer":
-		return "TRASFORMATORE UNICO: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
+		return "TRASFORMATORE: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "battery":
 		return "BATTERIA: Click posiziona  ·  R ruota (%s)  ·  500 kWh  ·  Dx riprende" % _machine_rotation_label()
 	if selected_id == "ice_drill":
@@ -345,7 +345,7 @@ func _try_demolish_at_mouse(item: Dictionary) -> void:
 		return
 	if entry.get("kind", "") == "mission_structure":
 		return
-	if entry.get("kind", "") == "power_device":
+	if entry.get("kind", "") in ["power_device", "research"]:
 		BuildableRegistry.destroy(entry)
 		return
 	if item.get("id", "") == "pipe_hammer" and entry.get("kind", "") == "pipe":

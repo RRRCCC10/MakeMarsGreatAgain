@@ -146,6 +146,20 @@ static func definition_for_item_id(item_id: String) -> Dictionary:
 	return {}
 
 
+static func get_icon_texture_for_item_id(item_id: String) -> Texture2D:
+	## La scelta dei campioni nel laboratorio usa la stessa miniatura della
+	## pietra raccolta nel mondo, inclusi i minerali che riutilizzano una
+	## silhouette comune.
+	for variant_value in ROCK_DEFINITIONS.keys():
+		var variant := str(variant_value)
+		var definition: Dictionary = ROCK_DEFINITIONS[variant]
+		if str(definition.get("item_id", "")) != item_id:
+			continue
+		var texture_variant := str(ROCK_TEXTURE_VARIANTS.get(variant, variant))
+		return ROCK_TEXTURES.get(texture_variant, ROCK_TEXTURES["roccia_rossa"])
+	return ROCK_TEXTURES["roccia_rossa"]
+
+
 static func drill_variant_for_biome(source_id: int, roll_percent: float, common_roll: float) -> String:
 	## Il ghiaccio profondo primordiale è una carota che può comparire ovunque
 	## (1%), ma sui poli sale al 10%. Viene controllato prima del raro locale:

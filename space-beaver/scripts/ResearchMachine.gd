@@ -280,6 +280,16 @@ func _process(delta: float) -> void:
 			_animation_step(delta)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	# Il selettore dei campioni è una finestra modale propria del laboratorio:
+	# Esc deve chiuderla anche se il player è bloccato da UIState.
+	if _sample_picker_root == null or not _sample_picker_root.visible:
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_close_sample_picker()
+		get_viewport().set_input_as_handled()
+
+
 func _animation_step(delta: float) -> void:
 	animation_elapsed += delta
 	if animation_elapsed < ANIMATION_FRAME_SECONDS:
@@ -326,6 +336,8 @@ func _build_sample_picker_ui() -> void:
 	_sample_picker_root.name = "ResearchSamplePicker"
 	_sample_picker_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_sample_picker_root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_sample_picker_root.focus_mode = Control.FOCUS_ALL
+	_sample_picker_root.gui_input.connect(_on_sample_picker_gui_input)
 	_sample_picker_root.visible = false
 	_sample_picker_layer.add_child(_sample_picker_root)
 	var shade := ColorRect.new()
@@ -387,19 +399,38 @@ func _open_sample_picker(player: Node2D, choices: Array) -> void:
 		var rarity := str(definition.get("rarity", "common"))
 		var rarity_label := "ULTRA RARO" if rarity == "ultra_rare" else ("RARO" if rarity == "rare" else "COMUNE")
 		var button := Button.new()
-		button.text = "%s  ×%d\n%s · %s · valore ricerca ×%.2f" % [str(choice.get("name", "Pietra")).to_upper(), int(choice.get("count", 0)), str(definition.get("biome", "provenienza sconosciuta")), rarity_label, float(definition.get("research_multiplier", 1.0))]
+		button.text = ""
 		button.custom_minimum_size = Vector2(660.0, 58.0)
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.add_theme_font_override("font", UI_FONT)
-		button.add_theme_font_size_override("font_size", 12)
-		button.add_theme_color_override("font_color", Color("dcecef"))
 		button.add_theme_stylebox_override("normal", _sample_picker_button_style(Color("12232d"), Color("477786")))
 		button.add_theme_stylebox_override("hover", _sample_picker_button_style(Color("214653"), Color("8ee7f2")))
 		button.add_theme_stylebox_override("pressed", _sample_picker_button_style(Color("315f6d"), Color("ffe38a")))
 		button.pressed.connect(_select_sample.bind(item_id))
+		var row := HBoxContainer.new()
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		row.offset_left = 12.0
+		row.offset_right = -12.0
+		row.offset_top = 6.0
+		row.offset_bottom = -6.0
+		row.add_theme_constant_override("separation", 12)
+		button.add_child(row)
+		var icon := TextureRect.new()
+		icon.texture = ROCK_RESOURCE.get_icon_texture_for_item_id(item_id)
+		icon.custom_minimum_size = Vector2(42.0, 42.0)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(icon)
+		var text := _picker_label("%s  ×%d\n%s · %s · valore ricerca ×%.2f" % [str(choice.get("name", "Pietra")).to_upper(), int(choice.get("count", 0)), str(definition.get("biome", "provenienza sconosciuta")), rarity_label, float(definition.get("research_multiplier", 1.0))], 12, Color("dcecef"))
+		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(text)
 		_sample_picker_rows.add_child(button)
 	_sample_picker_root.visible = true
+	_sample_picker_root.grab_focus()
 
 
 func _select_sample(item_id: String) -> void:
@@ -422,6 +453,12 @@ func _close_sample_picker() -> void:
 	var ui_state := get_node_or_null("/root/UIState")
 	if ui_state != null:
 		ui_state.call("close_modal", &"research_sample_picker")
+
+
+func _on_sample_picker_gui_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		_close_sample_picker()
+		_sample_picker_root.accept_event()
 
 
 func _picker_label(text: String, font_size: int, color: Color) -> Label:
@@ -717,11 +754,16 @@ func _deliver_report() -> void:
 
 
 func pickup() -> bool:
-	if state != State.IDLE:
-		return false
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory == null or not bool(inventory.call("add_item", machine_id, get_display_name(), 1, true)):
 		return false
+	# Smontare un laboratorio interrompe l'eventuale analisi/rapporto, ma deve
+	# essere sempre possibile: il giocatore non può rimanere bloccato con una
+	# macchina dentro una cupola.
+	state = State.IDLE
+	report_signed = false
+	study_elapsed = 0.0
+	report_elapsed = 0.0
 	queue_free()
 	return true
 

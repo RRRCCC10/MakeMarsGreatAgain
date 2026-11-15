@@ -77,9 +77,9 @@ func register_fluid_source(source: Node2D, output_cell: Vector2i, category: int,
 		"category": category,
 		"required_opening": required_opening,
 	})
-	var pipe := get_pipe(output_cell)
-	if pipe != null and pipe.has_opening(required_opening) and _component_accepts_category(output_cell, category):
-		_recalculate_component(output_cell)
+	var pipe := _get_port_pipe(output_cell, required_opening)
+	if pipe != null and pipe.has_opening(required_opening) and _component_accepts_category(pipe.cell, category):
+		_recalculate_component(pipe.cell)
 	network_changed.emit()
 
 
@@ -90,14 +90,15 @@ func register_fluid_input(sink: Node2D, input_cell: Vector2i, category: int, req
 		if not is_instance_valid(registered) or (registered == sink and registered_cell == input_cell):
 			fluid_inputs.remove_at(index)
 	fluid_inputs.append({"node": sink, "cell": input_cell, "category": category, "required_opening": required_opening})
-	var pipe := get_pipe(input_cell)
-	if pipe != null:
+	var terminal_pipe := get_pipe(input_cell)
+	if terminal_pipe != null:
 		# Le porte d'ingresso sono laterali: corregge i raccordi a croce creati
 		# dalla vecchia regola che trasformava automaticamente ogni tubo in croce.
 		var vertical := required_opening == Vector2i.UP or required_opening == Vector2i.DOWN
-		pipe.setup(input_cell, PipeSegment.ShapeType.STRAIGHT, vertical, pipe.category)
-		if pipe.has_opening(required_opening) and _component_accepts_category(input_cell, category):
-			_recalculate_component(input_cell)
+		terminal_pipe.setup(input_cell, PipeSegment.ShapeType.STRAIGHT, vertical, terminal_pipe.category)
+	var pipe := _get_port_pipe(input_cell, required_opening)
+	if pipe != null and pipe.has_opening(required_opening) and _component_accepts_category(pipe.cell, category):
+		_recalculate_component(pipe.cell)
 	network_changed.emit()
 
 
@@ -115,10 +116,10 @@ func unregister_fluid_source(source: Node, emit_change: bool = true) -> void:
 
 
 func can_attach_fluid_source(output_cell: Vector2i, category: int, required_opening: Vector2i = Vector2i.LEFT) -> bool:
-	var pipe := get_pipe(output_cell)
+	var pipe := _get_port_pipe(output_cell, required_opening)
 	if pipe == null:
 		return true
-	return pipe.has_opening(required_opening) and _component_accepts_category(output_cell, category)
+	return pipe.has_opening(required_opening) and _component_accepts_category(pipe.cell, category)
 
 
 func is_source_connected(source: Node, category: int = -1) -> bool:
@@ -131,11 +132,11 @@ func is_source_connected(source: Node, category: int = -1) -> bool:
 		var cell := Vector2i(definition.get("cell", Vector2i.ZERO))
 		var required_opening := Vector2i(definition.get("required_opening", Vector2i.LEFT))
 		var source_category := int(definition.get("category", PipeSegment.Category.GENERIC))
-		var pipe := get_pipe(cell)
+		var pipe := _get_port_pipe(cell, required_opening)
 		if pipe != null:
 			# Una partita caricata o una registrazione tardiva può lasciare per un
 			# frame la rete grigia: la riclassifichiamo prima di dichiararla persa.
-			_recalculate_component(cell)
+			_recalculate_component(pipe.cell)
 		return pipe != null and pipe.has_opening(required_opening) and pipe.category == source_category
 	return false
 
@@ -144,12 +145,12 @@ func consume_connected_resource(input_cell: Vector2i, opening_toward_machine: Ve
 	"""Preleva fluido da una sorgente raggiunta dalla rete del tubo in ingresso."""
 	if amount <= 0.0:
 		return 0.0
-	var input_pipe := get_pipe(input_cell)
+	var input_pipe := _get_port_pipe(input_cell, opening_toward_machine)
 	if input_pipe != null:
-		_recalculate_component(input_cell)
+		_recalculate_component(input_pipe.cell)
 	if input_pipe == null or input_pipe.category != category or not input_pipe.has_opening(opening_toward_machine):
 		return 0.0
-	var network := get_network(input_cell)
+	var network := get_network(input_pipe.cell)
 	for definition in fluid_sources:
 		if int(definition.get("category", PipeSegment.Category.GENERIC)) != category:
 			continue
@@ -157,8 +158,8 @@ func consume_connected_resource(input_cell: Vector2i, opening_toward_machine: Ve
 		if not is_instance_valid(source_node) or (not source_node.has_method("consume_fluid_resource") and not source_node.has_method("consume_fluid_resource_for_category")):
 			continue
 		var source_cell := Vector2i(definition.get("cell", Vector2i.ZERO))
-		var source_pipe := get_pipe(source_cell)
 		var source_opening := Vector2i(definition.get("required_opening", Vector2i.LEFT))
+		var source_pipe := _get_port_pipe(source_cell, source_opening)
 		if source_pipe == null or source_pipe not in network or not source_pipe.has_opening(source_opening):
 			continue
 		var supplied := 0.0
@@ -177,19 +178,19 @@ func is_input_connected(input_cell: Vector2i, opening_toward_machine: Vector2i, 
 
 func get_connected_source_nodes(input_cell: Vector2i, opening_toward_machine: Vector2i, category: int) -> Array[Node]:
 	var result: Array[Node] = []
-	var input_pipe := get_pipe(input_cell)
+	var input_pipe := _get_port_pipe(input_cell, opening_toward_machine)
 	if input_pipe != null:
-		_recalculate_component(input_cell)
+		_recalculate_component(input_pipe.cell)
 	if input_pipe == null or input_pipe.category != category or not input_pipe.has_opening(opening_toward_machine):
 		return result
-	var network := get_network(input_cell)
+	var network := get_network(input_pipe.cell)
 	for definition in fluid_sources:
 		if int(definition.get("category", PipeSegment.Category.GENERIC)) != category:
 			continue
 		var source_node := definition.get("node") as Node
 		var source_cell := Vector2i(definition.get("cell", Vector2i.ZERO))
-		var source_pipe := get_pipe(source_cell)
 		var source_opening := Vector2i(definition.get("required_opening", Vector2i.LEFT))
+		var source_pipe := _get_port_pipe(source_cell, source_opening)
 		if is_instance_valid(source_node) and (source_node.has_method("consume_fluid_resource") or source_node.has_method("consume_fluid_resource_for_category")) and source_pipe != null and source_pipe in network and source_pipe.has_opening(source_opening):
 			result.append(source_node)
 	return result
@@ -197,6 +198,22 @@ func get_connected_source_nodes(input_cell: Vector2i, opening_toward_machine: Ve
 
 func get_pipe(cell: Vector2i) -> PipeSegment:
 	return pipes.get(cell) as PipeSegment
+
+
+func _get_port_pipe(port_cell: Vector2i, required_opening: Vector2i) -> PipeSegment:
+	## Il raccordo della macchina/cupola e' mostrato come un terminale, non come
+	## una tile acquistabile. Perciò accettiamo sia il tubo posato sul terminale
+	## sia quello immediatamente esterno che lo raggiunge. Il secondo caso evita
+	## una disconnessione invisibile quando il giocatore collega il tubo al bordo
+	## visibile del raccordo.
+	var terminal_pipe := get_pipe(port_cell)
+	if terminal_pipe != null and terminal_pipe.has_opening(required_opening):
+		return terminal_pipe
+	var external_cell := port_cell - required_opening
+	var external_pipe := get_pipe(external_cell)
+	if external_pipe != null and external_pipe.has_opening(required_opening):
+		return external_pipe
+	return null
 
 
 func are_connected(first: Vector2i, second: Vector2i) -> bool:
@@ -258,20 +275,20 @@ func _recalculate_component(start_cell: Vector2i) -> void:
 	var inherited_category := PipeSegment.Category.GENERIC
 	for source in fluid_sources:
 		var source_cell := Vector2i(source.get("cell", Vector2i.ZERO))
-		var source_pipe := get_pipe(source_cell)
+		var required_opening := Vector2i(source.get("required_opening", Vector2i.LEFT))
+		var source_pipe := _get_port_pipe(source_cell, required_opening)
 		if source_pipe == null or source_pipe not in component:
 			continue
-		var required_opening := Vector2i(source.get("required_opening", Vector2i.LEFT))
 		if source_pipe.has_opening(required_opening):
 			inherited_category = int(source.get("category", PipeSegment.Category.GENERIC))
 			break
 	if inherited_category == PipeSegment.Category.GENERIC:
 		for input_port in fluid_inputs:
 			var input_cell := Vector2i(input_port.get("cell", Vector2i.ZERO))
-			var input_pipe := get_pipe(input_cell)
+			var required_opening := Vector2i(input_port.get("required_opening", Vector2i.LEFT))
+			var input_pipe := _get_port_pipe(input_cell, required_opening)
 			if input_pipe == null or input_pipe not in component:
 				continue
-			var required_opening := Vector2i(input_port.get("required_opening", Vector2i.LEFT))
 			if input_pipe.has_opening(required_opening):
 				inherited_category = int(input_port.get("category", PipeSegment.Category.GENERIC))
 				break
@@ -290,16 +307,12 @@ func _neighbor_categories(cell: Vector2i, shape_type: int, is_vertical: bool) ->
 	var categories: Dictionary = {}
 	var candidate_openings := _openings_for(shape_type, is_vertical)
 	for source in fluid_sources:
-		if Vector2i(source.get("cell", Vector2i.ZERO)) != cell:
-			continue
 		var required_opening := Vector2i(source.get("required_opening", Vector2i.LEFT))
-		if required_opening in candidate_openings:
+		if _port_touches_placement(Vector2i(source.get("cell", Vector2i.ZERO)), required_opening, cell, candidate_openings):
 			categories[int(source.get("category", PipeSegment.Category.GENERIC))] = true
 	for input_port in fluid_inputs:
-		if Vector2i(input_port.get("cell", Vector2i.ZERO)) != cell:
-			continue
 		var required_opening := Vector2i(input_port.get("required_opening", Vector2i.LEFT))
-		if required_opening in candidate_openings:
+		if _port_touches_placement(Vector2i(input_port.get("cell", Vector2i.ZERO)), required_opening, cell, candidate_openings):
 			categories[int(input_port.get("category", PipeSegment.Category.GENERIC))] = true
 	for direction in candidate_openings:
 		var neighbor := get_pipe(cell + direction)
@@ -314,14 +327,19 @@ func _orientation_for_port(cell: Vector2i, shape_type: int, is_vertical: bool) -
 	if shape_type == PipeSegment.ShapeType.CROSS:
 		return is_vertical
 	for port in fluid_sources + fluid_inputs:
-		if Vector2i(port.get("cell", Vector2i.ZERO)) != cell:
-			continue
 		var direction := Vector2i(port.get("required_opening", Vector2i.ZERO))
+		var port_cell := Vector2i(port.get("cell", Vector2i.ZERO))
+		if cell != port_cell and cell != port_cell - direction:
+			continue
 		if direction == Vector2i.UP or direction == Vector2i.DOWN:
 			return true
 		if direction == Vector2i.LEFT or direction == Vector2i.RIGHT:
 			return false
 	return is_vertical
+
+
+func _port_touches_placement(port_cell: Vector2i, required_opening: Vector2i, placement_cell: Vector2i, candidate_openings: Array[Vector2i]) -> bool:
+	return required_opening in candidate_openings and (placement_cell == port_cell or placement_cell == port_cell - required_opening)
 
 
 func _openings_for(shape_type: int, is_vertical: bool) -> Array[Vector2i]:
@@ -351,7 +369,7 @@ func _component_accepts_category(start_cell: Vector2i, category: int) -> bool:
 			return false
 	for source in fluid_sources:
 		var source_cell := Vector2i(source.get("cell", Vector2i.ZERO))
-		var source_pipe := get_pipe(source_cell)
+		var source_pipe := _get_port_pipe(source_cell, Vector2i(source.get("required_opening", Vector2i.LEFT)))
 		if source_pipe == null or source_pipe not in get_network(start_cell):
 			continue
 		var source_category := int(source.get("category", PipeSegment.Category.GENERIC))

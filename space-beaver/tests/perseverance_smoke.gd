@@ -31,6 +31,13 @@ func _run() -> void:
 	var rover := mission.get("rover") as Node2D
 	_expect(rover != null and rover.is_in_group("perseverance_rover"), "Il rover guasto deve comparire come obiettivo fotografabile")
 	_expect(int(mission.get("state")) == mission.State.AWAIT_PHOTO, "Il recupero deve iniziare dalla fotografia inviata")
+	var arrow := mission.get("_arrow") as Control
+	player.global_position = rover.global_position + Vector2(15.0 * 16.0, 0.0)
+	mission.call("_update_guidance")
+	_expect(arrow != null and not arrow.visible, "La freccia deve scomparire entro 15 tile da Perseverance")
+	player.global_position = rover.global_position + Vector2(15.0 * 16.0 + 1.0, 0.0)
+	mission.call("_update_guidance")
+	_expect(arrow != null and arrow.visible, "La freccia deve tornare visibile oltre il raggio di 15 tile")
 	player.global_position = rover.global_position + Vector2(24.0, 0.0)
 	inventory.hotbar[1] = {"id": "field_camera", "name": "Telecamera scientifica", "count": 1, "placeable": false, "tool": true}
 	inventory.call("select_hotbar", 1)
@@ -52,6 +59,13 @@ func _run() -> void:
 	_expect(int(achievements.call("get_progress", "perseverance_photo")) == 1 and int(achievements.call("get_progress", "perseverance_report")) == 1 and int(achievements.call("get_progress", "perseverance_repair")) == 1, "Foto, rapporto e riparazione devono completare la stessa catena di missioni")
 	var repeat_hours := float(mission.call("get_next_break_in_game_hours"))
 	_expect(repeat_hours >= 7.0 * 24.0 and repeat_hours <= 10.0 * 24.0, "I guasti successivi devono arrivare tra 7 e 10 giorni di gioco dopo la riparazione")
+	player.global_position = rover.global_position + Vector2(10_000.0, 0.0)
+	var player_camera := player.get_node_or_null("Camera2D") as Camera2D
+	if player_camera != null:
+		player_camera.force_update_scroll()
+	_expect(bool(mission.call("_repaired_rover_is_far_outside_view")), "Il rover riparato deve poter lasciare il mondo solo quando è molto fuori visuale")
+	mission.call("_process", 0.0)
+	_expect(mission.get("rover") == null, "Il rover riparato deve scomparire dopo essere uscito molto dalla visuale")
 	mission.call("reset_for_new_mission")
 	_finish()
 

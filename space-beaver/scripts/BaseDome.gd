@@ -1112,8 +1112,31 @@ func _destroy() -> bool:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and (contains_world_point(player.global_position) or is_in_corridor(player.global_position)):
 		return false
+	# Demolire non deve distruggere una cupola pagata: la struttura torna
+	# nell'inventario con tutti gli optional scelti nello shop. Il rover non è
+	# figlio della cupola, ma viene comunque preservato se una scena vecchia lo
+	# avesse agganciato alla base.
+	var inventory := get_node_or_null("/root/Inventory")
+	if inventory == null or not bool(inventory.call("can_add_item", dome_id)):
+		return false
+	if not bool(inventory.call("add_item", dome_id, get_display_name(), 1, true, configuration)):
+		return false
+	_preserve_rovers_before_demolition()
 	queue_free()
 	return true
+
+
+func _preserve_rovers_before_demolition() -> void:
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	for rover_variant in get_tree().get_nodes_in_group("rovers"):
+		var rover := rover_variant as Node2D
+		if rover == null or not is_instance_valid(rover) or rover.get_parent() != self:
+			continue
+		var saved_position := rover.global_position
+		rover.reparent(scene)
+		rover.global_position = saved_position
 
 
 func _record_achievement(achievement_id: String) -> void:

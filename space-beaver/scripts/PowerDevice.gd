@@ -510,7 +510,7 @@ func get_machine_specs() -> Dictionary:
 				"status": transformer_connection if not network_enabled else ("IN FUNZIONE" if powered else transformer_connection),
 				"status_color": Color("72eda0") if powered else Color("ffb45d"),
 				"principle": "L'induzione elettromagnetica trasferisce energia tra avvolgimenti isolati e adatta tensione e corrente alla rete di accumulo.",
-				"specs": ["Ingresso: rete pannelli", "Uscita: rete trasformata", "Canali elettrici separati", "Limite missione: 1 unita'", "Rete: %s" % transformer_connection],
+				"specs": ["Ingresso: rete pannelli", "Uscita: rete trasformata", "Canali elettrici separati", "Ogni trasformatore crea una rete indipendente", "Rete: %s" % transformer_connection],
 			}
 		"battery":
 			var charge_percent := roundi(battery_charge_ratio * 100.0)

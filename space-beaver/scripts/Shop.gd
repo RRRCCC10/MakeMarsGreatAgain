@@ -16,7 +16,7 @@ const CATALOG := {
 		"price": 1_000_000_000,
 		"category": "energy",
 		"placeable": true,
-		"description": "Collega i pannelli alle batterie. Ne e' consentito uno solo.",
+		"description": "Collega pannelli, batterie e macchinari. Puoi acquistarne più di uno: ogni trasformatore avvia una rete indipendente.",
 	},
 	"battery": {
 		"name": "Batteria",
@@ -182,9 +182,6 @@ func close() -> void:
 func purchase(item_id: String) -> bool:
 	if not CATALOG.has(item_id):
 		message_changed.emit("Oggetto non disponibile.", true)
-		return false
-	if item_id == "transformer" and _transformer_already_owned():
-		message_changed.emit("Puoi possedere un solo trasformatore.", true)
 		return false
 	if SuitSystem.is_suit(item_id) and (SuitSystem.owns_suit(item_id) or DeliveryManager.count_uncollected(item_id) > 0):
 		message_changed.emit("Questa tuta e' gia' di proprieta' della missione.", true)
@@ -366,7 +363,3 @@ func _close_ui_modal() -> void:
 	var ui_state := get_node_or_null("/root/UIState")
 	if ui_state != null:
 		ui_state.call("close_modal", &"shop")
-
-
-func _transformer_already_owned() -> bool:
-	return PowerGrid.has_transformer() or Inventory.count_item("transformer") > 0 or DeliveryManager.count_uncollected("transformer") > 0

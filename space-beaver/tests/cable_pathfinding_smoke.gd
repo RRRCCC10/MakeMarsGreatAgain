@@ -44,6 +44,11 @@ func _run() -> void:
 		_expect(not dome_cells.has(Vector2i(cell)), "Il pathfinding dei cavi non deve attraversare la cupola piccola")
 	dome.queue_free()
 	await process_frame
+	var far_start := Vector2i(-700, -700)
+	var far_goal := Vector2i(700, -700)
+	var far_path: Array = power_grid.call("_find_path", far_start, far_goal, "far_range_test")
+	_expect(not far_path.is_empty(), "Un collegamento elettrico molto lontano deve restare raggiungibile")
+	_expect(far_path.size() >= int(power_grid.call("_manhattan", far_start, far_goal)) + 1, "Il percorso lontano deve coprire l'intera distanza tra i due dispositivi")
 
 	var inventory: Node = root.get_node("Inventory")
 	var suits: Node = root.get_node("SuitSystem")

@@ -69,6 +69,16 @@ func _run() -> void:
 	_expect(inventory.add_rock("roccia_scura"), "Una seconda pietra deve entrare nell'inventario")
 	_expect(bool(machine.call("try_interact", player)), "E vicino al laboratorio deve aprire la scelta dei campioni")
 	_expect(int(machine.get("state")) == 0 and inventory.count_item("rock_roccia_basaltica") == 1 and inventory.count_item("rock_roccia_scura") == 1, "Con più pietre il laboratorio non deve scegliere automaticamente")
+	var sample_picker := machine.get("_sample_picker_root") as Control
+	_expect(sample_picker != null and sample_picker.visible, "Con più pietre deve comparire il selettore dei campioni")
+	var rock_thumbnails: Array[Node] = sample_picker.find_children("*", "TextureRect", true, false) if sample_picker != null else []
+	_expect(not rock_thumbnails.is_empty() and (rock_thumbnails.front() as TextureRect).texture is Texture2D, "Ogni pietra nel selettore deve mostrare una miniatura")
+	var escape_event := InputEventKey.new()
+	escape_event.keycode = KEY_ESCAPE
+	escape_event.pressed = true
+	machine.call("_on_sample_picker_gui_input", escape_event)
+	_expect(sample_picker != null and not sample_picker.visible, "Esc deve chiudere il selettore delle pietre")
+	_expect(bool(machine.call("try_interact", player)) and sample_picker != null and sample_picker.visible, "Dopo Esc il laboratorio deve poter riaprire il selettore")
 	machine.call("_select_sample", "rock_roccia_basaltica")
 	_expect(int(machine.get("state")) == 1 and inventory.count_item("rock_roccia_basaltica") == 0 and inventory.count_item("rock_roccia_scura") == 1, "La scelta deve consumare solo la pila selezionata")
 	_expect(is_equal_approx(float(machine.call("get_power_demand_kw")), 240.0), "Durante l'analisi il laboratorio deve richiedere molta corrente")
@@ -105,6 +115,19 @@ func _run() -> void:
 	var achievements := root.get_node("AchievementManager")
 	_expect(int(achievements.call("get_progress", "deep_ice_study")) == 1 and int(achievements.call("get_progress", "ancient_life")) == 1 and int(achievements.call("get_progress", "life_relay")) == 1, "Il rapporto biologico deve avanzare l'intero ramo della vita antica")
 	_expect(is_equal_approx(float(RESEARCH_SCRIPT.get_definition("raman_spectrometer").get("biosignature_chance", 0.0)), 0.35) and is_equal_approx(float(RESEARCH_SCRIPT.get_definition("icp_ms").get("biosignature_chance", 0.0)), 0.55), "Laboratori più avanzati devono avere una probabilità di rilevamento maggiore")
+	_expect(inventory.add_rock("roccia_scura"), "Serve un campione per verificare lo smontaggio durante l'analisi")
+	_expect(bool(machine.call("try_interact", player)) and int(machine.get("state")) == 1, "Il laboratorio deve entrare in analisi prima dello smontaggio")
+	var removed_machine_id := machine.get_instance_id()
+	_expect(bool(machine.call("pickup")), "Un laboratorio di ricerca deve poter essere smontato anche mentre analizza")
+	_expect(inventory.count_item("xrd_diffractometer") == 1, "Lo smontaggio deve restituire il laboratorio nell'inventario")
+	await process_frame
+	var buildable_registry := root.get_node("BuildableRegistry")
+	var still_registered := false
+	for entry in buildable_registry.get_entries():
+		var registered_node := entry.get("node") as Node
+		if registered_node != null and registered_node.get_instance_id() == removed_machine_id:
+			still_registered = true
+	_expect(not still_registered, "Un laboratorio smontato non deve restare selezionabile nella scena")
 	for item_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
 		var definition: Dictionary = shop.call("get_definition", item_id)
 		_expect(bool(definition.get("placeable", false)) and str(definition.get("category", "")) == "research", "%s deve essere acquistabile nello shop ricerca" % item_id)
