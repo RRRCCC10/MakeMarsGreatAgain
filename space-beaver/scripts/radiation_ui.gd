@@ -38,7 +38,7 @@ func _build_ui() -> void:
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	panel.add_child(rows)
-	rows.add_child(_label("DOSIMETRO PERSONALE", 13, TEXT_COLOR))
+	rows.add_child(_label("PERSONAL DOSIMETER", 13, TEXT_COLOR))
 	rate_label = _label("", 12, THIRST_COLOR)
 	rows.add_child(rate_label)
 	dose_label = _label("", 11, TEXT_COLOR)
@@ -69,8 +69,8 @@ func _build_ui() -> void:
 
 func _refresh(data: Dictionary) -> void:
 	rate_label.text = "RATE  %.3f mSv/h" % float(data["received_rate_msv_h"])
-	dose_label.text = "DOSE  acuta %.1f  ·  missione %.1f mSv" % [float(data["acute_dose_msv"]), float(data["cumulative_dose_msv"])]
-	condition_label.text = "STATO  " + str(data["condition"])
+	dose_label.text = "DOSE  acute %.1f  ·  mission %.1f mSv" % [float(data["acute_dose_msv"]), float(data["cumulative_dose_msv"])]
+	condition_label.text = "STATUS  " + str(data["condition"])
 	condition_label.add_theme_color_override("font_color", _condition_color(float(data["acute_dose_msv"])))
 	_on_suit_changed(SuitSystem.equipped_suit_id, SuitSystem.get_equipped_definition())
 	var state := int(data["state"])
@@ -82,11 +82,11 @@ func _refresh(data: Dictionary) -> void:
 	alert_title.add_theme_color_override("font_color", color)
 	var time_text := _format_game_time(float(data["time_remaining_hours"]))
 	if state == Radiation.EventState.WARNING:
-		alert_title.text = "⚠  ALLERTA: %s" % str(data["event_label"])
-		alert_detail.text = "Arrivo tra %s  ·  prepara il rientro in un rifugio schermato" % time_text
+		alert_title.text = "⚠  ALERT: %s" % str(data["event_label"])
+		alert_detail.text = "Arrival in %s  ·  prepare to return to a shielded shelter" % time_text
 	else:
-		alert_title.text = "⚠  %s IN CORSO" % str(data["event_label"])
-		alert_detail.text = "Fine stimata %s  ·  esposizione esterna %.1f mSv/h" % [time_text, float(data["received_rate_msv_h"])]
+		alert_title.text = "⚠  %s IN PROGRESS" % str(data["event_label"])
+		alert_detail.text = "Estimated end %s  ·  outdoor exposure %.1f mSv/h" % [time_text, float(data["received_rate_msv_h"])]
 
 
 func _on_suit_changed(_suit_id: String, definition: Dictionary) -> void:

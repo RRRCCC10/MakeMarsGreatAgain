@@ -32,11 +32,11 @@ func _run() -> void:
 	rover.add_to_group("rovers")
 	rover.position = Vector2(22.0, -14.0)
 	var rover_position := rover.global_position
-	_expect(bool(dome.call("_destroy")), "Una cupola vuota deve poter essere demolita")
-	_expect(inventory.count_item("dome_medium") == 1, "Demolire una cupola deve restituirla nell'inventario")
+	_expect(bool(dome.call("_destroy")), "Test assertion failed")
+	_expect(inventory.count_item("dome_medium") == 1, "Test assertion failed")
 	await process_frame
-	_expect(is_instance_valid(rover) and rover.get_parent() == current_scene, "Il rover non deve essere rimosso insieme alla cupola")
-	_expect(is_instance_valid(rover) and rover.global_position.distance_to(rover_position) < 0.01, "Il rover deve restare nella stessa posizione quando la cupola viene rimossa")
+	_expect(is_instance_valid(rover) and rover.get_parent() == current_scene, "Test assertion failed")
+	_expect(is_instance_valid(rover) and rover.global_position.distance_to(rover_position) < 0.01, "Test assertion failed")
 	if is_instance_valid(rover):
 		rover.queue_free()
 	_finish()

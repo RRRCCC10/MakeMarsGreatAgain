@@ -1,6 +1,6 @@
 extends Node
 
-## La sete rappresenta l'idratazione del protagonista: 100 significa completamente idratato.
+## Thirst represents the character's hydration: 100 means fully hydrated.
 signal changed(current: float, maximum: float)
 
 const MAX_THIRST := 100.0

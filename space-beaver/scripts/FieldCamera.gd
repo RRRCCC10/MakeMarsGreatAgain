@@ -1,8 +1,8 @@
 extends CanvasLayer
 
-## Telecamera scientifica da campo. Non e' un oggetto decorativo: conserva
-## gli scatti, identifica il soggetto inquadrato e lascia al giocatore la
-## scelta esplicita di trasmettere ogni immagine alla Terra.
+## Field scientific camera. It is not a decorative object: it stores shots,
+## identifies the framed subject, and lets the player explicitly transmit each
+## image to Earth.
 
 signal photo_taken(photo: Dictionary)
 signal photo_transmitted(photo: Dictionary)
@@ -13,12 +13,12 @@ const PHOTO_DISTANCE := 78.0
 const CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
 
 const BIOME_NAMES := {
-	0: "Pianura di atterraggio",
-	1: "Regolite scura",
-	2: "Cratere d'impatto",
-	3: "Bordo della calotta",
-	4: "Nucleo polare",
-	5: "Altopiano basaltico",
+	0: "Landing Plain",
+	1: "Dark Regolith",
+	2: "Impact Crater",
+	3: "Ice-Cap Edge",
+	4: "Polar Core",
+	5: "Basaltic Plateau",
 }
 
 var photo_roll: Array[Dictionary] = []
@@ -38,8 +38,8 @@ var _notice: Label
 
 
 func _ready() -> void:
-	# L'atterraggio mette in pausa il mondo, ma questo autoload deve comunque
-	# poter nascondere il proprio HUD prima che appaia la cinematica.
+	# Landing pauses the world, but this autoload must still hide its HUD before
+	# the cinematic appears.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 68
 	_build_ui()
@@ -94,7 +94,7 @@ func take_photo() -> Dictionary:
 	photo_roll.append(photo)
 	_show_flash()
 	_capture_view_to_archive(int(photo.get("id", 0)))
-	_show_notice("SCATTO %02d SALVATO · %s · premi O per inviarlo" % [int(photo.get("id", 0)), str(photo.get("subject", "Marte"))], Color("b6f3ff"))
+	_show_notice("SHOT %02d SAVED · %s · press O to send it" % [int(photo.get("id", 0)), str(photo.get("subject", "Mars"))], Color("b6f3ff"))
 	photo_taken.emit(photo.duplicate(true))
 	_refresh_status()
 	return photo.duplicate(true)
@@ -111,13 +111,13 @@ func transmit_oldest_photo() -> bool:
 		var achievements := get_node_or_null("/root/AchievementManager")
 		if achievements != null and achievements.has_method("record_photo_transmission"):
 			achievements.call("record_photo_transmission", photo.duplicate(true))
-		_show_notice("TRASMISSIONE TERRA COMPLETATA · %s" % str(photo.get("subject", "Foto scientifica")), Color("9ff0aa"))
+		_show_notice("EARTH TRANSMISSION COMPLETE · %s" % str(photo.get("subject", "Scientific Photo")), Color("9ff0aa"))
 		photo_transmitted.emit(photo.duplicate(true))
 		_refresh_status()
 		if is_archive_open:
 			_refresh_archive()
 		return true
-	_show_notice("RULLINO VUOTO · premi P per scattare una foto", Color("ffd878"))
+	_show_notice("CAMERA ROLL EMPTY · press P to take a photo", Color("ffd878"))
 	return false
 
 
@@ -166,35 +166,35 @@ func _build_photo_context() -> Dictionary:
 	var source_id := _source_at(player.global_position)
 	var phase := WorldClock.get_phase_label()
 	var tags: Array[String] = ["panorama", "source_%d" % source_id, "phase_%s" % phase.to_lower()]
-	var subject: String = str(BIOME_NAMES.get(source_id, "Orizzonte marziano"))
+	var subject: String = str(BIOME_NAMES.get(source_id, "Martian Horizon"))
 	var rock := _nearest_group_node("collectible_rocks", player.global_position)
 	if rock != null and rock.has_method("resource_definition"):
 		var definition: Dictionary = rock.call("resource_definition")
-		subject = str(definition.get("name", "Campione geologico"))
+		subject = str(definition.get("name", "Geological Sample"))
 		tags.append("rock")
 		if str(definition.get("rarity", "common")) in ["rare", "ultra_rare"]:
 			tags.append("rare_rock")
 	var structure := _nearest_photo_structure(player.global_position)
 	if structure != null:
 		if structure.is_in_group("greenhouses"):
-			subject = "Serra nel paesaggio marziano"
+			subject = "Greenhouse in the Martian Landscape"
 			tags.append("greenhouse")
 		elif structure.is_in_group("base_domes"):
-			subject = "Avamposto umano su Marte"
+			subject = "Human Outpost on Mars"
 			tags.append("base")
 		elif structure.is_in_group("research_machines"):
-			subject = "Laboratorio di superficie"
+			subject = "Surface Laboratory"
 			tags.append("laboratory")
 		elif structure.is_in_group("rovers"):
-			subject = "Rover esplorativo"
+			subject = "Exploration Rover"
 			tags.append("rover")
 		elif structure.is_in_group("perseverance_rover"):
-			subject = "Rover Perseverance danneggiato"
+			subject = "Damaged Perseverance Rover"
 			tags.append("perseverance")
 	if Inventory.count_item("rock_ghiaccio_profondo_primordiale") > 0:
 		tags.append("primordial_ice")
-		if subject == BIOME_NAMES.get(source_id, "Orizzonte marziano"):
-			subject = "Custodia di ghiaccio profondo"
+		if subject == BIOME_NAMES.get(source_id, "Martian Horizon"):
+			subject = "Deep-Ice Container"
 	if AchievementManager.is_reached("ancient_life") and "laboratory" in tags:
 		tags.append("life_evidence")
 	if source_id in [3, 4] and WorldClock.get_phase() == WorldClock.Phase.DAWN:
@@ -207,7 +207,7 @@ func _build_photo_context() -> Dictionary:
 		"id": next_photo_id,
 		"subject": subject,
 		"source_id": source_id,
-		"biome": BIOME_NAMES.get(source_id, "Zona inesplorata"),
+		"biome": BIOME_NAMES.get(source_id, "Unexplored Area"),
 		"phase": phase,
 		"day": int(WorldClock.day),
 		"tags": tags,
@@ -238,9 +238,9 @@ func _nearest_group_node(group_name: String, point: Vector2) -> Node2D:
 
 
 func _nearest_photo_structure(point: Vector2) -> Node2D:
-	# Le cupole medie e grandi devono poter essere fotografate dall'esterno:
-	# il raggio utile segue l'impronta della struttura. Scegliamo inoltre il
-	# soggetto più vicino tra tutti i gruppi, non il primo gruppo non vuoto.
+	# Medium and large domes must be photographable from outside, so the useful
+	# radius follows the structure footprint. Also choose the closest subject from
+	# all groups rather than the first non-empty group.
 	var closest: Node2D
 	var closest_distance := INF
 	var seen: Dictionary = {}
@@ -264,10 +264,9 @@ func _nearest_photo_structure(point: Vector2) -> Node2D:
 
 
 func _capture_view_to_archive(photo_id: int) -> void:
-	# L'immagine completa viene conservata localmente oltre ai metadati usati dal
-	# contratto. Aspettiamo due frame e nascondiamo temporaneamente i soli HUD
-	# della fotocamera: nell'archivio finisce il panorama, non il lampo bianco o
-	# il testo di conferma dello scatto.
+	# Keep the full image locally in addition to the metadata used by the contract.
+	# Wait two frames and temporarily hide only camera HUD elements: the archive
+	# stores the panorama, not the white flash or the shot confirmation text.
 	await RenderingServer.frame_post_draw
 	if not is_inside_tree():
 		return
@@ -286,7 +285,7 @@ func _capture_view_to_archive(photo_id: int) -> void:
 		return
 	var folder := "user://mission_photos"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
-	var file_path := "%s/sol_%02d_scatt_%03d.png" % [folder, int(WorldClock.day), photo_id]
+	var file_path := "%s/sol_%02d_shot_%03d.png" % [folder, int(WorldClock.day), photo_id]
 	if image.save_png(file_path) == OK:
 		for photo in photo_roll:
 			if int(photo.get("id", -1)) == photo_id:
@@ -307,7 +306,7 @@ func _build_ui() -> void:
 	_status_panel.anchor_left = 0.62
 	_status_panel.anchor_right = 1.0
 	_status_panel.offset_left = 0.0
-	# Il saldo resta nella fascia superiore a destra; la telecamera parte sotto.
+	# The balance stays in the upper-right band; the camera panel begins below it.
 	_status_panel.offset_top = 88.0
 	_status_panel.offset_right = -16.0
 	_status_panel.offset_bottom = 180.0
@@ -333,7 +332,7 @@ func _build_ui() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	copy.add_child(_status)
 	_hint = Label.new()
-	_hint.text = "P · SCATTA     O · TERRA     C · ARCHIVIO"
+	_hint.text = "P · SHOOT     O · EARTH     C · ARCHIVE"
 	_hint.add_theme_font_size_override("font_size", 10)
 	_hint.add_theme_color_override("font_color", Color("91cfe1"))
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -396,13 +395,13 @@ func _build_archive_ui() -> void:
 	var title_row := HBoxContainer.new()
 	layout.add_child(title_row)
 	var title := Label.new()
-	title.text = "// ARCHIVIO FOTOGRAFICO MISSIONE //"
+	title.text = "// MISSION PHOTO ARCHIVE //"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color("b8efff"))
 	title_row.add_child(title)
 	var close := Button.new()
-	close.text = "[ C / ESC · CHIUDI ]"
+	close.text = "[ C / ESC · CLOSE ]"
 	close.custom_minimum_size = Vector2(150, 32)
 	close.pressed.connect(close_archive)
 	title_row.add_child(close)
@@ -469,10 +468,10 @@ func _refresh_status() -> void:
 		return
 	var unsent := get_unsent_count()
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	var biome := "AREA SCONOSCIUTA"
+	var biome := "UNKNOWN AREA"
 	if player != null:
 		biome = str(BIOME_NAMES.get(_source_at(player.global_position), biome)).to_upper()
-	_status.text = "TELECAMERA SCIENTIFICA · %s\nRULLINO · %d SCATTI · %d DA TRASMETTERE" % [biome, photo_roll.size(), unsent]
+	_status.text = "FIELD SCIENTIFIC CAMERA · %s\nCAMERA ROLL · %d SHOTS · %d TO TRANSMIT" % [biome, photo_roll.size(), unsent]
 
 
 func _refresh_archive() -> void:
@@ -480,10 +479,10 @@ func _refresh_archive() -> void:
 		return
 	for child in _archive_list.get_children():
 		child.queue_free()
-	_archive_summary.text = "%d SCATTI · %d INVIATI · ogni invio sblocca i contratti fotografici senza richiedere energia." % [photo_roll.size(), get_photo_count(true)]
+	_archive_summary.text = "%d SHOTS · %d SENT · each transmission unlocks photo contracts without requiring power." % [photo_roll.size(), get_photo_count(true)]
 	if photo_roll.is_empty():
 		var empty := Label.new()
-		empty.text = "Nessuno scatto nel rullino. Equipa la telecamera e premi P davanti a un panorama, roccia o struttura."
+		empty.text = "No shots in the camera roll. Equip the camera and press P near a panorama, rock, or structure."
 		empty.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		empty.add_theme_font_size_override("font_size", 14)
 		empty.add_theme_color_override("font_color", Color("a8bdc5"))
@@ -505,14 +504,14 @@ func _refresh_archive() -> void:
 		index.add_theme_color_override("font_color", Color("a5eaff"))
 		row.add_child(index)
 		var text := Label.new()
-		text.text = "%s\n%s · SOL %d · %s" % [str(photo.get("subject", "Foto scientifica")), str(photo.get("biome", "Marte")), int(photo.get("day", 1)), str(photo.get("phase", "GIORNO"))]
+		text.text = "%s\n%s · SOL %d · %s" % [str(photo.get("subject", "Scientific Photo")), str(photo.get("biome", "Mars")), int(photo.get("day", 1)), str(photo.get("phase", "DAY"))]
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		text.add_theme_font_size_override("font_size", 12)
 		text.add_theme_color_override("font_color", Color("d9e8eb"))
 		row.add_child(text)
 		var state := Label.new()
-		state.text = "INVIATA" if bool(photo.get("sent", false)) else "NEL RULLINO"
+		state.text = "SENT" if bool(photo.get("sent", false)) else "ON CAMERA ROLL"
 		state.custom_minimum_size = Vector2(116.0, 0.0)
 		state.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		state.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -556,7 +555,7 @@ func _get_camera_icon() -> Texture2D:
 		return _camera_icon
 	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(CAMERA_ICON_PATH))
 	if image == null or image.is_empty():
-		push_error("Impossibile caricare lo sprite della telecamera: %s" % CAMERA_ICON_PATH)
+		push_error("Unable to load camera sprite: %s" % CAMERA_ICON_PATH)
 		return null
 	_camera_icon = ImageTexture.create_from_image(image)
 	return _camera_icon

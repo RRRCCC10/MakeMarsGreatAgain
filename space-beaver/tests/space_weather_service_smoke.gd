@@ -34,21 +34,21 @@ func _run() -> void:
 			"impactList": [{"location": "Earth", "arrivalTime": "2026-11-09T12:00Z"}],
 		},
 	])
-	_expect(int(weather.call("get_candidate_count")) == 2, "Solo gli impatti previsti su Marte devono entrare nel pool")
-	_expect(str(weather.call("choose_event_profile", "major", 0, 4)) == "minor", "Il primo evento deve restare minore anche con DONKI")
-	_expect(str(weather.call("choose_event_profile", "minor", 1, 2)) == "minor", "Nessun evento DONKI deve entrare prima del SOL 3")
-	_expect(str(weather.call("choose_event_profile", "minor", 1, 4)) == "major", "Un impatto marziano veloce deve selezionare il profilo maggiore")
-	_expect(str(weather.call("choose_event_profile", "major", 2, 4)) == "minor", "Un impatto radente deve selezionare il profilo minore")
-	_expect(str(weather.call("choose_event_profile", "major", 3, 4)) == "major", "Esauriti i dati DONKI, deve restare il fallback del gioco")
+	_expect(int(weather.call("get_candidate_count")) == 2, "Test assertion failed")
+	_expect(str(weather.call("choose_event_profile", "major", 0, 4)) == "minor", "Test assertion failed")
+	_expect(str(weather.call("choose_event_profile", "minor", 1, 2)) == "minor", "Test assertion failed")
+	_expect(str(weather.call("choose_event_profile", "minor", 1, 4)) == "major", "Test assertion failed")
+	_expect(str(weather.call("choose_event_profile", "major", 2, 4)) == "minor", "Test assertion failed")
+	_expect(str(weather.call("choose_event_profile", "major", 3, 4)) == "major", "Test assertion failed")
 
 	var stats: Dictionary = weather.call("get_schedule_statistics")
-	_expect(is_equal_approx(float(stats.get("first_event_min_hours", 0.0)), 72.0), "Il tutorial deve avere almeno 3 SOL senza eventi")
-	_expect(is_equal_approx(float(stats.get("first_event_max_hours", 0.0)), 96.0), "Il primo evento deve arrivare entro 4 SOL")
-	_expect(is_equal_approx(float(stats.get("repeat_quiet_mean_sols", 0.0)), 4.0), "L'attesa media tra eventi deve restare di 4 SOL")
-	_expect(float(stats.get("expected_events_per_30_sols", 0.0)) > 7.0 and float(stats.get("expected_events_per_30_sols", 0.0)) < 7.3, "La frequenza media deve restare regolare, non continua ne' rara")
+	_expect(is_equal_approx(float(stats.get("first_event_min_hours", 0.0)), 72.0), "Test assertion failed")
+	_expect(is_equal_approx(float(stats.get("first_event_max_hours", 0.0)), 96.0), "Test assertion failed")
+	_expect(is_equal_approx(float(stats.get("repeat_quiet_mean_sols", 0.0)), 4.0), "Test assertion failed")
+	_expect(float(stats.get("expected_events_per_30_sols", 0.0)) > 7.0 and float(stats.get("expected_events_per_30_sols", 0.0)) < 7.3, "Test assertion failed")
 
 	radiation.call("reset_for_new_mission")
-	_expect(float(radiation.time_to_next_event_hours) >= 72.0 and float(radiation.time_to_next_event_hours) <= 96.0, "Radiation deve rispettare la finestra protetta iniziale")
+	_expect(float(radiation.time_to_next_event_hours) >= 72.0 and float(radiation.time_to_next_event_hours) <= 96.0, "Test assertion failed")
 	_finish()
 
 

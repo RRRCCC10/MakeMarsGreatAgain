@@ -17,19 +17,19 @@ const REPEAT_EVENT_MIN_HOURS := 72.0
 const REPEAT_EVENT_MAX_HOURS := 120.0
 const EVENT_DEFINITIONS := {
 	"minor": {
-		"label": "PICCO SOLARE MINORE",
+		"label": "MINOR SOLAR PEAK",
 		"duration_hours": 2.5,
 		"unshielded_total_msv": 120.0,
 		"color": Color("ffd36a"),
 	},
 	"major": {
-		"label": "PICCO SOLARE MAGGIORE",
+		"label": "MAJOR SOLAR PEAK",
 		"duration_hours": 4.0,
 		"unshielded_total_msv": 600.0,
 		"color": Color("ff8d62"),
 	},
 	"extreme": {
-		"label": "TEMPESTA SOLARE ESTREMA",
+		"label": "EXTREME SOLAR STORM",
 		"duration_hours": 6.0,
 		"unshielded_total_msv": 1500.0,
 		"color": Color("ef6cff"),
@@ -79,7 +79,7 @@ func _process(delta: float) -> void:
 		var definition: Dictionary = EVENT_DEFINITIONS[current_event_id]
 		var duration := float(definition["duration_hours"])
 		var progress := clampf(event_elapsed_hours / duration, 0.0, 1.0)
-		# Curva morbida con media circa 1: il centro dell'evento e' il picco.
+		# Smooth curve with an average near 1: the event center is the peak.
 		var intensity_shape := 0.25 + 1.1781 * sin(PI * progress)
 		solar_ambient_rate = float(definition["unshielded_total_msv"]) / duration * intensity_shape
 		var received_solar_rate := solar_ambient_rate * (1.0 - SuitSystem.get_solar_protection()) * (1.0 - dome_solar_protection)
@@ -108,7 +108,7 @@ func get_data() -> Dictionary:
 	return {
 		"state": event_state,
 		"event_id": current_event_id,
-		"event_label": str(definition.get("label", "FONDO COSMICO NOMINALE")),
+		"event_label": str(definition.get("label", "NOMINAL COSMIC BACKGROUND")),
 		"event_color": definition.get("color", Color("6fc9e8")),
 		"time_remaining_hours": event_time_remaining_hours,
 		"ambient_rate_msv_h": current_ambient_rate_msv_h,
@@ -134,14 +134,14 @@ func _get_dome_radiation_protection(method_name: String) -> float:
 
 func get_condition_label() -> String:
 	if acute_dose_msv < 500.0:
-		return "NOMINALE"
+		return "NOMINAL"
 	if acute_dose_msv < 1000.0:
-		return "AFFATICAMENTO LIEVE"
+		return "MILD FATIGUE"
 	if acute_dose_msv < 2000.0:
-		return "NAUSEA E DEBOLEZZA"
+		return "NAUSEA AND WEAKNESS"
 	if acute_dose_msv < 4000.0:
-		return "ESPOSIZIONE CRITICA"
-	return "DANNO RADIOLOGICO IRREVERSIBILE"
+		return "CRITICAL EXPOSURE"
+	return "IRREVERSIBLE RADIATION DAMAGE"
 
 
 func get_movement_multiplier() -> float:
@@ -174,7 +174,7 @@ func reset_for_new_mission() -> void:
 	current_event_id = ""
 	event_elapsed_hours = 0.0
 	event_time_remaining_hours = 0.0
-	# Tre o quattro Sol protetti: nessun feed esterno puo' interrompere il tutorial.
+	# Three or four protected Sols ensure no external feed can interrupt the tutorial.
 	time_to_next_event_hours = _rng.randf_range(FIRST_EVENT_MIN_HOURS, FIRST_EVENT_MAX_HOURS)
 	current_ambient_rate_msv_h = GCR_AMBIENT_RATE_MSV_H
 	current_received_rate_msv_h = GCR_AMBIENT_RATE_MSV_H * (1.0 - SuitSystem.get_cosmic_protection())

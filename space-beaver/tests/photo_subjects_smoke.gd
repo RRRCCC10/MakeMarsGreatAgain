@@ -33,9 +33,9 @@ func _run() -> void:
 	dome.global_position = test_position + Vector2(80.0, 0.0)
 	await process_frame
 	var dome_photo: Dictionary = camera.call("_build_photo_context")
-	_expect("base" in Array(dome_photo.get("tags", [])), "La cupola abitativa deve diventare il soggetto della foto dall'esterno")
+	_expect("base" in Array(dome_photo.get("tags", [])), "Test assertion failed")
 	achievements.call("record_photo_transmission", dome_photo)
-	_expect(int(achievements.call("get_progress", "outpost_portrait")) == 1, "La trasmissione della cupola deve completare il relativo obiettivo")
+	_expect(int(achievements.call("get_progress", "outpost_portrait")) == 1, "Test assertion failed")
 	dome.queue_free()
 	await process_frame
 
@@ -46,9 +46,9 @@ func _run() -> void:
 	greenhouse.global_position = test_position + Vector2(90.0, 0.0)
 	await process_frame
 	var greenhouse_photo: Dictionary = camera.call("_build_photo_context")
-	_expect("greenhouse" in Array(greenhouse_photo.get("tags", [])), "La serra deve diventare il soggetto della foto dall'esterno")
+	_expect("greenhouse" in Array(greenhouse_photo.get("tags", [])), "Test assertion failed")
 	achievements.call("record_photo_transmission", greenhouse_photo)
-	_expect(int(achievements.call("get_progress", "greenhouse_window")) == 1, "La trasmissione della serra deve completare il relativo obiettivo")
+	_expect(int(achievements.call("get_progress", "greenhouse_window")) == 1, "Test assertion failed")
 	_finish()
 
 

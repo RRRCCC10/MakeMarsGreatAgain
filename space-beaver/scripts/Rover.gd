@@ -1,8 +1,8 @@
 class_name Rover
 extends CharacterBody2D
 
-## Veicolo EVA indipendente dalla rete della base. I pannelli integrati sono
-## apribili solo da fermo e caricano una batteria dedicata durante il giorno.
+## EVA vehicle independent from the base grid. Its integrated panels can open
+## only while stationary and charge a dedicated battery during daylight.
 
 signal battery_changed(energy_kwh: float, capacity_kwh: float)
 signal occupancy_changed(occupied: bool)
@@ -68,7 +68,7 @@ var panel_state := PanelState.CLOSED
 var incident_faulted := false
 var sand_accumulation := 0
 var animation_elapsed := 0.0
-var facing_index := 0 # destra, sinistra, alto, basso
+var facing_index := 0 # right, left, up, down
 var driver: Node2D
 var sprite: Sprite2D
 var collision_shape: CollisionShape2D
@@ -77,7 +77,7 @@ var boarding_click_area: Area2D
 
 
 static func placement_world_position(cell: Vector2i) -> Vector2:
-	# Rover largo tre tile e alto due: il click corrisponde alla tile superiore sinistra.
+	# The rover is three tiles wide and two tiles tall; the click maps to its upper-left tile.
 	return Vector2(cell * 16) + Vector2(24.0, 16.0)
 
 
@@ -93,8 +93,8 @@ static func can_place_at(world_position: Vector2) -> bool:
 		return false
 	var map_provider := tree.get_first_node_in_group("world_map_provider")
 	if map_provider != null and map_provider.has_method("is_world_position_inside"):
-		# Lascia spazio al telaio del rover: anche il mezzo parcheggiato non può
-		# sporgere oltre il bordo della mappa.
+		# Leave space for the rover frame: even a parked vehicle cannot extend
+		# beyond the map boundary.
 		if not bool(map_provider.call("is_world_position_inside", world_position, 24.0)):
 			return false
 	var registry := tree.root.get_node_or_null("BuildableRegistry")
@@ -128,8 +128,8 @@ static func place(parent: Node, cell: Vector2i, battery_energy_kwh: float = STAR
 
 
 func _ready() -> void:
-	# Il rover deve restare sopra terreno, cupola e piattaforma anche se vengono
-	# riordinati nodi o layer dei chunk durante il caricamento della mappa.
+	# The rover must remain above terrain, domes, and platforms even if chunk nodes
+	# or layers are reordered while the map loads.
 	z_as_relative = false
 	z_index = 10
 	_setup_sprite()
@@ -138,19 +138,19 @@ func _ready() -> void:
 	if is_preview:
 		collision_shape.disabled = true
 		return
-	# Le anteprime di piazzamento sono nodi temporanei invisibili: non devono
-	# comparire nella ricerca del rover reale, nel dock o negli input.
+	# Placement previews are invisible temporary nodes. They must not appear in a
+	# real-rover search, the dock, or input handling.
 	add_to_group("rovers")
 	_setup_boarding_click_area()
 	var registry := _service("BuildableRegistry")
 	if registry != null:
-		registry.call("register_buildable", self, "ROVER DI ESPLORAZIONE", "vehicle", pickup)
+		registry.call("register_buildable", self, "EXPLORATION ROVER", "vehicle", pickup)
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
-		incidents.call("register_target", self, "vehicle", "ROVER DI ESPLORAZIONE")
+		incidents.call("register_target", self, "vehicle", "EXPLORATION ROVER")
 	var sandstorms := get_node_or_null("/root/SandstormManager")
 	if sandstorms != null:
-		sandstorms.call("register_target", self, "ROVER DI ESPLORAZIONE")
+		sandstorms.call("register_target", self, "EXPLORATION ROVER")
 	_refresh_visual()
 
 
@@ -228,18 +228,17 @@ func _input(event: InputEvent) -> void:
 			return
 		var nearby_player := get_tree().get_first_node_in_group("player") as Node2D
 		if sand_accumulation > 0 and nearby_player != null and nearby_player.global_position.distance_to(global_position) <= 94.0:
-			# RoverInteraction decide' dopo una pressione breve/lunga: non
-			# salire immediatamente mentre il giocatore sta iniziando a spolverare.
+			# RoverInteraction decides after a tap or hold. Do not board immediately
+			# while the player starts cleaning dust.
 			return
-		# Ridondanza intenzionale rispetto al player: il rover è responsabile
-		# anche del proprio ingresso, così nessun pannello o macchinario può
-		# sottrarre E prima dell'imbarco.
+		# Intentional redundancy with the player: the rover also owns boarding, so
+		# no panel or machine can consume E before the player boards.
 		var player := get_tree().get_first_node_in_group("player") as Node2D
 		if player != null and can_board(player) and board(player):
 			get_viewport().set_input_as_handled()
 			return
-	# F e' un comando locale del rover, non una scorciatoia globale. Senza
-	# questo controllo un rover remoto poteva rubare F alla camera d'aria.
+	# F is a local rover command, not a global shortcut. Without this check, a
+	# remote rover could steal F from an airlock.
 	if _is_control_key(event, KEY_F) and _is_player_nearby() and _can_toggle_panels():
 		toggle_panels()
 		get_viewport().set_input_as_handled()
@@ -304,7 +303,7 @@ func get_battery_percent() -> float:
 
 
 func contains_world_point(world_point: Vector2) -> bool:
-	# La collisione è concentrata sulle ruote, così il rover si legge come un mezzo basso.
+	# Collision is concentrated around the wheels, so the rover reads as a low vehicle.
 	return Rect2(global_position + Vector2(-23.0, -9.0), Vector2(46.0, 20.0)).has_point(world_point)
 
 
@@ -332,8 +331,8 @@ func prepare_base_recall(target_position: Vector2) -> bool:
 
 
 func present_docked_at_base() -> void:
-	# Anche un rover creato prima di un aggiornamento del gioco deve tornare
-	# leggibile sul dock: vista laterale arancione, sprite riattivato e layer alto.
+	# A rover created before a game update must still render correctly on the dock:
+	# orange side view, reactivated sprite, and high layer.
 	facing_index = 0
 	visible = true
 	z_as_relative = false
@@ -346,20 +345,20 @@ func present_docked_at_base() -> void:
 
 func get_machine_specs() -> Dictionary:
 	var solar_factor := _solar_factor()
-	var panels_label := "APERTI · ricarica solare %.1f kW" % (SOLAR_CHARGE_KW * solar_factor) if is_panels_open() else "CHIUSI"
-	var status := "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("IN MARCIA" if is_instance_valid(driver) and panel_state == PanelState.CLOSED else ("RICARICA SOLARE" if is_panels_open() and solar_factor > 0.0 else "PRONTO"))
+	var panels_label := "OPEN · solar charging %.1f kW" % (SOLAR_CHARGE_KW * solar_factor) if is_panels_open() else "CLOSED"
+	var status := "FAULT — REPAIR REQUIRED" if incident_faulted else ("DRIVING" if is_instance_valid(driver) and panel_state == PanelState.CLOSED else ("SOLAR CHARGING" if is_panels_open() and solar_factor > 0.0 else "READY"))
 	return {
-		"title": "ROVER DI ESPLORAZIONE EVA",
-		"category": "VEICOLO SCIENTIFICO E LOGISTICO",
+		"title": "EVA EXPLORATION ROVER",
+		"category": "SCIENTIFIC AND LOGISTICS VEHICLE",
 		"status": status,
 		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if battery_energy_kwh > 0.0 else Color("ff776d")),
-		"principle": "Un pacco batteria dedicato alimenta trazione e sistemi di bordo. I pannelli fotovoltaici dispiegabili convertono la luce marziana in energia durante il giorno, senza gravare sulla rete della base.",
+		"principle": "A dedicated battery pack powers traction and onboard systems. Deployable photovoltaic panels convert Martian sunlight into energy during daylight without drawing from the base grid.",
 		"specs": [
-			"Batteria dedicata: %.1f / %.0f kWh · %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(get_battery_percent())],
-			"Trazione: %.1f kW durante la marcia" % DRIVING_DEMAND_KW,
-			"Pannelli: %s" % panels_label,
-			"Comandi: E sali/scendi · F pannelli (solo a piedi)",
-			"Autonomia: indipendente dalla rete elettrica",
+			"Dedicated battery: %.1f / %.0f kWh · %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(get_battery_percent())],
+			"Traction: %.1f kW while driving" % DRIVING_DEMAND_KW,
+			"Panels: %s" % panels_label,
+			"Controls: E board/exit · F panels (on foot only)",
+			"Autonomy: independent from the electrical grid",
 		],
 	}
 
@@ -449,9 +448,9 @@ func _setup_interaction_label() -> void:
 
 
 func _setup_boarding_click_area() -> void:
-	# Via alternativa intenzionale: quando il player e' gia' vicino al rover,
-	# un click sul mezzo esegue la stessa azione di E. Il layer 4 non collide
-	# con player, rocce o tubi; serve solo al picking del mouse.
+	# Intentional alternate route: when the player is already near the rover, a
+	# click on it performs the same action as E. Layer 4 does not collide with the
+	# player, rocks, or pipes; it exists only for mouse picking.
 	boarding_click_area = Area2D.new()
 	boarding_click_area.name = "BoardingClickArea"
 	boarding_click_area.collision_layer = 4
@@ -565,7 +564,7 @@ func _exit_direction() -> Vector2:
 
 
 func _can_toggle_panels() -> bool:
-	# I pannelli estesi non sono sicuri con il pilota a bordo: bisogna scendere.
+	# Extended panels are unsafe while the pilot is aboard, so they must exit first.
 	return not is_instance_valid(driver) and panel_state in [PanelState.CLOSED, PanelState.OPEN] and velocity.length_squared() < 1.0
 
 
@@ -657,7 +656,7 @@ func _update_interaction_label() -> void:
 		return
 	if is_instance_valid(driver):
 		interaction_label.visible = true
-		interaction_label.text = "E / CLICK · SCENDI\nSCENDI PRIMA DI APRIRE I PANNELLI · %d%%" % roundi(get_battery_percent())
+		interaction_label.text = "E / CLICK · EXIT\nEXIT BEFORE OPENING PANELS · %d%%" % roundi(get_battery_percent())
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and _player_inside_pressurized_dome(player):
@@ -669,14 +668,14 @@ func _update_interaction_label() -> void:
 	if not nearby:
 		return
 	if incident_faulted:
-		interaction_label.text = "ROVER IN GUASTO\nE · RIPARA SISTEMI DI BORDO"
+		interaction_label.text = "ROVER FAULT\nE · REPAIR ONBOARD SYSTEMS"
 		return
 	if panel_state == PanelState.CLOSED:
 		if sand_accumulation > 0:
 			interaction_label.text = "E breve · SALI   E tenuto · SPOLVERA\nBATTERIA %d%%" % roundi(get_battery_percent())
 		else:
-			interaction_label.text = "E / CLICK · SALI    F · APRI PANNELLI\nBATTERIA %d%%" % roundi(get_battery_percent())
+			interaction_label.text = "E / CLICK · BOARD    F · OPEN PANELS\nBATTERY %d%%" % roundi(get_battery_percent())
 	elif panel_state == PanelState.OPEN:
-		interaction_label.text = "F · CHIUDI PANNELLI\nRICARICA %d%%" % roundi(get_battery_percent())
+		interaction_label.text = "F · CLOSE PANELS\nCHARGING %d%%" % roundi(get_battery_percent())
 	else:
 		interaction_label.text = "PANNELLI IN MOVIMENTO\nBATTERIA %d%%" % roundi(get_battery_percent())

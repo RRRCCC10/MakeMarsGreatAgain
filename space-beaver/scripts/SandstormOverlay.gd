@@ -1,8 +1,8 @@
 class_name SandstormOverlay
 extends Control
 
-## Strato a schermo intero leggero: la sabbia viene disegnata proceduralmente,
-## quindi resta nitida e si adatta a ogni risoluzione senza texture enormi.
+## Lightweight full-screen layer: sand is drawn procedurally, staying sharp and
+## adapting to every resolution without huge textures.
 
 var intensity := 0.0
 var elapsed := 0.0

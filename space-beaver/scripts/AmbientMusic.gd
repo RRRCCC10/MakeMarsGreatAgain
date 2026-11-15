@@ -1,7 +1,7 @@
 extends Node
 
-## Colonna sonora ambientale della missione. Il volume resta volutamente basso
-## per non coprire effetti, avvisi e dialoghi dell'interfaccia.
+## Mission background score. Its volume intentionally remains low so it does
+## not cover effects, warnings, or interface dialogue.
 
 const OST_STREAM := preload("res://assets/audio/OST_1.wav")
 const BACKGROUND_VOLUME_DB := -20.0

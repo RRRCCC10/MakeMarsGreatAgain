@@ -1,8 +1,8 @@
 class_name TextureTransparency
 extends RefCounted
 
-## Trasforma in trasparenza soltanto lo sfondo chiaro raggiungibile dai bordi.
-## Il bianco presente *dentro* uno sprite (cupole, riflessi, piante) resta intatto.
+## Turns transparent only the light background reachable from image borders.
+## White *inside* a sprite (domes, reflections, plants) remains untouched.
 
 static var _cache: Dictionary = {}
 const MASK_REVISION := 2
@@ -11,8 +11,8 @@ const MASK_REVISION := 2
 static func without_white_background(source: Texture2D) -> Texture2D:
 	if source == null:
 		return null
-	# La revisione evita che una partita già aperta riusi la vecchia texture
-	# prodotta con la soglia troppo aggressiva.
+	# The revision prevents an already open game from reusing the old texture
+	# produced with an overly aggressive threshold.
 	var cache_key := source.resource_path + "#mask-%d" % MASK_REVISION
 	if not cache_key.is_empty() and _cache.has(cache_key):
 		return _cache[cache_key]
@@ -32,11 +32,11 @@ static func without_white_background(source: Texture2D) -> Texture2D:
 			continue
 		visited[point] = true
 		var color := image.get_pixelv(point)
-		# I file sorgente della serra sono JPEG: il pavimento e il vetro sono
-		# volutamente molto chiari (per esempio 223,227,238 e 237,246,255).
-		# La vecchia soglia 0.82 li scambiava per lo sfondo e svuotava la cupola.
-		# Rimuoviamo quindi soltanto il bianco/neutro quasi puro, raggiungibile
-		# dal bordo, lasciando invariati i dettagli bianchi e azzurri degli sprite.
+		# The greenhouse source files are JPEGs: floor and glass are deliberately
+		# very light (for example 223,227,238 and 237,246,255). The old 0.82
+		# threshold mistook them for background and hollowed out the dome. Remove
+		# only nearly pure neutral white reachable from the border, preserving white
+		# and light-blue sprite details.
 		var is_near_pure_white := color.r >= 0.965 and color.g >= 0.965 and color.b >= 0.965 and absf(color.r - color.g) <= 0.035 and absf(color.g - color.b) <= 0.035
 		if not is_near_pure_white:
 			continue

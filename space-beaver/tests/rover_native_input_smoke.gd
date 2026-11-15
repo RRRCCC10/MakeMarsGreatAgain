@@ -1,7 +1,5 @@
 extends SceneTree
 
-## Riproduce un tasto proveniente dall'Input singleton (lo stesso canale degli
-## eventi della finestra) invece di inviarlo direttamente al viewport.
 
 const DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
@@ -36,13 +34,9 @@ func _run() -> void:
 		_fail("la posizione di test non e' imbarcabile")
 		return
 	var press_e := InputEventKey.new()
-	# keycode logico volutamente nullo: verifica il tasto fisico ricevuto da
-	# alcune tastiere/layout, che prima non veniva riconosciuto da player/rover.
 	press_e.keycode = KEY_NONE
 	press_e.physical_keycode = KEY_E
 	press_e.pressed = true
-	# Disabilita apposta il router globale: player e rover devono restare
-	# funzionanti anche da soli, senza dipendere dall'ordine degli autoload.
 	var router := root.get_node_or_null("RoverInteraction")
 	if router != null:
 		router.set_process_input(false)

@@ -1,14 +1,14 @@
 extends CharacterBody2D
 
-## Velocità in pixel del mondo al secondo. move_and_slide() applica il delta
-## del tick fisico: questo valore resta quindi identico a 30, 60 o 144 FPS.
-## 128 px/s conserva un passo leggibile, ma evita l'andatura troppo lenta.
+## World velocity in pixels per second. move_and_slide() applies the physics
+## tick delta, so this value remains identical at 30, 60, or 144 FPS. 128 px/s
+## keeps walking readable without making it too slow.
 const SPEED := 128.0
 const PICKUP_DISTANCE := 70.0
 const FRAME_SIZE := Vector2i(32, 32)
 const PLAYER_SHEET := preload("res://assets/sprites/player-spritesheet.png")
-## La rotella resta libera, ma non può mostrare una porzione eccessiva del mondo
-## né ingrandire gli sprite oltre una visuale confortevole.
+## The mouse wheel remains free, but cannot show an excessive portion of the
+## world or enlarge sprites beyond a comfortable view.
 const MIN_CAMERA_ZOOM := 0.60
 const MAX_CAMERA_ZOOM := 2.75
 const ZOOM_FACTOR := 1.18
@@ -23,7 +23,7 @@ var _rover_board_key_down := false
 
 func _ready() -> void:
 	add_to_group("player")
-	# Le rocce usano il layer 2: il giocatore ci urta, il rover no.
+	# Rocks use layer 2: the player collides with them, while the rover does not.
 	collision_mask = 3
 	animated_sprite.sprite_frames = _make_sprite_frames()
 	animated_sprite.play("idle_down")
@@ -33,9 +33,9 @@ func _ready() -> void:
 
 func _physics_process(_delta: float) -> void:
 	_poll_rover_board_hotkey()
-	# Il bordo segue la mappa dipinta (2.000 × 2.000 tile), non la camera.
-	# Viene applicato anche da fermo per correggere eventuali posizioni caricate
-	# fuori area senza permettere di camminare nel vuoto oltre il bordo.
+	# The boundary follows the painted map (2,000 × 2,000 tiles), not the camera.
+	# Apply it while stationary too, correcting loaded out-of-bounds positions
+	# without allowing movement into the void beyond the edge.
 	_clamp_to_world_bounds()
 	if _ui_blocks_world_actions() and not _ui_allows_world_movement():
 		velocity = Vector2.ZERO
@@ -74,7 +74,7 @@ func _update_animation(direction: Vector2) -> void:
 func _make_sprite_frames() -> SpriteFrames:
 	var frames := SpriteFrames.new()
 	frames.remove_animation("default")
-	# Riga 1: idle. Righe 2-5: basso, alto, sinistra, destra.
+	# Row 1: idle. Rows 2–5: down, up, left, right.
 	_add_animation(frames, "idle_down", 0, [0, 1, 2, 3, 4], 3.0)
 	_add_animation(frames, "idle_up", 0, [0, 1, 2, 3, 4], 3.0)
 	_add_animation(frames, "idle_left", 0, [0, 1, 2, 3, 4], 3.0)
@@ -211,8 +211,8 @@ func _try_board_nearby_rover() -> bool:
 
 
 func _poll_rover_board_hotkey() -> void:
-	# Fallback indipendente dal routing degli eventi: alcuni pannelli di gioco
-	# consumano _unhandled_input, ma lo stato fisico della tastiera resta valido.
+	# Event-routing-independent fallback: some game panels consume
+	# _unhandled_input, but the keyboard's physical state remains valid.
 	var e_down := Input.is_key_pressed(KEY_E)
 	if e_down and not _rover_board_key_down:
 		_try_board_nearby_rover()
@@ -240,9 +240,9 @@ func _has_dirty_water_drill_nearby() -> bool:
 
 
 func _input(event: InputEvent) -> void:
-	# Il gestore del macchinario è un figlio del player e usa _unhandled_input:
-	# se il rover veniva controllato lì, un macchinario vicino poteva consumare E
-	# prima della salita. Il veicolo va gestito nel passaggio input prioritario.
+	# The machine controller is a player child and uses _unhandled_input. If rover
+	# control happened there, a nearby machine could consume E before boarding.
+	# Handle the vehicle in the priority input phase instead.
 	if not event is InputEventKey or not event.pressed or event.echo:
 		return
 	var sandstorm_manager := get_node_or_null("/root/SandstormManager")
@@ -265,8 +265,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			game_window.mode = Window.MODE_WINDOWED if game_window.mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
 		get_viewport().set_input_as_handled()
 		return
-	# Una riparazione e' modale: va gestita prima del controllo generale sulle
-	# GUI, altrimenti UIState bloccherebbe proprio la sequenza WASD necessaria.
+	# A repair is modal, so handle it before the general GUI check. Otherwise
+	# UIState would block the required WASD sequence.
 	if event is InputEventKey and event.pressed and not event.echo:
 		var sandstorm_manager := get_node_or_null("/root/SandstormManager")
 		if sandstorm_manager != null:
@@ -326,7 +326,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				return
 		if control_key != KEY_E:
 			return
-		# Il rover riceve lo stesso evento e gestisce l'uscita del pilota.
+		# The rover receives the same event and handles the pilot's exit.
 		if is_driving_rover():
 			return
 		var capsule := nearest_delivery_capsule()

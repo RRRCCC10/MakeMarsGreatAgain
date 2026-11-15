@@ -1,18 +1,18 @@
 extends CanvasLayer
 
-## Archivio cartografico dei contratti. Le schede dividono il grande grafo in
-## mappe leggibili, mantenendo sempre visibili i prerequisiti nel dettaglio.
+## Cartographic contract archive. Tabs divide the large graph into readable maps
+## while keeping prerequisites visible in the detail panel.
 
 const CARD_SIZE := Vector2(156.0, 88.0)
 const GRAPH_SIZE := Vector2(1_500.0, 620.0)
 const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 
 const CATEGORIES := [
-	{"id": "field", "label": "CAMPO", "icon": "◈", "color": Color("e6a66d"), "description": "Campioni, esplorazione e contratti eseguibili senza infrastrutture."},
-	{"id": "habitat", "label": "BASE", "icon": "⌂", "color": Color("91dfa2"), "description": "Sopravvivenza, aria, acqua, energia e coltivazioni."},
-	{"id": "science", "label": "RICERCA", "icon": "⌬", "color": Color("c6a4ff"), "description": "Laboratori, rapporti e contratti scientifici ad alto valore."},
-	{"id": "return", "label": "RITORNO", "icon": "▲", "color": Color("ffe07a"), "description": "Dalla possibile biosignatura al manifesto completo e al lancio verso la Terra."},
-	{"id": "photos", "label": "IMMAGINI", "icon": "▣", "color": Color("84dced"), "description": "Archivio fotografico e trasmissioni visive verso la Terra."},
+	{"id": "field", "label": "FIELD", "icon": "◈", "color": Color("e6a66d"), "description": "Samples, exploration, and contracts that need no infrastructure."},
+	{"id": "habitat", "label": "BASE", "icon": "⌂", "color": Color("91dfa2"), "description": "Survival, air, water, power, and crops."},
+	{"id": "science", "label": "RESEARCH", "icon": "⌬", "color": Color("c6a4ff"), "description": "Laboratories, reports, and high-value scientific contracts."},
+	{"id": "return", "label": "RETURN", "icon": "▲", "color": Color("ffe07a"), "description": "From a possible biosignature to a complete manifest and launch to Earth."},
+	{"id": "photos", "label": "PHOTOS", "icon": "▣", "color": Color("84dced"), "description": "Photo archive and visual transmissions to Earth."},
 ]
 
 const CATEGORY_LAYOUTS := {
@@ -23,7 +23,7 @@ const CATEGORY_LAYOUTS := {
 			"first_horizon": Vector2(72, 406), "biome_survey": Vector2(300, 406), "long_range_survey": Vector2(528, 340), "exploration_suit": Vector2(756, 340), "polar_expedition": Vector2(528, 484),
 			"perseverance_photo": Vector2(1_020, 126), "perseverance_report": Vector2(1_020, 276), "perseverance_repair": Vector2(1_020, 426),
 		},
-		"sections": [["RACCOLTA IN SUPERFICIE", Vector2(72, 52)], ["ESPLORAZIONE", Vector2(72, 332)], ["MISSIONE PERSEVERANCE", Vector2(1_020, 52)]],
+		"sections": [["SURFACE COLLECTION", Vector2(72, 52)], ["EXPLORATION", Vector2(72, 332)], ["PERSEVERANCE MISSION", Vector2(1_020, 52)]],
 	},
 	"habitat": {
 		"nodes": {
@@ -31,7 +31,7 @@ const CATEGORY_LAYOUTS := {
 			"stable_grid": Vector2(290, 420), "greenhouse": Vector2(520, 420), "first_planting": Vector2(750, 354), "first_harvest": Vector2(980, 420),
 			"genetic_modification": Vector2(1_190, 354), "genetic_replacement": Vector2(1_190, 480),
 		},
-		"sections": [["CICLO DI ACCESSO E ACQUA", Vector2(290, 44)], ["HABITAT E CIBO", Vector2(290, 350)], ["BIOINGEGNERIA", Vector2(1_190, 292)]],
+		"sections": [["ACCESS AND WATER CYCLE", Vector2(290, 44)], ["HABITAT AND FOOD", Vector2(290, 350)], ["BIOENGINEERING", Vector2(1_190, 292)]],
 	},
 	"science": {
 		"nodes": {
@@ -44,14 +44,14 @@ const CATEGORY_LAYOUTS := {
 			"regional_atlas": Vector2(936, 534), "planetary_archive": Vector2(1_158, 520),
 			"science_center": Vector2(1_158, 158), "martian_dividend": Vector2(1_360, 158),
 		},
-		"sections": [["FONDAZIONE", Vector2(48, 224)], ["STRUMENTI", Vector2(714, 28)], ["TRASMISSIONE", Vector2(714, 382)], ["DIRETTORATO", Vector2(1_158, 108)]],
+		"sections": [["FOUNDATION", Vector2(48, 224)], ["INSTRUMENTS", Vector2(714, 28)], ["TRANSMISSION", Vector2(714, 382)], ["DIRECTORATE", Vector2(1_158, 108)]],
 	},
 	"return": {
 		"nodes": {
 			"polar_drill": Vector2(36, 74), "primordial_ice": Vector2(252, 74), "deep_ice_study": Vector2(468, 74), "ancient_life": Vector2(684, 74), "life_relay": Vector2(900, 74), "life_sample_secured": Vector2(1_116, 74),
 			"return_manifest": Vector2(144, 258), "sabatier_online": Vector2(410, 258), "rocket_fueled": Vector2(676, 258), "return_launch": Vector2(942, 258),
 		},
-		"sections": [["SCOPERTA E CONTENIMENTO", Vector2(36, 30)], ["PREPARAZIONE AL RITORNO", Vector2(144, 216)], ["CATALOGO CAMPIONI RICHIESTI", Vector2(36, 382)]],
+		"sections": [["DISCOVERY AND CONTAINMENT", Vector2(36, 30)], ["RETURN PREPARATION", Vector2(144, 216)], ["REQUIRED SAMPLE CATALOG", Vector2(36, 382)]],
 	},
 	"photos": {
 		"nodes": {
@@ -61,7 +61,7 @@ const CATEGORY_LAYOUTS := {
 			"outpost_portrait": Vector2(724, 52), "greenhouse_window": Vector2(948, 52), "lab_in_frame": Vector2(1_172, 52),
 			"primordial_frost_photo": Vector2(1_172, 180), "life_witness_image": Vector2(1_360, 180),
 		},
-		"sections": [["SCATTI DI CAMPO", Vector2(52, 206)], ["OSSERVAZIONI SCIENTIFICHE", Vector2(724, 28)], ["CIELO E POLI", Vector2(500, 398)]],
+		"sections": [["FIELD SHOTS", Vector2(52, 206)], ["SCIENTIFIC OBSERVATIONS", Vector2(724, 28)], ["SKY AND POLES", Vector2(500, 398)]],
 	},
 }
 
@@ -222,7 +222,7 @@ func _build_ui() -> void:
 	var title_row := HBoxContainer.new()
 	content.add_child(title_row)
 	var title := Label.new()
-	title.text = "ARCHIVIO DEI CONTRATTI"
+	title.text = "CONTRACT ARCHIVE"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color("f2d672"))
@@ -230,13 +230,13 @@ func _build_ui() -> void:
 	title.add_theme_constant_override("outline_size", 3)
 	title_row.add_child(title)
 	var close_label := Label.new()
-	close_label.text = "J / ESC  ·  CHIUDI"
+	close_label.text = "J / ESC  ·  CLOSE"
 	close_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	close_label.add_theme_font_size_override("font_size", 12)
 	close_label.add_theme_color_override("font_color", Color("a5dcef"))
 	title_row.add_child(close_label)
 	var subtitle := Label.new()
-	subtitle.text = "Seleziona un dossier: i contratti progrediscono sempre, ma le ricompense rispettano la catena di autorizzazioni."
+	subtitle.text = "Select a dossier: contracts always progress, but rewards follow the authorization chain."
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", Color("b7c8d0"))
 	content.add_child(subtitle)
@@ -307,7 +307,7 @@ func _build_ui() -> void:
 	_detail_status.add_theme_font_size_override("font_size", 10)
 	detail_rows.add_child(_detail_status)
 	var controls := Label.new()
-	controls.text = "LEGENDA  ◼ bloccato   ◇ in corso   ✦ ricompensa pronta   ✓ riscosso     ·     ROTELLA PREMUTA  trascina la mappa     ·     CLIC SINISTRO  dettagli / riscatta"
+	controls.text = "LEGEND  ◼ locked   ◇ in progress   ✦ reward ready   ✓ claimed     ·     MIDDLE MOUSE  drag map     ·     LEFT-CLICK  details / claim"
 	controls.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	controls.add_theme_font_size_override("font_size", 10)
 	controls.add_theme_color_override("font_color", Color("7fa2b0"))
@@ -424,13 +424,13 @@ func _add_return_catalog_panel() -> void:
 	for definition in ROCK_RESOURCE.get_return_mission_catalog():
 		var item := Label.new()
 		item.custom_minimum_size = Vector2(448, 17)
-		item.text = "%s · %s · %s" % [str(definition.get("name", "Campione")), str(definition.get("biome", "Bioma")), _catalog_rarity(str(definition.get("rarity", "common")))]
+		item.text = "%s · %s · %s" % [str(definition.get("name", "Sample")), str(definition.get("biome", "Biome")), _catalog_rarity(str(definition.get("rarity", "common")))]
 		item.add_theme_font_size_override("font_size", 9)
 		item.add_theme_color_override("font_color", Color("c7d9df"))
 		grid.add_child(item)
 	var life_item := Label.new()
 	life_item.custom_minimum_size = Vector2(448, 17)
-	life_item.text = "Campione di vita aliena · laboratorio ghiaccio profondo · UNICO"
+	life_item.text = "Alien life sample · deep-ice laboratory · UNIQUE"
 	life_item.add_theme_font_size_override("font_size", 9)
 	life_item.add_theme_color_override("font_color", Color("80ffcf"))
 	grid.add_child(life_item)
@@ -438,10 +438,10 @@ func _add_return_catalog_panel() -> void:
 
 func _catalog_rarity(rarity: String) -> String:
 	if rarity == "ultra_rare":
-		return "ULTRA-RARA"
+		return "ULTRA-RARE"
 	if rarity == "rare":
-		return "RARA"
-	return "COMUNE"
+		return "RARE"
+	return "COMMON"
 
 
 func _build_links(definitions: Array, positions: Dictionary) -> Array[Dictionary]:
@@ -518,7 +518,7 @@ func _make_card(definition: Dictionary, category_color: Color) -> Control:
 	copy.add_theme_constant_override("separation", 1)
 	body.add_child(copy)
 	var title := Label.new()
-	title.text = str(definition.get("title", "OBIETTIVO"))
+	title.text = str(definition.get("title", "OBJECTIVE"))
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.custom_minimum_size = Vector2(0, 25)
 	title.add_theme_font_size_override("font_size", 10)
@@ -551,10 +551,10 @@ func _stripe_color(definition: Dictionary, status: String) -> Color:
 
 func _status_text(status: String) -> String:
 	match status:
-		"locked": return "BLOCCATO"
-		"available": return "IN CORSO"
-		"claimable": return "✦ RISCATTA"
-	return "✓ RISCOSSO"
+		"locked": return "LOCKED"
+		"available": return "IN PROGRESS"
+		"claimable": return "✦ CLAIM"
+	return "✓ CLAIMED"
 
 
 func _on_card_pressed(achievement_id: String) -> void:
@@ -572,19 +572,19 @@ func _show_detail(achievement_id: String) -> void:
 	var status := AchievementManager.get_status(achievement_id)
 	var reward: Dictionary = definition.get("reward", {})
 	_detail_title.text = "%s  ·  %s" % [str(definition.get("icon", "◈")), str(definition.get("title", ""))]
-	_detail_body.text = "%s\nRicompensa: %s" % [str(definition.get("description", "")), str(reward.get("label", "nessuna"))]
+	_detail_body.text = "%s\nReward: %s" % [str(definition.get("description", "")), str(reward.get("label", "none"))]
 	var text := ""
 	if status == "locked":
 		var names: Array[String] = []
 		for prerequisite_id in AchievementManager.get_prerequisites(achievement_id):
 			names.append(str(AchievementManager.get_definition(prerequisite_id).get("title", prerequisite_id)))
-		text = "BLOCCATO  ·  Riscatta prima: " + ", ".join(names) + ". Il progresso resta registrato."
+		text = "LOCKED  ·  Claim first: " + ", ".join(names) + ". Progress remains recorded."
 	elif status == "available":
-		text = "IN CORSO  ·  Completa il requisito per rendere la ricompensa disponibile."
+		text = "IN PROGRESS  ·  Complete the requirement to make the reward available."
 	elif status == "claimable":
-		text = "✦ RICOMPENSA PRONTA  ·  Clicca di nuovo questo badge per riscuoterla e autorizzare i successivi."
+		text = "✦ REWARD READY  ·  Click this badge again to claim it and authorize the next ones."
 	else:
-		text = "✓ RISCOSSO  ·  Il contratto ha autorizzato i nodi dipendenti."
+		text = "✓ CLAIMED  ·  The contract has authorized its dependent nodes."
 	_detail_status.text = text
 	_detail_status.add_theme_color_override("font_color", Color("ffe17a") if status == "claimable" else Color("a9c8d1"))
 
@@ -650,12 +650,12 @@ func _on_achievement_updated(_achievement_id: String) -> void:
 
 func _on_achievement_claimable(achievement_id: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("OBIETTIVO PRONTO · %s · premi J" % str(definition.get("title", "")))
+	_show_notification("OBJECTIVE READY · %s · press J" % str(definition.get("title", "")))
 
 
 func _on_achievement_claimed(achievement_id: String, reward_label: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("RICOMPENSA RISCOSSA · %s · %s" % [str(definition.get("title", "")), reward_label])
+	_show_notification("REWARD CLAIMED · %s · %s" % [str(definition.get("title", "")), reward_label])
 
 
 func _show_notification(message: String) -> void:

@@ -1,7 +1,7 @@
 extends Node
 
-## La riserva della tuta si ricarica dentro una cupola con atmosfera respirabile.
-## Ogni cupola ha una carica iniziale limitata, rifornita da una rete O₂ collegata.
+## Suit reserves recharge inside a dome with a breathable atmosphere.
+## Every dome has a limited initial reserve supplied by a connected O₂ network.
 signal changed(current: float, maximum: float)
 
 const MAX_OXYGEN := 100.0

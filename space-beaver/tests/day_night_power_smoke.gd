@@ -35,17 +35,17 @@ func _run() -> void:
 	clock.set_game_hour(12.0)
 	power_grid.battery_energy_kwh = 0.0
 	power_grid._update_energy(20.0)
-	_expect(is_equal_approx(power_grid.production_kw, 100.0), "A mezzogiorno un pannello collegato deve produrre 100 kW")
-	_expect(is_equal_approx(power_grid.demand_kw, 50.0), "Il consumatore collegato deve richiedere 50 kW")
-	_expect(is_equal_approx(power_grid.battery_energy_kwh, 50.0), "In un'ora il surplus di 50 kW deve caricare 50 kWh")
+	_expect(is_equal_approx(power_grid.production_kw, 100.0), "Test assertion failed")
+	_expect(is_equal_approx(power_grid.demand_kw, 50.0), "Test assertion failed")
+	_expect(is_equal_approx(power_grid.battery_energy_kwh, 50.0), "Test assertion failed")
 
 	clock.set_game_hour(0.0)
 	power_grid.battery_energy_kwh = 100.0
 	power_grid._update_energy(20.0)
-	_expect(is_zero_approx(power_grid.production_kw), "Di notte la produzione solare deve essere zero")
-	_expect(is_equal_approx(power_grid.battery_energy_kwh, 50.0), "In un'ora notturna il carico di 50 kW deve consumare 50 kWh")
-	_expect(power_grid.network_powered, "La batteria deve mantenere alimentata la rete di notte")
-	_expect(power_grid.network_status == "BATTERIA", "La UI deve indicare l'alimentazione da batteria")
+	_expect(is_zero_approx(power_grid.production_kw), "Test assertion failed")
+	_expect(is_equal_approx(power_grid.battery_energy_kwh, 50.0), "Test assertion failed")
+	_expect(power_grid.network_powered, "Test assertion failed")
+	_expect(power_grid.network_status == "BATTERY", "Test assertion failed")
 
 	clock.running = false
 	if failures.is_empty():

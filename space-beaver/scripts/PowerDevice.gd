@@ -119,8 +119,8 @@ func _process(delta: float) -> void:
 	if animation_timer < 0.10:
 		return
 	animation_timer = 0.0
-	# Il trasformatore ha 4 frame da 32x32. La batteria ha invece
-	# 4 frame per ciascuna delle 5 righe che indicano la carica.
+	# Transformer has four 32×32 frames. Battery instead has four frames for
+	# each of the five rows that show charge.
 	animation_frame = (animation_frame + 1) % 4
 	_refresh_texture()
 
@@ -155,41 +155,41 @@ func is_network_enabled() -> bool:
 
 func get_connection_label() -> String:
 	if solar_destroyed:
-		return "DISTRUTTO DALLA SABBIA — rimuovi e sostituisci"
+		return "DESTROYED BY SAND — remove and replace"
 	if incident_faulted:
-		return "GUASTO — avvicinati e ripara"
+		return "FAULT — approach and repair"
 	if not network_enabled:
 		return "DISCONNESSO"
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	if power_grid == null:
-		return "ABILITATO - RETE NON DISPONIBILE"
+		return "ENABLED - GRID UNAVAILABLE"
 	var connection_map: Dictionary = power_grid.get("connection_ok")
-	return "COLLEGATO ALLA RETE" if bool(connection_map.get(self, false)) else "ABILITATO - IN ATTESA DI RETE"
+	return "CONNECTED TO GRID" if bool(connection_map.get(self, false)) else "ENABLED - AWAITING GRID"
 
 
 func get_interaction_summary() -> String:
 	match device_id:
 		"solar_panel":
 			if solar_destroyed:
-				return "PANNELLO DISTRUTTO DALLA TEMPESTA · rimuovilo e acquistane uno nuovo"
+				return "PANEL DESTROYED BY STORM · remove it and buy a replacement"
 			if solar_tarped:
-				return "TELO PROTETTIVO INSTALLATO · T per rimuoverlo"
+				return "PROTECTIVE TARP INSTALLED · T to remove it"
 			var available_kw := 100.0 * WorldClock.get_solar_factor() * get_solar_output_multiplier()
-			return "Produzione disponibile: %d kW · sabbia: %s" % [roundi(available_kw), _sand_label()]
+			return "Available output: %d kW · sand: %s" % [roundi(available_kw), _sand_label()]
 		"transformer":
-			return "Trasformazione e isolamento delle sezioni elettriche"
+			return "Electrical-section transformation and isolation"
 		"battery":
-			return "Carica: %.1f / %.0f kWh  ·  %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(battery_charge_ratio * 100.0)]
+			return "Charge: %.1f / %.0f kWh  ·  %d%%" % [battery_energy_kwh, BATTERY_CAPACITY_KWH, roundi(battery_charge_ratio * 100.0)]
 		"ice_drill":
-			var summary := "Consumo: 60 kW  ·  Acqua: %.0f L/h" % get_fluid_output_rate_lph()
+			var summary := "Use: 60 kW  ·  Water: %.0f L/h" % get_fluid_output_rate_lph()
 			var refill_prompt := get_bottle_refill_prompt()
 			if not refill_prompt.is_empty():
 				return summary + "\n" + refill_prompt
 			var inventory := get_node_or_null("/root/Inventory")
 			if inventory != null and int(inventory.call("count_item", "water_bottle")) > 0:
-				return summary + "\nBORRACCIA: selezionala e premi E per ricaricarla"
+				return summary + "\nWATER BOTTLE: select it and press E to refill"
 			return summary
-	return "Dispositivo elettrico"
+	return "Electrical device"
 
 
 func set_incident_faulted(_target_id: String, value: bool) -> void:
@@ -255,8 +255,8 @@ func on_sand_buried() -> void:
 		if solar_burial_evaluated:
 			return
 		solar_burial_evaluated = true
-		# Un pannello esposto ha due terzi della probabilità di fallimento del
-		# guasto completo provocato dal terzo strato, e non è riparabile.
+		# An exposed panel has two-thirds of the third-layer total-failure chance
+		# and cannot be repaired.
 		if randf() < 2.0 / 3.0:
 			solar_destroyed = true
 			network_enabled = false
@@ -267,7 +267,7 @@ func on_sand_buried() -> void:
 				power_grid.call("request_rebuild")
 			var sandstorms := get_node_or_null("/root/SandstormManager")
 			if sandstorms != null:
-				sandstorms.call("show_notification", "PANNELLO SOLARE DISTRUTTO\nLa sabbia ha danneggiato le celle: rimuovilo e acquistane uno nuovo.")
+				sandstorms.call("show_notification", "SOLAR PANEL DESTROYED\nSand damaged the cells: remove it and buy a replacement.")
 		return
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
@@ -304,20 +304,20 @@ func get_solar_output_multiplier() -> float:
 
 
 func _sand_label() -> String:
-	return ["PULITO", "SPORCO", "COPERTO", "SEPOLTO"][sand_accumulation]
+	return ["CLEAN", "DIRTY", "COVERED", "BURIED"][sand_accumulation]
 
 
 func _incident_display_name() -> String:
 	match device_id:
 		"solar_panel":
-			return "PANNELLO SOLARE"
+			return "SOLAR PANEL"
 		"transformer":
-			return "TRASFORMATORE"
+			return "TRANSFORMER"
 		"battery":
-			return "BATTERIA"
+			return "BATTERY"
 		"ice_drill":
-			return "TRIVELLA DI GHIACCIO"
-	return "DISPOSITIVO ELETTRICO"
+			return "ICE DRILL"
+	return "ELECTRICAL DEVICE"
 
 
 func get_bottle_refill_prompt() -> String:
@@ -332,11 +332,11 @@ func get_bottle_refill_prompt() -> String:
 	var capacity := float(bottle.get("capacity_liters", 2.0))
 	var current := float(bottle.get("liters", 0.0))
 	if current >= capacity - 0.001:
-		return "BORRACCIA GIÀ PIENA"
+		return "WATER BOTTLE ALREADY FULL"
 	if water_storage_liters < 0.05:
-		var production_state := "trivella in produzione" if powered else "alimenta la trivella per produrre altra acqua"
-		return "BORRACCIA · riserva vuota · %s" % production_state
-	return "E · RIEMPI BORRACCIA · riserva %.1f L%s" % [water_storage_liters, (" · " + refill_feedback if not refill_feedback.is_empty() else "")]
+		var production_state := "drill producing" if powered else "power the drill to produce more water"
+		return "WATER BOTTLE · reserve empty · %s" % production_state
+	return "E · REFILL WATER BOTTLE · reserve %.1f L%s" % [water_storage_liters, (" · " + refill_feedback if not refill_feedback.is_empty() else "")]
 
 
 func try_refill_selected_bottle(player: Node2D) -> bool:
@@ -351,14 +351,14 @@ func try_refill_selected_bottle(player: Node2D) -> bool:
 	if str(bottle.get("id", "")) != "water_bottle":
 		return false
 	if water_storage_liters < 0.05:
-		refill_feedback = "riserva acqua insufficiente"
+		refill_feedback = "insufficient water reserve"
 		return true
 	var transferred := float(inventory.call("refill_selected_water_bottle", water_storage_liters))
 	if transferred <= 0.0001:
-		refill_feedback = "borraccia già piena"
+		refill_feedback = "water bottle already full"
 		return true
 	water_storage_liters = maxf(0.0, water_storage_liters - transferred)
-	refill_feedback = "+%.1f L ricaricati" % transferred
+	refill_feedback = "+%.1f L refilled" % transferred
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null:
 		achievements.call("record", "refill_bottle")
@@ -444,7 +444,7 @@ static func footprint_cells_for(item_id: String, cell: Vector2i, new_placement_r
 	if item_id == "solar_panel":
 		native_cells = [cell, cell + Vector2i.RIGHT]
 	elif item_id in ["transformer", "ice_drill", "rock_drill"]:
-		# Lo sprite occupa due colonne e tre righe attorno alla riga di aggancio.
+		# Sprite occupies two columns and three rows around the attachment row.
 		native_cells = [cell + Vector2i.UP, cell + Vector2i.RIGHT + Vector2i.UP, cell, cell + Vector2i.RIGHT, cell + Vector2i.DOWN, cell + Vector2i.RIGHT + Vector2i.DOWN]
 	var rotated: Array[Vector2i] = []
 	for native_cell in native_cells:
@@ -495,57 +495,57 @@ func get_machine_specs() -> Dictionary:
 		"solar_panel":
 			var solar_connection := get_connection_label()
 			return {
-				"title": "PANNELLO SOLARE FOTOVOLTAICO",
-				"category": "GENERAZIONE ELETTRICA",
-				"status": solar_connection if not network_enabled else ("PRODUZIONE ATTIVA" if powered else "NESSUNA PRODUZIONE"),
+				"title": "PHOTOVOLTAIC SOLAR PANEL",
+				"category": "ELECTRICAL GENERATION",
+				"status": solar_connection if not network_enabled else ("OUTPUT ACTIVE" if powered else "NO OUTPUT"),
 				"status_color": Color("72eda0") if powered else Color("ffb45d"),
-				"principle": "Le celle fotovoltaiche convertono i fotoni solari in corrente continua tramite l'effetto fotovoltaico nei semiconduttori.",
-				"specs": ["Potenza nominale: 100 kW", "Produzione: proporzionale alla luce solare", "Produzione notturna: 0 kW", "Uscita elettrica: lato destro", "Rete: %s" % solar_connection],
+				"principle": "Photovoltaic cells convert solar photons into direct current through the photovoltaic effect in semiconductors.",
+				"specs": ["Rated power: 100 kW", "Output: proportional to sunlight", "Night output: 0 kW", "Electrical output: right side", "Grid: %s" % solar_connection],
 			}
 		"transformer":
 			var transformer_connection := get_connection_label()
 			return {
-				"title": "TRASFORMATORE DI POTENZA",
-				"category": "CONDIZIONAMENTO ELETTRICO",
-				"status": transformer_connection if not network_enabled else ("IN FUNZIONE" if powered else transformer_connection),
+				"title": "POWER TRANSFORMER",
+				"category": "ELECTRICAL CONDITIONING",
+				"status": transformer_connection if not network_enabled else ("OPERATING" if powered else transformer_connection),
 				"status_color": Color("72eda0") if powered else Color("ffb45d"),
-				"principle": "L'induzione elettromagnetica trasferisce energia tra avvolgimenti isolati e adatta tensione e corrente alla rete di accumulo.",
-				"specs": ["Ingresso: rete pannelli", "Uscita: rete trasformata", "Canali elettrici separati", "Ogni trasformatore crea una rete indipendente", "Rete: %s" % transformer_connection],
+				"principle": "Electromagnetic induction transfers energy between isolated windings and adapts voltage and current for the storage network.",
+				"specs": ["Input: panel network", "Output: transformed network", "Separate electrical channels", "Every transformer creates an independent network", "Grid: %s" % transformer_connection],
 			}
 		"battery":
 			var charge_percent := roundi(battery_charge_ratio * 100.0)
 			var battery_connection := get_connection_label()
 			var battery_status := battery_connection
-			if network_enabled and battery_connection == "COLLEGATO ALLA RETE":
-				battery_status = "CARICA %d%%" % charge_percent
+			if network_enabled and battery_connection == "CONNECTED TO GRID":
+				battery_status = "CHARGE %d%%" % charge_percent
 			return {
-				"title": "BATTERIA DI ACCUMULO",
-				"category": "STOCCAGGIO ENERGETICO",
+				"title": "STORAGE BATTERY",
+				"category": "ENERGY STORAGE",
 				"status": battery_status,
 				"status_color": Color("69c8ff") if charge_percent > 0 else Color("ff655d"),
-				"principle": "L'energia elettrica viene immagazzinata come energia chimica reversibile e restituita alla rete quando la produzione solare non copre il carico.",
-				"specs": ["Capacita': %.0f kWh" % BATTERY_CAPACITY_KWH, "Energia propria: %.1f kWh" % battery_energy_kwh, "Stato di carica: %d%%" % charge_percent, "Flusso: %s" % _flow_label(), "Alimentazione notturna: disponibile", "Rete: %s" % battery_connection],
+				"principle": "Electrical energy is stored as reversible chemical energy and returned to the grid when solar output cannot cover load.",
+				"specs": ["Capacity: %.0f kWh" % BATTERY_CAPACITY_KWH, "Stored energy: %.1f kWh" % battery_energy_kwh, "State of charge: %d%%" % charge_percent, "Flow: %s" % _flow_label(), "Night supply: available", "Grid: %s" % battery_connection],
 			}
 		"ice_drill":
-			var pipe_status := "CONNESSA - ACQUA IN RETE" if fluid_output_connected else "USCITA IDRICA NON CONNESSA"
+			var pipe_status := "CONNECTED - WATER ON NETWORK" if fluid_output_connected else "WATER OUTPUT NOT CONNECTED"
 			var drill_connection := get_connection_label()
 			return {
-				"title": "TRIVELLA DI ESTRAZIONE DEL GHIACCIO",
-				"category": "ISRU - UTILIZZO RISORSE IN SITU",
-				"status": drill_connection if not network_enabled else ("OPERATIVA" if powered else drill_connection),
+				"title": "ICE EXTRACTION DRILL",
+				"category": "ISRU - IN-SITU RESOURCE UTILIZATION",
+				"status": drill_connection if not network_enabled else ("OPERATIONAL" if powered else drill_connection),
 				"status_color": Color("72eda0") if powered else Color("ff655d"),
-				"principle": "Modello ISRU del gioco: la testa perfora regolite marziana contenente ghiaccio; il ghiaccio recuperato viene separato e fuso per ottenere acqua liquida.",
-				"specs": ["Assorbimento elettrico: 60 kW", "Produzione nominale: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Uscita: destra, cella centrale", "Tubazione: %s" % pipe_status, "Acqua estratta: %.1f L" % water_extracted_liters, "Riserva trivella: %.1f / %.0f L" % [water_storage_liters, ICE_DRILL_WATER_STORAGE_CAPACITY_L], "Acqua trasportata: %.1f L" % water_transported_liters, "Borraccia: selezionala e premi E vicino alla trivella", "Rete: %s" % drill_connection],
+				"principle": "Game ISRU model: the drill head bores ice-bearing Martian regolith; recovered ice is separated and melted into liquid water.",
+				"specs": ["Electrical demand: 60 kW", "Rated output: %.0f L/h" % ICE_DRILL_WATER_L_PER_HOUR, "Output: right, center cell", "Piping: %s" % pipe_status, "Water extracted: %.1f L" % water_extracted_liters, "Drill reserve: %.1f / %.0f L" % [water_storage_liters, ICE_DRILL_WATER_STORAGE_CAPACITY_L], "Water transferred: %.1f L" % water_transported_liters, "Water bottle: select it and press E near the drill", "Grid: %s" % drill_connection],
 			}
-	return {"title": "MACCHINARIO", "category": "SISTEMA", "status": "SCONOSCIUTO", "status_color": Color.WHITE, "principle": "", "specs": []}
+	return {"title": "MACHINE", "category": "SYSTEM", "status": "UNKNOWN", "status_color": Color.WHITE, "principle": "", "specs": []}
 
 
 func _flow_label() -> String:
 	if flow_state > 0:
-		return "IN CARICA"
+		return "CHARGING"
 	if flow_state < 0:
-		return "IN SCARICA"
-	return "STABILE"
+		return "DISCHARGING"
+	return "STABLE"
 
 
 func _refresh_texture() -> void:
@@ -583,8 +583,8 @@ func _refresh_texture() -> void:
 		atlas.atlas = BATTERY_SHEET
 		if sand_accumulation > 0:
 			sprite.modulate = Color(1.0, 0.76 - float(sand_accumulation) * 0.10, 0.56 - float(sand_accumulation) * 0.10)
-		# Riga 0 = piena, riga 4 = vuota. Ogni riga contiene i 4
-		# frame dell'animazione, che non devono mai cambiare la carica.
+		# Row 0 is full and row 4 is empty. Every row contains four animation
+		# frames that must never alter charge.
 		var charge_band := clampi(floori(battery_charge_ratio * 5.0), 0, 4)
 		var battery_row := 4 - charge_band
 		atlas.region = Rect2(
@@ -669,8 +669,8 @@ func _setup_collision() -> void:
 			shape.size = Vector2(14.0, 12.0)
 			collision.position = Vector2(0.0, 2.0)
 		"ice_drill":
-			# Solo la base occupa il suolo: la parte alta resta attraversabile
-			# quando il giocatore cammina dietro alla trivella.
+			# Only the base occupies ground; the upper portion stays passable when
+			# the player walks behind the drill.
 			shape.size = Vector2(27.0, 15.0)
 			collision.position = Vector2(0.0, 15.0)
 		_:

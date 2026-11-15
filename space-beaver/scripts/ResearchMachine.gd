@@ -1,8 +1,8 @@
 class_name ResearchMachine
 extends Node2D
 
-## Strumenti scientifici trasportati in qualunque cupola abitativa. Ogni analisi consuma
-## un singolo campione di roccia e genera un rapporto da trasmettere alla Terra.
+## Scientific instruments installed in any habitat dome. Each analysis consumes one
+## rock sample and produces a report to transmit to Earth.
 
 const TILE_SIZE := 16
 const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
@@ -18,31 +18,31 @@ const UPGRADE_COSTS: Array[int] = [175_000_000, 250_000_000, 350_000_000, 500_00
 
 const DEFINITIONS := {
 	"xrd_diffractometer": {
-		"name": "Diffrattometro a raggi X",
-		"short_name": "DIFFRATTOMETRO XRD",
+		"name": "X-ray Diffractometer",
+		"short_name": "XRD DIFFRACTOMETER",
 		"size": Vector2i(32, 16),
 		"seconds": 150.0,
 		"reward": 1_000_000_000,
 		"biosignature_chance": 0.20,
-		"principle": "La diffrazione dei raggi X identifica le fasi cristalline del campione dalla geometria del reticolo atomico.",
+		"principle": "X-ray diffraction identifies the sample's crystalline phases from the geometry of its atomic lattice.",
 	},
 	"raman_spectrometer": {
-		"name": "Spettrometro Raman",
-		"short_name": "SPETTROMETRO RAMAN",
+		"name": "Raman Spectrometer",
+		"short_name": "RAMAN SPECTROMETER",
 		"size": Vector2i(32, 16),
 		"seconds": 180.0,
 		"reward": 1_300_000_000,
 		"biosignature_chance": 0.35,
-		"principle": "Lo scattering Raman del laser rivela i legami molecolari e la composizione mineralogica senza distruggere il campione.",
+		"principle": "Laser Raman scattering reveals molecular bonds and mineral composition without destroying the sample.",
 	},
 	"icp_ms": {
-		"name": "Spettrometro ICP-MS",
+		"name": "ICP-MS Spectrometer",
 		"short_name": "ICP-MS",
 		"size": Vector2i(48, 16),
 		"seconds": 240.0,
 		"reward": 1_900_000_000,
 		"biosignature_chance": 0.55,
-		"principle": "Il plasma accoppiato induttivamente ionizza il campione; lo spettrometro di massa misura gli elementi e le loro abbondanze.",
+		"principle": "Inductively coupled plasma ionizes the sample; mass spectrometry measures its elements and their abundances.",
 	},
 }
 
@@ -107,11 +107,11 @@ static func _texture_for_state(machine_id_value: String, machine_state: State) -
 	var resource_path := "res://assets/sprites/research/%s_%s.png" % [_asset_prefix_for(machine_id_value), state_key]
 	if texture_cache.has(resource_path):
 		return texture_cache[resource_path] as Texture2D
-	# Gli sprite vengono letti direttamente dal PNG: il gioco non dipende dalla
-	# cache .godot/imported, che può non esistere alla prima apertura del progetto.
+	# Sprites load directly from PNG files, so the game does not depend on the
+	# .godot/imported cache, which may not exist when the project first opens.
 	var image := Image.load_from_file(ProjectSettings.globalize_path(resource_path))
 	if image == null or image.is_empty():
-		push_error("Impossibile caricare lo sprite di ricerca: %s" % resource_path)
+		push_error("Unable to load research sprite: %s" % resource_path)
 		return null
 	var texture := ImageTexture.create_from_image(image)
 	texture_cache[resource_path] = texture
@@ -154,9 +154,8 @@ static func can_place_at(machine_id_value: String, world_position: Vector2, new_
 	var footprint := footprint_rect_for(machine_id_value, world_position, new_placement_rotation)
 	var host_dome: Node2D
 	for dome in tree.get_nodes_in_group("base_domes"):
-		# Tutte le cupole abitative sono locali tecnici validi. La serra usa la
-		# stessa infrastruttura della cupola, ma le aiuole non devono venire
-		# occupate da laboratori o macchinari.
+		# All habitat domes are valid technical rooms. The greenhouse uses the same
+		# dome infrastructure, but laboratory machines must not occupy its beds.
 		if not dome is Node2D or dome.is_in_group("greenhouses"):
 			continue
 		var dome_node := dome as Node2D
@@ -261,8 +260,8 @@ func _process(delta: float) -> void:
 	if is_preview:
 		return
 	if state == State.ANALYZING:
-		# I laboratori ad alta precisione lavorano soltanto con la rete attiva:
-		# mentre analizzano richiedono 240 kW, più di due pannelli solari.
+		# High-precision laboratories work only with an active grid: while analyzing,
+		# they demand 240 kW, more than two solar panels provide individually.
 		if powered:
 			study_elapsed = minf(get_analysis_seconds(), study_elapsed + maxf(delta, 0.0))
 		if study_elapsed >= get_analysis_seconds():
@@ -281,8 +280,8 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	# Il selettore dei campioni è una finestra modale propria del laboratorio:
-	# Esc deve chiuderla anche se il player è bloccato da UIState.
+	# The sample picker is the laboratory's own modal window. Escape must close it
+	# even when UIState blocks the player.
 	if _sample_picker_root == null or not _sample_picker_root.visible:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
@@ -360,10 +359,10 @@ func _build_sample_picker_ui() -> void:
 	var contents := VBoxContainer.new()
 	contents.add_theme_constant_override("separation", 8)
 	panel.add_child(contents)
-	var title := _picker_label("// SELEZIONA CAMPIONE DA ANALIZZARE //", 17, Color("ffe38a"))
+	var title := _picker_label("// SELECT SAMPLE FOR ANALYSIS //", 17, Color("ffe38a"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	contents.add_child(title)
-	var hint := _picker_label("Hai più pietre: scegli la pila da consumare nel laboratorio.", 11, Color("b8d0d6"))
+	var hint := _picker_label("You have multiple rocks: choose the stack the laboratory will consume.", 11, Color("b8d0d6"))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	contents.add_child(hint)
@@ -375,7 +374,7 @@ func _build_sample_picker_ui() -> void:
 	_sample_picker_rows.add_theme_constant_override("separation", 6)
 	scroll.add_child(_sample_picker_rows)
 	var close := Button.new()
-	close.text = "[ ANNULLA · ESC ]"
+	close.text = "[ CANCEL · ESC ]"
 	close.custom_minimum_size = Vector2(220.0, 34.0)
 	close.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close.add_theme_font_override("font", UI_FONT)
@@ -397,7 +396,7 @@ func _open_sample_picker(player: Node2D, choices: Array) -> void:
 		var item_id := str(choice.get("id", ""))
 		var definition: Dictionary = ROCK_RESOURCE.definition_for_item_id(item_id)
 		var rarity := str(definition.get("rarity", "common"))
-		var rarity_label := "ULTRA RARO" if rarity == "ultra_rare" else ("RARO" if rarity == "rare" else "COMUNE")
+		var rarity_label := "ULTRA RARE" if rarity == "ultra_rare" else ("RARE" if rarity == "rare" else "COMMON")
 		var button := Button.new()
 		button.text = ""
 		button.custom_minimum_size = Vector2(660.0, 58.0)
@@ -422,7 +421,7 @@ func _open_sample_picker(player: Node2D, choices: Array) -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(icon)
-		var text := _picker_label("%s  ×%d\n%s · %s · valore ricerca ×%.2f" % [str(choice.get("name", "Pietra")).to_upper(), int(choice.get("count", 0)), str(definition.get("biome", "provenienza sconosciuta")), rarity_label, float(definition.get("research_multiplier", 1.0))], 12, Color("dcecef"))
+		var text := _picker_label("%s  ×%d\n%s · %s · research value ×%.2f" % [str(choice.get("name", "Rock")).to_upper(), int(choice.get("count", 0)), str(definition.get("biome", "unknown origin")), rarity_label, float(definition.get("research_multiplier", 1.0))], 12, Color("dcecef"))
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -509,7 +508,7 @@ func _update_interaction_label() -> void:
 
 
 func get_display_name() -> String:
-	return str(get_definition(machine_id).get("name", "Laboratorio scientifico"))
+	return str(get_definition(machine_id).get("name", "Scientific Laboratory"))
 
 
 func get_footprint_rect() -> Rect2:
@@ -541,9 +540,9 @@ func get_base_analysis_seconds() -> float:
 
 
 func get_power_connection_cell() -> Vector2i:
-	# I laboratori stanno dentro una cupola abitativa, dove i cavi non devono
-	# attraversare pavimento e pareti. Usano perciò il raccordo elettrico esterno
-	# della cupola che li ospita: il loro assorbimento resta comunque separato.
+	# Laboratories sit inside habitat domes, where cables must not cross floors or
+	# walls. They use their host dome's exterior electrical connector, while their
+	# power demand remains separate.
 	var host_dome := _get_host_base_dome()
 	if host_dome != null and host_dome.has_method("get_power_connection_cell"):
 		return Vector2i(host_dome.call("get_power_connection_cell"))
@@ -581,25 +580,24 @@ func set_powered(value: bool) -> void:
 
 func get_power_connection_label() -> String:
 	if not network_enabled:
-		return "RETE DISATTIVATA"
+		return "GRID DISABLED"
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	if power_grid == null:
-		return "RETE NON DISPONIBILE"
-	return "COLLEGATO ALLA RETE" if bool(power_grid.get("connection_ok").get(self, false)) else "CAVO ELETTRICO NON COLLEGATO"
+		return "GRID UNAVAILABLE"
+	return "CONNECTED TO GRID" if bool(power_grid.get("connection_ok").get(self, false)) else "POWER CABLE NOT CONNECTED"
 
 
 func get_reward() -> int:
-	# Dopo la consegna la UI e i chiamanti possono ancora chiedere quale fosse il
-	# valore del rapporto appena spedito: non perdiamo quel dato azzerando il
-	# campione nella transizione allo stato IDLE.
+	# After delivery, the UI and callers can still ask for the report's value. Keep
+	# it instead of losing it when the sample resets during the transition to IDLE.
 	if state == State.IDLE and sample_id.is_empty() and last_report_reward > 0:
 		return last_report_reward
 	var multiplier := 1.0
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null and achievements.has_method("get_research_reward_multiplier"):
 		multiplier = float(achievements.call("get_research_reward_multiplier", machine_id, sample_rarity))
-	# Il valore della ricerca appartiene al campione, non soltanto alla macchina:
-	# una scoperta rara estratta in un bioma remoto genera un rapporto più utile.
+	# Research value belongs to the sample, not only the machine: a rare discovery
+	# extracted in a remote biome produces a more valuable report.
 	var reward := roundi(float(get_definition(machine_id).get("reward", 0)) * sample_research_multiplier * multiplier)
 	if sample_is_primordial_ice and ancient_life_detected:
 		reward += ANCIENT_LIFE_REPORT_BONUS
@@ -616,24 +614,24 @@ func get_remaining_seconds() -> float:
 
 func get_prompt_for_player(_player: Node2D) -> String:
 	if state == State.ANALYZING:
-		var analysis_status := "%s · analisi %s" % [str(get_definition(machine_id).get("short_name", "RICERCA")), _format_time(get_remaining_seconds())]
+		var analysis_status := "%s · analysis %s" % [str(get_definition(machine_id).get("short_name", "RESEARCH")), _format_time(get_remaining_seconds())]
 		if sample_is_primordial_ice:
-			analysis_status += "\nMODELLO DI GIOCO · segnale compatibile %.0f%%" % (biosignature_chance * 100.0)
-		return analysis_status if powered else analysis_status + "\nIN PAUSA · COLLEGA 240 kW"
+			analysis_status += "\nGAME MODEL · compatible signal %.0f%%" % (biosignature_chance * 100.0)
+		return analysis_status if powered else analysis_status + "\nPAUSED · CONNECT 240 kW"
 	if state == State.COMPLETE:
-		var report_header := "SEGNALE COMPATIBILE RILEVATO" if sample_is_primordial_ice and ancient_life_detected else "RAPPORTO PRONTO"
+		var report_header := "COMPATIBLE SIGNAL DETECTED" if sample_is_primordial_ice and ancient_life_detected else "REPORT READY"
 		if not report_signed:
-			return "%s · FIRMA NECESSARIA\nE · FIRMA RAPPORTO · %s" % [report_header, _format_money(get_reward())]
-		return "%s · RAPPORTO FIRMATO\nE · INVIA ALLA TERRA · %s" % [report_header, _format_money(get_reward())]
+			return "%s · SIGNATURE REQUIRED\nE · SIGN REPORT · %s" % [report_header, _format_money(get_reward())]
+		return "%s · REPORT SIGNED\nE · SEND TO EARTH · %s" % [report_header, _format_money(get_reward())]
 	if upgrade_level >= MAX_UPGRADE_LEVEL:
-		return "E · ANALIZZA UNA PIETRA\nUPGRADE MASSIMO · 40 s"
+		return "E · ANALYZE A ROCK\nMAXIMUM UPGRADE · 40 s"
 	var inventory := get_node_or_null("/root/Inventory")
 	var upgrade_line := "U · UPGRADE %d→%d · %s" % [upgrade_level, upgrade_level + 1, _format_money(get_next_upgrade_cost())]
 	if inventory != null:
 		var available_sample: Dictionary = inventory.call("get_first_rock_sample")
 		if not available_sample.is_empty():
-			return "E · ANALIZZA UNA PIETRA\n" + upgrade_line
-	return "PORTA UNA PIETRA AL LABORATORIO\n" + upgrade_line
+			return "E · ANALYZE A ROCK\n" + upgrade_line
+	return "BRING A ROCK TO THE LABORATORY\n" + upgrade_line
 
 
 func try_interact(player: Node2D) -> bool:
@@ -665,9 +663,9 @@ func _start_analysis(sample: Dictionary) -> bool:
 	if sample.is_empty():
 		return false
 	sample_id = str(sample.get("id", ""))
-	sample_name = str(sample.get("name", "Pietra"))
+	sample_name = str(sample.get("name", "Rock"))
 	var sample_definition: Dictionary = ROCK_RESOURCE.definition_for_item_id(sample_id)
-	sample_biome = str(sample_definition.get("biome", "Provenienza non catalogata"))
+	sample_biome = str(sample_definition.get("biome", "Uncatalogued origin"))
 	sample_rarity = str(sample_definition.get("rarity", "common"))
 	sample_research_multiplier = maxf(0.1, float(sample_definition.get("research_multiplier", 1.0)))
 	sample_is_primordial_ice = bool(sample_definition.get("deep_ice", false))
@@ -696,7 +694,7 @@ func get_next_upgrade_cost() -> int:
 func try_upgrade(player: Node2D) -> bool:
 	if is_preview or player == null or player.global_position.distance_to(global_position) > INTERACTION_DISTANCE:
 		return false
-	# Non cambiamo la calibrazione nel mezzo di un esperimento già avviato.
+	# Do not change calibration in the middle of an experiment already underway.
 	if state != State.IDLE or upgrade_level >= MAX_UPGRADE_LEVEL:
 		return false
 	var economy := get_node_or_null("/root/Economy")
@@ -727,8 +725,8 @@ func _deliver_report() -> void:
 	last_report_reward = report_reward
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null:
-		# Un rapporto non è solo una vendita: alimenta le campagne scientifiche
-		# della tavola obiettivi (biomi, rarità, strumenti e trasmissioni).
+		# A report is more than a sale: it advances scientific campaigns in the
+		# objective board (biomes, rarities, instruments, and transmissions).
 		if achievements.has_method("record_research_report"):
 			achievements.call("record_research_report", machine_id, sample_id, sample_biome, sample_rarity)
 		else:
@@ -757,9 +755,8 @@ func pickup() -> bool:
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory == null or not bool(inventory.call("add_item", machine_id, get_display_name(), 1, true)):
 		return false
-	# Smontare un laboratorio interrompe l'eventuale analisi/rapporto, ma deve
-	# essere sempre possibile: il giocatore non può rimanere bloccato con una
-	# macchina dentro una cupola.
+	# Dismantling a laboratory interrupts its analysis or report, but must always
+	# be possible: the player cannot become stuck with a machine inside a dome.
 	state = State.IDLE
 	report_signed = false
 	study_elapsed = 0.0
@@ -769,21 +766,21 @@ func pickup() -> bool:
 
 
 func get_machine_specs() -> Dictionary:
-	var status := "PRONTO AD ANALIZZARE"
-	var detail := "in attesa di un campione"
+	var status := "READY FOR ANALYSIS"
+	var detail := "awaiting a sample"
 	var color := Color("8cd9ff")
 	if state == State.ANALYZING:
-		status = "ANALISI IN CORSO" if powered else "ANALISI IN PAUSA · RETE ASSENTE"
-		detail = "%s · %s · %s · restano %s" % [sample_name, sample_biome, _rarity_label(), _format_time(get_remaining_seconds())]
+		status = "ANALYSIS IN PROGRESS" if powered else "ANALYSIS PAUSED · GRID UNAVAILABLE"
+		detail = "%s · %s · %s · %s remaining" % [sample_name, sample_biome, _rarity_label(), _format_time(get_remaining_seconds())]
 		if sample_is_primordial_ice:
-			detail += " · segnale compatibile (modello) %.0f%%" % (biosignature_chance * 100.0)
+			detail += " · compatible signal (model) %.0f%%" % (biosignature_chance * 100.0)
 		color = Color("ffe38a")
 	elif state == State.COMPLETE:
-		status = "SEGNALE COMPATIBILE RILEVATO" if ancient_life_detected else "RAPPORTO PRONTO"
-		detail = "%s · %s · %s · %s · %s" % [sample_name, sample_biome, _rarity_label(), "firmare il rapporto" if not report_signed else "pronto per l'invio", _format_money(get_reward())]
+		status = "COMPATIBLE SIGNAL DETECTED" if ancient_life_detected else "REPORT READY"
+		detail = "%s · %s · %s · %s · %s" % [sample_name, sample_biome, _rarity_label(), "sign report" if not report_signed else "ready to send", _format_money(get_reward())]
 		color = Color("7fffd4") if ancient_life_detected else Color("72eda0")
 	var research_multiplier := 1.0
-	var contracts := "in attesa del primo rapporto"
+	var contracts := "awaiting first report"
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null:
 		if achievements.has_method("get_research_reward_multiplier"):
@@ -792,18 +789,18 @@ func get_machine_specs() -> Dictionary:
 			contracts = str(achievements.call("get_research_contract_summary", machine_id))
 	return {
 		"title": get_display_name().to_upper(),
-		"category": "RICERCA SCIENTIFICA · CUPOLA ABITATIVA",
+		"category": "SCIENTIFIC RESEARCH · HABITAT DOME",
 		"status": status,
 		"status_color": color,
 		"principle": str(get_definition(machine_id).get("principle", "")),
-		"specs": ["Campione: %s" % detail, "Valore campione: ×%.2f · contratti: ×%.2f" % [sample_research_multiplier, research_multiplier], "Segnale compatibile (modello di gioco): %s" % ("RILEVATO · bonus %s" % _format_money(ANCIENT_LIFE_REPORT_BONUS) if ancient_life_detected else ("chance %.0f%%" % (biosignature_chance * 100.0) if sample_is_primordial_ice else "non applicabile")), "Contratti Terra: %s" % contracts, "Upgrade: livello %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Durata analisi: %s (base %s, massimo upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Prossimo upgrade: %s" % ("MASSIMO" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Assorbimento analisi: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Rete: %s" % get_power_connection_label(), "Ricompensa rapporto: %s" % _format_money(get_reward()), "E: pietra / rapporto · U: upgrade"],
+		"specs": ["Sample: %s" % detail, "Sample value: ×%.2f · contracts: ×%.2f" % [sample_research_multiplier, research_multiplier], "Compatible signal (game model): %s" % ("DETECTED · bonus %s" % _format_money(ANCIENT_LIFE_REPORT_BONUS) if ancient_life_detected else ("chance %.0f%%" % (biosignature_chance * 100.0) if sample_is_primordial_ice else "not applicable")), "Earth contracts: %s" % contracts, "Upgrade: level %d/%d" % [upgrade_level, MAX_UPGRADE_LEVEL], "Analysis duration: %s (base %s, maximum upgrade: 0:40)" % [_format_time(get_analysis_seconds()), _format_time(get_base_analysis_seconds())], "Next upgrade: %s" % ("MAXIMUM" if upgrade_level >= MAX_UPGRADE_LEVEL else _format_money(get_next_upgrade_cost())), "Analysis demand: %.0f kW" % ANALYSIS_POWER_DEMAND_KW, "Grid: %s" % get_power_connection_label(), "Report reward: %s" % _format_money(get_reward()), "E: rock / report · U: upgrade"],
 	}
 
 
 func _rarity_label() -> String:
 	if sample_rarity == "ultra_rare":
-		return "ULTRA RARO"
-	return "RARO" if sample_rarity == "rare" else "COMUNE"
+		return "ULTRA RARE"
+	return "RARE" if sample_rarity == "rare" else "COMMON"
 
 
 func _refresh_visual() -> void:

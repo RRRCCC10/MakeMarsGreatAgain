@@ -15,10 +15,10 @@ const POTATO_TEXTURE := preload("res://assets/sprites/greenhouse/potato_first_cy
 const RESEARCH_MACHINE_SCRIPT := preload("res://scripts/ResearchMachine.gd")
 const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 const SHOP_SECTIONS := [
-	{"label": "TUTE", "categories": ["equipment"]},
-	{"label": "BASE & INFRASTRUTTURE", "categories": ["habitats", "energy", "life_support"]},
-	{"label": "RISORSE & RICERCA", "categories": ["extraction", "research"]},
-	{"label": "BIOINGEGNERIA", "categories": ["bioengineering"]},
+	{"label": "SUITS", "categories": ["equipment"]},
+	{"label": "BASE & INFRASTRUCTURE", "categories": ["habitats", "energy", "life_support"]},
+	{"label": "RESOURCES & RESEARCH", "categories": ["extraction", "research"]},
+	{"label": "BIOENGINEERING", "categories": ["bioengineering"]},
 ]
 
 var overlay: ColorRect
@@ -62,8 +62,8 @@ func _build_ui() -> void:
 	root.add_child(overlay)
 	var panel := PanelContainer.new()
 	panel.name = "ResponsiveShopPanel"
-	# Lo shop non usa più un rettangolo fisso: in una finestra più ampia le
-	# sezioni e le card ricevono spazio reale, senza tagliare il contenuto.
+	# The store uses a responsive panel so wider windows give sections and cards
+	# real space instead of clipping their content.
 	panel.anchor_left = 0.04
 	panel.anchor_top = 0.04
 	panel.anchor_right = 0.96
@@ -80,10 +80,10 @@ func _build_ui() -> void:
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 9)
 	panel.add_child(rows)
-	var title := _label("// EMPORIO LOGISTICO MISSIONE //", 20, Color("ffe38a"))
+	var title := _label("// MISSION LOGISTICS STORE //", 20, Color("ffe38a"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(title)
-	var subtitle := _label("B per chiudere  ·  Gli acquisti ravvicinati viaggiano nella stessa capsula", 12, Color("c5d2d4"))
+	var subtitle := _label("B to close  ·  Nearby purchases travel in the same capsule", 12, Color("c5d2d4"))
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(subtitle)
 	rows.add_child(HSeparator.new())
@@ -109,7 +109,7 @@ func _build_ui() -> void:
 	rows.add_child(message_label)
 	var close_button := Button.new()
 	close_button.add_theme_font_override("font", UI_FONT)
-	close_button.text = "[ CHIUDI EMPORIO ]"
+	close_button.text = "[ CLOSE STORE ]"
 	close_button.custom_minimum_size = Vector2(220, 34)
 	close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_button.add_theme_stylebox_override("normal", _button_style(Color("304c58")))
@@ -139,7 +139,7 @@ func _add_category_group(parent: VBoxContainer, category: String) -> void:
 	group.add_theme_constant_override("separation", 7)
 	parent.add_child(group)
 	if category == "bioengineering":
-		group.add_child(_label("▸ PROGRAMMA SEMI GM", 14, Color("86d4e5")))
+		group.add_child(_label("▸ GM SEED PROGRAM", 14, Color("86d4e5")))
 		_add_seed_program_card(group)
 		return
 	group.add_child(_label("▸ %s" % Shop.get_category_label(category), 14, Color("86d4e5")))
@@ -162,7 +162,7 @@ func _add_seed_program_card(parent: VBoxContainer) -> void:
 	rows.alignment = BoxContainer.ALIGNMENT_CENTER
 	rows.add_theme_constant_override("separation", 8)
 	card.add_child(rows)
-	var title := _label("SEMI DI PATATE GENETICAMENTE MODIFICATI", 16, Color("a9ed8c"))
+	var title := _label("GENETICALLY MODIFIED POTATO SEEDS", 16, Color("a9ed8c"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(title)
 	seed_program_label = _label("", 12, Color("c7d5d7"))
@@ -195,7 +195,7 @@ func _build_dome_config_view() -> VBoxContainer:
 	config.add_theme_constant_override("separation", 4)
 	var back := Button.new()
 	back.add_theme_font_override("font", UI_FONT)
-	back.text = "← TORNA ALLE SEZIONI DELLO SHOP"
+	back.text = "← RETURN TO STORE SECTIONS"
 	back.custom_minimum_size = Vector2(280, 30)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back.pressed.connect(_close_dome_config)
@@ -210,17 +210,17 @@ func _build_dome_config_view() -> VBoxContainer:
 	dome_config_title = _label("", 18, Color("e8f0ed"))
 	dome_config_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	config.add_child(dome_config_title)
-	var shield_header := _label("SCHERMATURE E MODULI", 14, Color("86d4e5"))
+	var shield_header := _label("SHIELDING AND MODULES", 14, Color("86d4e5"))
 	shield_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	config.add_child(shield_header)
 	var prices: Dictionary = Shop.get_dome_addon_prices()
-	dome_lead_checkbox = _make_dome_option("Piombo · solare −25%%, cosmica −8%% (+%s)" % Economy.format_money(int(prices["lead_shielding"])))
+	dome_lead_checkbox = _make_dome_option("Lead · solar −25%%, cosmic −8%% (+%s)" % Economy.format_money(int(prices["lead_shielding"])))
 	dome_lead_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_lead_checkbox))
 	config.add_child(dome_lead_checkbox)
-	dome_hydrogen_checkbox = _make_dome_option("Materiale idrogenato · cosmica −35%%, solare −12%% (+%s)" % Economy.format_money(int(prices["hydrogen_shielding"])))
+	dome_hydrogen_checkbox = _make_dome_option("Hydrogen-rich material · cosmic −35%%, solar −12%% (+%s)" % Economy.format_money(int(prices["hydrogen_shielding"])))
 	dome_hydrogen_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_hydrogen_checkbox))
 	config.add_child(dome_hydrogen_checkbox)
-	dome_rover_pad_checkbox = _make_dome_option("Base di ricarica rover accanto alla cupola (+%s)" % Economy.format_money(int(prices["rover_pad"])))
+	dome_rover_pad_checkbox = _make_dome_option("Rover charging pad beside the dome (+%s)" % Economy.format_money(int(prices["rover_pad"])))
 	dome_rover_pad_checkbox.toggled.connect(_on_dome_option_toggled.bind(dome_rover_pad_checkbox))
 	config.add_child(dome_rover_pad_checkbox)
 	dome_config_total = _label("", 14, Color("ffe38a"))
@@ -228,7 +228,7 @@ func _build_dome_config_view() -> VBoxContainer:
 	config.add_child(dome_config_total)
 	var confirm := Button.new()
 	confirm.add_theme_font_override("font", UI_FONT)
-	confirm.text = "[ CONFERMA CUPOLA E ORDINA ]"
+	confirm.text = "[ CONFIRM DOME AND ORDER ]"
 	confirm.custom_minimum_size = Vector2(280, 34)
 	confirm.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	confirm.add_theme_stylebox_override("normal", _button_style(Color("3b664a")))
@@ -300,7 +300,7 @@ func _add_card(parent: HFlowContainer, item_id: String, texture: Texture2D) -> v
 	rows.add_child(description)
 	var buy := Button.new()
 	buy.add_theme_font_override("font", UI_FONT)
-	buy.text = "[ CONFIGURA ]" if item_id in ["dome_small", "dome_medium", "dome_large"] else "[ ORDINA ]"
+	buy.text = "[ CONFIGURE ]" if item_id in ["dome_small", "dome_medium", "dome_large"] else "[ ORDER ]"
 	buy.custom_minimum_size = Vector2(150, 32)
 	buy.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	buy.add_theme_stylebox_override("normal", _button_style(Color("3b664a")))
@@ -354,7 +354,7 @@ func _refresh_dome_config_price(_toggled: bool = false) -> void:
 	if dome_config_total == null:
 		return
 	var total := Shop.get_dome_total_price(selected_dome_id, _get_dome_configuration()) if not selected_dome_id.is_empty() else 0
-	dome_config_total.text = "TOTALE CUPOLA CONFIGURATA: %s" % Economy.format_money(total)
+	dome_config_total.text = "CONFIGURED DOME TOTAL: %s" % Economy.format_money(total)
 
 
 func _input(event: InputEvent) -> void:
@@ -372,7 +372,7 @@ func _refresh() -> void:
 	overlay.visible = Shop.is_open
 	_refresh_seed_program()
 	if Shop.is_open:
-		message_label.text = "Seleziona i componenti: verranno raggruppati in un unico lancio."
+		message_label.text = "Select components: they will be grouped into one launch."
 	_refresh_buttons()
 	_refresh_order()
 
@@ -391,17 +391,17 @@ func _refresh_seed_program() -> void:
 		return
 	var unlocked := Shop.are_seed_genetics_unlocked()
 	if not unlocked:
-		seed_program_label.text = "BLOCCATO · completa e riscatta PRIMO RACCOLTO e EREDITÀ OPERATIVA (missione Perseverance)."
+		seed_program_label.text = "LOCKED · complete and claim FIRST HARVEST and OPERATIONAL LEGACY (Perseverance mission)."
 	else:
-		seed_program_label.text = "Gli upgrade valgono per i nuovi lotti. Le piante già seminate mantengono i loro geni; avvicinati con semi migliori per sostituirle."
+		seed_program_label.text = "Upgrades apply to new batches. Already planted crops keep their genes; approach them with better seeds to replace them."
 	for track_variant in seed_upgrade_buttons.keys():
 		var track := str(track_variant)
 		var button := seed_upgrade_buttons[track] as Button
 		var level := Shop.get_seed_upgrade_level(track)
 		var maxed := level >= Shop.MAX_SEED_UPGRADE_LEVEL
-		var title := "RESA" if track == "yield" else "VELOCITÀ"
-		var effect := "+20% raccolto" if track == "yield" else "+15% crescita"
-		button.text = "%s %d/%d\n%s%s" % [title, level, Shop.MAX_SEED_UPGRADE_LEVEL, effect, " · MASSIMO" if maxed else " · " + Economy.format_money(Shop.get_seed_upgrade_price(track))]
+		var title := "YIELD" if track == "yield" else "SPEED"
+		var effect := "+20% harvest" if track == "yield" else "+15% growth"
+		button.text = "%s %d/%d\n%s%s" % [title, level, Shop.MAX_SEED_UPGRADE_LEVEL, effect, " · MAXIMUM" if maxed else " · " + Economy.format_money(Shop.get_seed_upgrade_price(track))]
 		button.disabled = not unlocked or maxed or not Economy.can_afford(Shop.get_seed_upgrade_price(track))
 
 
@@ -410,9 +410,9 @@ func _refresh_order() -> void:
 		return
 	var status := DeliveryManager.get_delivery_status()
 	if bool(status["pending"]):
-		order_label.text = "ORDINE APERTO (%.1f s)  ·  %s" % [float(status["seconds"]), str(status["pending_summary"])]
+		order_label.text = "OPEN ORDER (%.1f s)  ·  %s" % [float(status["seconds"]), str(status["pending_summary"])]
 	else:
-		order_label.text = "Nessun ordine in preparazione"
+		order_label.text = "No order in preparation"
 	_refresh_buttons()
 
 

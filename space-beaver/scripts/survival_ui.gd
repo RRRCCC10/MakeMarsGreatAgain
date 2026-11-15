@@ -56,13 +56,13 @@ func _build_ui() -> void:
 	columns.add_theme_constant_override("separation", 16)
 	survival_panel.add_child(columns)
 
-	var thirst_widgets := _add_meter(columns, "SETE", THIRST_COLOR)
+	var thirst_widgets := _add_meter(columns, "THIRST", THIRST_COLOR)
 	thirst_segments = thirst_widgets["segments"]
 	thirst_label = thirst_widgets["label"]
-	var oxygen_widgets := _add_meter(columns, "OSSIGENO", OXYGEN_COLOR)
+	var oxygen_widgets := _add_meter(columns, "OXYGEN", OXYGEN_COLOR)
 	oxygen_segments = oxygen_widgets["segments"]
 	oxygen_label = oxygen_widgets["label"]
-	var hunger_widgets := _add_meter(columns, "FAME", HUNGER_COLOR)
+	var hunger_widgets := _add_meter(columns, "HUNGER", HUNGER_COLOR)
 	hunger_segments = hunger_widgets["segments"]
 	hunger_label = hunger_widgets["label"]
 

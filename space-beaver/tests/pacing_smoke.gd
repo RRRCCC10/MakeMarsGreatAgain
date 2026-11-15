@@ -15,9 +15,9 @@ func _run() -> void:
 	await process_frame
 	await process_frame
 	var player := get_first_node_in_group("player") as CharacterBody2D
-	_expect(player != null, "La scena principale deve avere un player")
+	_expect(player != null, "Test assertion failed")
 	if player != null:
-		_expect(is_equal_approx(float(player.get("SPEED")), 128.0), "Il player deve usare la velocità di progetto di 128 px/s")
+		_expect(is_equal_approx(float(player.get("SPEED")), 128.0), "Test assertion failed")
 		player.collision_mask = 0
 		player.global_position = Vector2.ZERO
 		var start_position := player.global_position
@@ -26,25 +26,25 @@ func _run() -> void:
 			await physics_frame
 		Input.action_release("move_right")
 		var travelled := player.global_position.distance_to(start_position)
-		_expect(travelled > 121.0 and travelled < 135.0, "Un secondo di fisica deve spostare il player di circa 128 px, indipendentemente dagli FPS")
+		_expect(travelled > 121.0 and travelled < 135.0, "Test assertion failed")
 
 	var clock := root.get_node_or_null("WorldClock")
 	var hunger := root.get_node_or_null("Hunger")
 	var hydration := root.get_node_or_null("Hydration")
-	_expect(clock != null and hunger != null and hydration != null, "I manager di ritmo devono essere autoload disponibili")
+	_expect(clock != null and hunger != null and hydration != null, "Test assertion failed")
 	if clock != null and hunger != null and hydration != null:
 		clock.call("reset_for_new_mission")
-		_expect(is_equal_approx(float(clock.call("get_game_hours_for_real_delta", 1.0)), 0.05), "Il clock deve avanzare 0,05 ore di gioco per secondo reale")
-		_expect(is_equal_approx(float(clock.call("get_game_hours_for_real_delta", 480.0)), 24.0), "Un sol deve durare 8 minuti reali")
+		_expect(is_equal_approx(float(clock.call("get_game_hours_for_real_delta", 1.0)), 0.05), "Test assertion failed")
+		_expect(is_equal_approx(float(clock.call("get_game_hours_for_real_delta", 480.0)), 24.0), "Test assertion failed")
 		hunger.call("reset_for_new_mission")
 		hydration.call("reset_for_new_mission")
 		hunger.call("_process", 10.0)
 		hydration.call("_process", 10.0)
-		_expect(is_equal_approx(float(hunger.get("hunger")), 98.0), "La fame deve perdere 0,20 al secondo reale")
-		_expect(is_equal_approx(float(hydration.get("thirst")), 97.0), "La sete deve perdere 0,30 al secondo reale")
+		_expect(is_equal_approx(float(hunger.get("hunger")), 98.0), "Test assertion failed")
+		_expect(is_equal_approx(float(hydration.get("thirst")), 97.0), "Test assertion failed")
 
 	var power_device_script := load("res://scripts/PowerDevice.gd")
-	_expect(power_device_script != null, "PowerDevice deve caricarsi dopo gli autoload")
+	_expect(power_device_script != null, "Test assertion failed")
 	if power_device_script == null:
 		_finish()
 		return
@@ -53,7 +53,7 @@ func _run() -> void:
 	current_scene.add_child(drill)
 	drill.set_power_state(true)
 	drill._process(20.0)
-	_expect(is_equal_approx(drill.water_extracted_liters, 80.0), "La trivella deve produrre 80 L per ora di gioco, quindi 80 L in 20 secondi reali")
+	_expect(is_equal_approx(drill.water_extracted_liters, 80.0), "Test assertion failed")
 	drill.queue_free()
 	_finish()
 

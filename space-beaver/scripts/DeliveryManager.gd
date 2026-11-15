@@ -30,14 +30,14 @@ func queue_item(item_id: String, definition: Dictionary, amount: int = 1, config
 	var order_key := item_id if configuration.is_empty() else "%s|%s" % [item_id, JSON.stringify(configuration)]
 	var item: Dictionary = pending_order.get(order_key, {
 		"id": item_id,
-		"name": str(definition.get("name", "Oggetto")),
+		"name": str(definition.get("name", "Item")),
 		"count": 0,
 		"placeable": bool(definition.get("placeable", true)),
 		"configuration": configuration.duplicate(true),
 	})
 	item["count"] = int(item.get("count", 0)) + amount
 	pending_order[order_key] = item
-	# Ogni nuovo acquisto riapre per pochi secondi la stessa spedizione.
+	# Every new purchase reopens the same shipment for a few seconds.
 	batch_time_remaining = BATCH_WINDOW_SECONDS
 	order_changed.emit()
 	return true
@@ -60,7 +60,7 @@ func count_uncollected(item_id: String) -> int:
 func get_pending_summary() -> String:
 	var parts := PackedStringArray()
 	for item in pending_order.values():
-		parts.append("%s x%d" % [str(item.get("name", "Oggetto")), int(item.get("count", 0))])
+		parts.append("%s x%d" % [str(item.get("name", "Item")), int(item.get("count", 0))])
 	return "  ·  ".join(parts)
 
 
@@ -114,8 +114,8 @@ func _dispatch_pending_order() -> void:
 	for item in pending_order.values():
 		contents.append(item.duplicate(true))
 	var landing_position := _choose_landing_position()
-	# Non forziamo mai la capsula dentro un ostacolo come fallback: se il
-	# giocatore ha saturato la zona, l'ordine resta in attesa e ritenta.
+	# Never force the capsule into an obstacle as a fallback. If the player has
+	# filled the area, the order waits and retries.
 	if landing_position == Vector2.INF:
 		batch_time_remaining = 0.75
 		return
@@ -132,8 +132,8 @@ func _dispatch_pending_order() -> void:
 
 func _choose_landing_position() -> Vector2:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	# Il riferimento non e' la base: ogni ordine viene consegnato accanto
-	# all'astronauta, anche quando sta esplorando un settore remoto.
+	# The reference is not the base: every order arrives beside the astronaut,
+	# even while they explore a remote sector.
 	var center := player.global_position if player != null else Vector2.ZERO
 	var candidates: Array[Vector2] = [
 		Vector2(112, -64), Vector2(-112, -64), Vector2(128, 64), Vector2(-128, 64),

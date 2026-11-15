@@ -1,7 +1,5 @@
 extends SceneTree
 
-## Test di integrazione del tasto E: passa dal routing reale del viewport e
-## percorre autoload, player, figlio Node dei macchinari, cupola e rover.
 
 const DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
@@ -41,9 +39,6 @@ func _run() -> void:
 	rover.global_position = dome.call("_get_rover_parking_position")
 	player.global_position = rover.global_position + Vector2(-38.0, 0.0)
 	await physics_frame
-	# Riproduce il conflitto reale: il figlio Node del player avrebbe uno stock
-	# ritirabile con E. Il router rover deve avere la precedenza e non deve
-	# lasciare che la macchina consumi il tasto.
 	var stock_machine := FakeStockMachine.new()
 	current_scene.add_child(stock_machine)
 	var machine_handler := player.get_node("Node")
@@ -51,7 +46,6 @@ func _run() -> void:
 	var press_e := InputEventKey.new()
 	press_e.keycode = KEY_E
 	press_e.pressed = true
-	# Passa dal routing reale del viewport, inclusi tutti i nodi nella scena.
 	get_root().get_viewport().push_input(press_e)
 	await process_frame
 	if not bool(player.call("is_driving_rover")) or rover.driver != player:

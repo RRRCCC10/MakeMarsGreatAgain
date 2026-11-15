@@ -29,7 +29,7 @@ func _run() -> void:
 	await process_frame
 	var research_cell := Vector2i(floori((dome.global_position.x - 8.0) / 16.0), floori((dome.global_position.y - 32.0) / 16.0))
 	var lab := RESEARCH_SCRIPT.place(current_scene, "xrd_diffractometer", research_cell) as ResearchMachine
-	_expect(lab != null, "Il laboratorio deve poter essere installato nella cupola")
+	_expect(lab != null, "Test assertion failed")
 	if lab == null:
 		_finish()
 		return
@@ -38,7 +38,7 @@ func _run() -> void:
 	var panel = grid.place_device(current_scene, "solar_panel", connector + Vector2i(-20, 0))
 	var transformer = grid.place_device(current_scene, "transformer", connector + Vector2i(-14, 0))
 	var battery = grid.place_device(current_scene, "battery", connector + Vector2i(-7, 0))
-	_expect(panel != null and transformer != null and battery != null, "La rete esterna deve potersi installare davanti al raccordo della cupola")
+	_expect(panel != null and transformer != null and battery != null, "Test assertion failed")
 	if panel == null or transformer == null or battery == null:
 		_finish()
 		return
@@ -49,9 +49,9 @@ func _run() -> void:
 	clock.running = true
 	clock.set_game_hour(12.0)
 	grid._update_energy(0.1)
-	_expect(bool(grid.connection_ok.get(dome, false)), "La cupola deve collegarsi stabilmente al proprio raccordo esterno")
-	_expect(bool(grid.connection_ok.get(lab, false)), "Un macchinario dentro la cupola deve usare il raccordo senza attraversare la cupola")
-	_expect(dome.powered and lab.powered, "La cupola e il laboratorio interno devono ricevere energia dalla stessa rete")
+	_expect(bool(grid.connection_ok.get(dome, false)), "Test assertion failed")
+	_expect(bool(grid.connection_ok.get(lab, false)), "Test assertion failed")
+	_expect(dome.powered and lab.powered, "Test assertion failed")
 	clock.running = false
 	_finish()
 

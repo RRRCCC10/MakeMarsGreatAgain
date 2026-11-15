@@ -6,12 +6,12 @@ const REVEAL_RADIUS_TILES := 10
 const DRAW_BLOCK_TILES := 4
 
 const TERRAIN_COLORS := {
-	0: Color("bc593d"), # sabbia base
-	1: Color("7b3430"), # regolite scura
-	2: Color("9a8278"), # pietra da cratere
-	3: Color("b9d2d2"), # ghiaccio polveroso
-	4: Color("2d85aa"), # ghiaccio blu
-	5: Color("2b2025"), # basalto
+	0: Color("bc593d"), # baseline sand
+	1: Color("7b3430"), # dark regolith
+	2: Color("9a8278"), # crater rock
+	3: Color("b9d2d2"), # powdery ice
+	4: Color("2d85aa"), # blue ice
+	5: Color("2b2025"), # basalt
 }
 
 class MapCanvas extends Control:
@@ -59,11 +59,11 @@ func _setup() -> void:
 	map_provider = get_parent().get_node_or_null("Map")
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	if map_provider == null or not map_provider.has_method("get_world_rect") or player == null:
-		push_error("WorldMapUI: provider della mappa o player non trovato")
+		push_error("WorldMapUI: map provider or player not found")
 		return
 	var provided_rect = map_provider.call("get_world_rect")
 	if not provided_rect is Rect2i:
-		push_error("WorldMapUI: il provider non ha restituito un Rect2i")
+		push_error("WorldMapUI: provider did not return a Rect2i")
 		return
 	world_rect = provided_rect
 	_reveal_around_player()
@@ -78,8 +78,8 @@ func _process(_delta: float) -> void:
 	if minimap_canvas != null:
 		minimap_canvas.queue_redraw()
 	if is_open and map_canvas != null:
-		# Finche' il giocatore non trascina la carta, questa continua a seguirlo
-		# anche mentre resta aperta e il personaggio si muove.
+		# Until the player drags the map, it continues to follow them even while
+		# it remains open and the character moves.
 		if not map_was_panned and player != null and map_provider != null:
 			map_view_center_cell = Vector2(map_provider.call("world_to_cell", player.global_position))
 		map_canvas.queue_redraw()
@@ -97,8 +97,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_open:
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
-		# Il pan e' utile solo dopo lo zoom: a zoom 1 l'intero mondo e' gia'
-		# visibile e non c'e' una visuale da traslare.
+		# Panning is useful only after zooming: at zoom 1 the whole world is
+		# already visible, with no viewport to shift.
 		if event.pressed and map_zoom > MIN_MAP_ZOOM:
 			is_panning = true
 			last_pan_mouse_position = event.position
@@ -220,8 +220,8 @@ func _build_ui() -> void:
 
 	var panel := Panel.new()
 	panel.name = "ResponsiveMapPanel"
-	# Carta elastica: i margini percentuali mantengono leggibile la mappa sia
-	# nella finestra iniziale sia dopo un ingrandimento libero della finestra.
+	# Elastic map: percentage margins keep the map readable both in the initial
+	# window and after free window resizing.
 	panel.anchor_left = 0.05
 	panel.anchor_top = 0.05
 	panel.anchor_right = 0.95
@@ -250,7 +250,7 @@ func _build_ui() -> void:
 	panel.add_child(map_canvas)
 
 	var title := Label.new()
-	title.text = "// CARTA TOPOGRAFICA //"
+	title.text = "// TOPOGRAPHIC MAP //"
 	title.position = Vector2(22, 12)
 	title.size = Vector2(400, 22)
 	title.add_theme_color_override("font_color", Color("91e5f4"))
@@ -258,7 +258,7 @@ func _build_ui() -> void:
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(title)
 	var hint := Label.new()
-	hint.text = "M · chiudi     Rotella · zoom     Trascina rotella · sposta"
+	hint.text = "M · close     Wheel · zoom     Middle drag · pan"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	hint.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	hint.offset_left = -365.0
@@ -270,7 +270,7 @@ func _build_ui() -> void:
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.add_child(hint)
 	var legend := Label.new()
-	legend.text = "Aree inesplorate oscurate · △ AirDrop lampeggiante · strutture con sprite"
+	legend.text = "Unexplored areas darkened · △ blinking AirDrop · structures with sprites"
 	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	legend.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	legend.offset_top = -33
@@ -317,7 +317,7 @@ func _build_minimap_ui() -> void:
 	minimap_canvas.custom_minimum_size = Vector2(220, 168)
 	minimap_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rows.add_child(minimap_canvas)
-	var hint := _map_label("PREMI M PER APRIRE LA MAPPA", 9, Color("8ee7f2"))
+	var hint := _map_label("PRESS M TO OPEN MAP", 9, Color("8ee7f2"))
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(hint)
 
@@ -500,8 +500,8 @@ func _pan_map(mouse_delta: Vector2) -> void:
 	var pixels_per_tile := _get_map_size(map_canvas) / float(visible_tiles)
 	if pixels_per_tile <= 0.0:
 		return
-	# La carta segue il trascinamento: spostando il mouse a destra si guarda
-	# verso ovest, come in una mappa cartacea.
+	# The map follows dragging: moving the mouse right looks west, as on a paper
+	# map.
 	map_view_center_cell = _clamp_map_view_center(map_view_center_cell - mouse_delta / pixels_per_tile, visible_tiles)
 	map_was_panned = true
 	map_canvas.queue_redraw()

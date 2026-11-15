@@ -38,7 +38,7 @@ func _build_ui() -> void:
 	rows.alignment = BoxContainer.ALIGNMENT_CENTER
 	rows.add_theme_constant_override("separation", 15)
 	panel.add_child(rows)
-	var header := _label("// RAPPORTO FINALE DI MISSIONE //", 13, Color("84949a"))
+	var header := _label("// FINAL MISSION REPORT //", 13, Color("84949a"))
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(header)
 	code_label = _label("", 18, Color.WHITE)
@@ -63,7 +63,7 @@ func _build_ui() -> void:
 	epilogue_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(epilogue_label)
 	restart_button = Button.new()
-	restart_button.text = "[ RICOMINCIA LA MISSIONE DA ZERO ]"
+	restart_button.text = "[ RESTART MISSION FROM ZERO ]"
 	restart_button.custom_minimum_size = Vector2(390, 48)
 	restart_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	restart_button.add_theme_font_size_override("font_size", 15)
@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	restart_button.add_theme_stylebox_override("pressed", _button_style(Color("182126")))
 	restart_button.pressed.connect(GameState.restart_from_scratch)
 	rows.add_child(restart_button)
-	var warning := _label("ATTENZIONE: inventario, strutture, budget e progressi verranno azzerati.", 11, Color("d17c72"))
+	var warning := _label("WARNING: inventory, structures, budget, and progress will be reset.", 11, Color("d17c72"))
 	warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(warning)
 	overlay.visible = false
@@ -82,7 +82,7 @@ func _show_death(data: Dictionary) -> void:
 	var color: Color = data.get("color", Color.WHITE)
 	code_label.text = str(data.get("code", "MISSION // END"))
 	code_label.add_theme_color_override("font_color", color)
-	title_label.text = str(data.get("title", "MISSIONE TERMINATA"))
+	title_label.text = str(data.get("title", "MISSION ENDED"))
 	title_label.add_theme_color_override("font_color", color)
 	message_label.text = str(data.get("message", ""))
 	epilogue_label.text = str(data.get("epilogue", ""))

@@ -1,9 +1,9 @@
 extends CanvasLayer
 
-## Notifica non bloccante per i traguardi appena completati. I nodi della
-## rete possono raggiungere il proprio target prima dei prerequisiti: in quel
-## caso la schermata celebra comunque il risultato, ma non promette una
-## ricompensa riscattabile fino a quando la catena non e' stata completata.
+## Non-blocking notification for newly completed milestones. Graph nodes can
+## reach their target before prerequisites; in that case the screen still
+## celebrates the result without promising a claimable reward until the chain
+## is complete.
 
 const DISPLAY_SECONDS := 4.5
 
@@ -28,8 +28,8 @@ func _ready() -> void:
 
 
 func _on_achievement_reached(achievement_id: String, claimable_now: bool) -> void:
-	# La tavola e' gia' la vista dettagliata degli obiettivi: non sovrapponiamo
-	# una seconda interfaccia mentre il giocatore la sta consultando.
+	# The board already provides the detailed objective view. Do not overlay a
+	# second interface while the player is consulting it.
 	if AchievementManager.is_board_open:
 		return
 	var definition := AchievementManager.get_definition(achievement_id)
@@ -45,9 +45,9 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_dismiss_current()
-		# L'avviso deve sparire al primo click, ma non può divorare quel click:
-		# per esempio il giocatore può chiuderlo selezionando subito un oggetto
-		# nell'inventario aperto sotto di esso.
+		# The alert must vanish on the first click without consuming that click. For
+		# example, the player can dismiss it while selecting an item in the open
+		# inventory beneath it.
 
 
 func _dismiss_current() -> void:
@@ -77,10 +77,10 @@ func _show_next() -> void:
 	_eyebrow.add_theme_color_override("font_color", color)
 	_icon.text = str(definition.get("icon", "✦"))
 	_icon.add_theme_color_override("font_color", color)
-	_title.text = str(definition.get("title", "OBIETTIVO RAGGIUNTO"))
+	_title.text = str(definition.get("title", "OBJECTIVE REACHED"))
 	_description.text = str(definition.get("description", ""))
-	_reward.text = "RICOMPENSA  " + str(reward.get("label", "Pronta per il riscatto"))
-	_hint.text = "J  ·  Apri la tavola e riscatta la ricompensa" if claimable_now else "PROGRESSO SALVATO  ·  completa prima i prerequisiti della rete"
+	_reward.text = "REWARD  " + str(reward.get("label", "Ready to claim"))
+	_hint.text = "J  ·  Open the board and claim the reward" if claimable_now else "PROGRESS SAVED  ·  complete graph prerequisites first"
 	_hint.add_theme_color_override("font_color", Color("ffe178") if claimable_now else Color("b7c4cb"))
 	_root.visible = true
 	_card.modulate = Color(1, 1, 1, 0)
@@ -107,8 +107,8 @@ func _build_ui() -> void:
 	_root = Control.new()
 	_root.name = "AchievementSuccessRoot"
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# È una notifica, non una finestra modale: lascia interagire con tutte le
-	# GUI sottostanti anche mentre è visibile.
+	# This is a notification, not a modal window. Let the player interact with all
+	# underlying GUIs even while it is visible.
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.visible = false
 	add_child(_root)
@@ -138,7 +138,7 @@ func _build_ui() -> void:
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	margins.add_child(rows)
-	_eyebrow = _label("// TRAGUARDO RAGGIUNTO //", 12, Color("ffd36a"))
+	_eyebrow = _label("// MILESTONE REACHED //", 12, Color("ffd36a"))
 	_eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	rows.add_child(_eyebrow)
 	var main_row := HBoxContainer.new()
@@ -172,8 +172,8 @@ func _build_ui() -> void:
 
 
 func _set_mouse_ignored_recursively(node: Node) -> void:
-	# IGNORE non si eredita in Godot: anche i contenitori interni devono essere
-	# ignorati, altrimenti una MarginContainer trasparente fermerebbe i click.
+	# IGNORE is not inherited in Godot. Inner containers must also ignore input or
+	# a transparent MarginContainer would block clicks.
 	if node is Control:
 		(node as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for child in node.get_children():

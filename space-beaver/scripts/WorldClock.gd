@@ -5,12 +5,12 @@ signal phase_changed(phase: int, phase_label: String)
 
 enum Phase { NIGHT, DAWN, DAY, DUSK }
 
-## Un sol marziano dura 24 h 39 m 35 s terrestri. Per convenzione l'orologio
-## locale lo divide in 24 ore marziane, quindi una di esse dura ~61 m 39,8 s
-## terrestri. Il gioco resta compresso a otto minuti reali per sol: cambiano
-## la nomenclatura e il riferimento scientifico, non il ritmo di sopravvivenza.
+## A Martian sol lasts 24 h 39 m 35 terrestrial seconds. By convention the
+## local clock divides it into 24 Martian hours, so each lasts ~61 m 39.8 s.
+## The game remains compressed to eight real minutes per Sol: nomenclature and
+## scientific reference change, not survival pacing.
 const HOURS_PER_SOL := 24.0
-const HOURS_PER_DAY := HOURS_PER_SOL # compatibilità con i sistemi preesistenti
+const HOURS_PER_DAY := HOURS_PER_SOL # compatibility with pre-existing systems
 const MARS_SOL_EARTH_SECONDS := 88_775.244
 const MARS_HOUR_EARTH_MINUTES := MARS_SOL_EARTH_SECONDS / HOURS_PER_SOL / 60.0
 const LOCAL_SOLAR_TIME_LABEL := "LMST"
@@ -18,8 +18,8 @@ const DEFAULT_GAME_HOURS_PER_REAL_SECOND := 0.05
 
 var game_hour := 8.0
 var sol := 1
-## Alias tecnico per salvataggi e script meno recenti: l'interfaccia e i dati
-## nuovi espongono sempre il nome corretto, `sol`.
+## Technical alias for older saves and scripts: new interface and data always
+## expose the correct name, `sol`.
 var day: int:
 	get:
 		return sol
@@ -81,12 +81,12 @@ func get_phase_label(phase: int = -1) -> String:
 	var resolved_phase := get_phase() if phase < 0 else phase
 	match resolved_phase:
 		Phase.DAWN:
-			return "ALBA"
+			return "DAWN"
 		Phase.DAY:
-			return "GIORNO"
+			return "DAY"
 		Phase.DUSK:
-			return "TRAMONTO"
-	return "NOTTE"
+			return "DUSK"
+	return "NIGHT"
 
 
 func get_phase_progress() -> float:
@@ -130,7 +130,7 @@ func get_time_data() -> Dictionary:
 		"whole_hour": whole_hour,
 		"minute": minute,
 		"sol": sol,
-		"day": sol, # compatibilità con archivi foto esistenti
+		"day": sol, # compatibility with existing photo archives
 		"phase": get_phase(),
 		"phase_label": get_phase_label(),
 		"solar_factor": get_solar_factor(),

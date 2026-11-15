@@ -16,8 +16,8 @@ func _run() -> void:
 	await process_frame
 	var board := current_scene.get_node_or_null("AchievementBoard")
 	var success_ui := current_scene.get_node_or_null("AchievementSuccessUI")
-	_expect(board != null, "La scena principale deve contenere la tavola achievement")
-	_expect(success_ui != null and success_ui.get_node_or_null("AchievementSuccessRoot") != null, "La scena principale deve contenere la schermata celebrativa dei traguardi")
+	_expect(board != null, "Test assertion failed")
+	_expect(success_ui != null and success_ui.get_node_or_null("AchievementSuccessRoot") != null, "Test assertion failed")
 	if board == null:
 		_finish()
 		return
@@ -25,41 +25,41 @@ func _run() -> void:
 	await process_frame
 	var root_ui := board.get_node_or_null("AchievementBoardRoot") as Control
 	var achievements := root.get_node_or_null("AchievementManager")
-	_expect(root_ui != null and root_ui.visible, "J/apertura deve rendere visibile la tavola")
-	_expect(achievements != null and bool(achievements.get("is_board_open")), "Con la tavola aperta il gioco deve bloccare le interazioni nel mondo")
-	_expect(achievements != null and int(achievements.call("get_progress", "first_base")) == 0, "Ogni nuovo avvio deve ignorare i progressi achievement delle sessioni precedenti")
+	_expect(root_ui != null and root_ui.visible, "Test assertion failed")
+	_expect(achievements != null and bool(achievements.get("is_board_open")), "Test assertion failed")
+	_expect(achievements != null and int(achievements.call("get_progress", "first_base")) == 0, "Test assertion failed")
 	var survival_ui := current_scene.get_node_or_null("SurvivalUI") as CanvasLayer
 	var power_ui := current_scene.get_node_or_null("PowerUI") as CanvasLayer
-	_expect(survival_ui != null and not survival_ui.visible and power_ui != null and not power_ui.visible, "Con la tavola aperta gli altri HUD devono sparire")
+	_expect(survival_ui != null and not survival_ui.visible and power_ui != null and not power_ui.visible, "Test assertion failed")
 	var graph := _find_named(root_ui, "MissionGraph") as Control
 	var graph_links := _find_named(root_ui, "GraphLinks") as Control
 	var definitions: Array = achievements.call("get_ordered_definitions") if achievements != null else []
-	_expect(graph != null, "La tavola deve contenere un grafo dedicato")
-	_expect(graph_links != null, "Il grafo deve disegnare le connessioni tra i nodi")
+	_expect(graph != null, "Test assertion failed")
+	_expect(graph_links != null, "Test assertion failed")
 	if graph != null:
 		var node_count := 0
 		for child in graph.get_children():
 			if str(child.name).begins_with("AchievementNode_"):
 				node_count += 1
-		_expect(node_count > 0 and node_count < definitions.size(), "Ogni scheda deve mostrare una mappa leggibile del proprio ramo, non tutti i nodi sovrapposti")
-		_expect(graph.get_node_or_null("AchievementNode_first_field_sample") != null and graph.get_node_or_null("AchievementNode_first_base") == null, "La scheda campo deve mostrare raccolta ed esplorazione")
+		_expect(node_count > 0 and node_count < definitions.size(), "Test assertion failed")
+		_expect(graph.get_node_or_null("AchievementNode_first_field_sample") != null and graph.get_node_or_null("AchievementNode_first_base") == null, "Test assertion failed")
 		board.call("_select_category", "science")
 		await process_frame
 		graph = _find_named(root_ui, "MissionGraph") as Control
-		_expect(graph != null and graph.get_node_or_null("AchievementNode_first_lab") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_first_field_sample") == null, "La scheda ricerca deve mostrare laboratori e nodo finale senza mescolare gli altri rami")
+		_expect(graph != null and graph.get_node_or_null("AchievementNode_first_lab") != null and graph.get_node_or_null("AchievementNode_science_center") != null and graph.get_node_or_null("AchievementNode_first_field_sample") == null, "Test assertion failed")
 		board.call("_select_category", "return")
 		await process_frame
 		graph = _find_named(root_ui, "MissionGraph") as Control
-		_expect(graph != null and graph.get_node_or_null("AchievementNode_return_manifest") != null and graph.get_node_or_null("AchievementNode_return_launch") != null, "La scheda Ritorno deve mostrare manifesto e lancio finale")
-		_expect(graph != null and graph.get_node_or_null("ReturnSampleCatalog") != null, "La scheda Ritorno deve elencare luogo e rarità dei campioni richiesti")
+		_expect(graph != null and graph.get_node_or_null("AchievementNode_return_manifest") != null and graph.get_node_or_null("AchievementNode_return_launch") != null, "Test assertion failed")
+		_expect(graph != null and graph.get_node_or_null("ReturnSampleCatalog") != null, "Test assertion failed")
 	board.call("close")
-	_expect((achievements == null or not bool(achievements.get("is_board_open"))) and not root_ui.visible, "Chiudere la tavola deve riattivare il gioco")
-	_expect(survival_ui != null and survival_ui.visible and power_ui != null and power_ui.visible, "Chiudere la tavola deve ripristinare gli HUD")
+	_expect((achievements == null or not bool(achievements.get("is_board_open"))) and not root_ui.visible, "Test assertion failed")
+	_expect(survival_ui != null and survival_ui.visible and power_ui != null and power_ui.visible, "Test assertion failed")
 	if achievements != null and success_ui != null:
 		achievements.call("record", "first_base")
 		await process_frame
 		var success_root := success_ui.get_node_or_null("AchievementSuccessRoot") as Control
-		_expect(success_root != null and success_root.visible, "Quando un obiettivo raggiunge il bersaglio deve comparire la schermata celebrativa")
+		_expect(success_root != null and success_root.visible, "Test assertion failed")
 	_finish()
 
 

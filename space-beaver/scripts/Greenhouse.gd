@@ -1,8 +1,8 @@
 extends BaseDome
 class_name Greenhouse
 
-## Serra marziana: eredita la camera di decompressione della cupola base,
-## ma usa due aiuole bloccanti e una coltura sincronizzata di 16 patate.
+## Martian greenhouse: inherits the base dome airlock but uses two blocking
+## beds and one synchronized crop of 16 potatoes.
 
 const GREENHOUSE_RADIUS := 80.0
 const BASE_TEXTURE := preload("res://assets/sprites/greenhouse/greenhouse_base.jpg")
@@ -15,10 +15,10 @@ const TRANSPARENCY := preload("res://scripts/TextureTransparency.gd")
 
 const FIRST_CYCLE_SECONDS := 5.0 * 60.0
 const REGROWTH_SECONDS := 3.0 * 60.0
-const POWERED_TIME_MULTIPLIER := 1.60 # +60% velocita' di crescita quando alimentata
+const POWERED_TIME_MULTIPLIER := 1.60 # +60% growth speed while powered
 const WATER_L_PER_GAME_HOUR := 16.0
 const POWER_DEMAND_KW := 10.0
-const POWERED_EXTRA_DEMAND_KW := 15.0 # riscaldamento/luci della serra
+const POWERED_EXTRA_DEMAND_KW := 15.0 # greenhouse heating and lights
 const PLOT_COUNT := 16
 const HARVEST_FOOD := 5
 const WALL_COLLISION_RADIUS := 70.0
@@ -40,8 +40,8 @@ var _planted := false
 var _ready_to_harvest := false
 var _completed_cycles := 0
 var _growth_seconds := 0.0
-# Timer persistente del lotto corrente. È separato dallo stato della rete:
-# togliere corrente non può ricalcolare né restituire il tempo già guadagnato.
+# Persistent timer for the current lot. It is separate from network state:
+# removing power cannot recalculate or restore time already earned.
 var _remaining_growth_seconds := 0.0
 var _water_consumed_liters := 0.0
 var _oxygen_produced_units := 0.0
@@ -57,10 +57,10 @@ const VISUAL_ASSET_REVISION := 2
 
 
 func setup_greenhouse(direction: int = 1, preview: bool = false) -> void:
-	# dome_medium è usata solo come configurazione neutra per la camera d'aria;
-	# raggio, sprite, porta acqua e logica sono ridefiniti da questa classe.
+	# dome_medium is used only as a neutral airlock configuration; radius, sprite,
+	# water port, and logic are redefined by this class.
 	super.setup("dome_medium", direction, preview, {})
-	# L'alimentazione elettrica della serra e' sempre una scelta manuale.
+	# Greenhouse electrical power is always a manual choice.
 	network_enabled = false
 	powered = false
 
@@ -79,13 +79,13 @@ func _ready() -> void:
 	var registry := get_node_or_null("/root/BuildableRegistry")
 	if registry != null:
 		registry.call("unregister_buildable", self, false)
-		registry.call("register_buildable", self, "SERRA DI PATATE", "building", Callable(self, "_destroy"))
+		registry.call("register_buildable", self, "POTATO GREENHOUSE", "building", Callable(self, "_destroy"))
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
-		incidents.call("register_target", self, "greenhouse_system", "SISTEMA SERRA")
+		incidents.call("register_target", self, "greenhouse_system", "GREENHOUSE SYSTEM")
 	var sandstorms := get_node_or_null("/root/SandstormManager")
 	if sandstorms != null:
-		sandstorms.call("register_target", self, "SERRA DI PATATE")
+		sandstorms.call("register_target", self, "POTATO GREENHOUSE")
 
 
 func _exit_tree() -> void:
@@ -101,13 +101,13 @@ func get_radius() -> float:
 
 
 func contains_world_point(world_position: Vector2) -> bool:
-	# La grafica misura 160 px, ma il passaggio reale deve essere dentro l'anello.
+	# Art is 160 px wide, but the actual passage must remain inside the ring.
 	return global_position.distance_to(world_position) <= WALL_COLLISION_RADIUS
 
 
 func can_place_greenhouse_at(world_position: Vector2) -> bool:
-	# Wrapper d'istanza per l'anteprima: evita di dipendere dal binding statico
-	# delle classi globali durante il primo import dell'editor.
+	# Instance wrapper for previews: avoids reliance on static global-class binding
+	# during the editor's first import.
 	var tree := Engine.get_main_loop() as SceneTree
 	var map_provider: Node = tree.get_first_node_in_group("world_map_provider") if tree != null else null
 	if map_provider != null and map_provider.has_method("clamp_world_position"):
@@ -131,7 +131,7 @@ func can_place_greenhouse_at(world_position: Vector2) -> bool:
 
 
 func get_thermal_shelter_bonus_c() -> float:
-	# È una serra, non un modulo abitativo: ripara appena dal freddo.
+	# This is a greenhouse, not a habitat module: it provides only slight shelter.
 	return 5.0 if powered and not _system_incident_faulted else 3.0
 
 
@@ -159,8 +159,8 @@ func is_water_connected() -> bool:
 	var pipe_manager := get_node_or_null("/root/PipeManager")
 	if pipe_manager == null or _water_input_cell == Vector2i.ZERO:
 		return false
-	# Il raccordo è una cella esterna. La rete può essere ancora grigia finché
-	# non raggiunge la trivella: il colore non deve impedirne il rilevamento.
+	# The connector is an external cell. The network can remain gray until it
+	# reaches the drill; color must not prevent detection.
 	var pipe := pipe_manager.call("get_pipe", _water_input_cell) as PipeSegment
 	return pipe != null and pipe.has_opening(Vector2i.RIGHT)
 
@@ -170,9 +170,9 @@ func has_water_source() -> bool:
 
 
 func _ensure_water_network_category() -> bool:
-	# Il collegamento diretto trivella → tubo → serra può nascere quando i tubi
-	# sono ancora grigi. Cerchiamo la sorgente nella stessa rete fisica e, solo
-	# se non esistono fluidi incompatibili, la trasformiamo in rete dell'acqua.
+	# A direct drill → pipe → greenhouse link can appear while pipes are still
+	# gray. Search for the source in the same physical network and classify it as
+	# water only when no incompatible fluid exists.
 	var pipe_manager := get_node_or_null("/root/PipeManager")
 	if pipe_manager == null or not is_water_connected():
 		return false
@@ -200,8 +200,8 @@ func _ensure_water_network_category() -> bool:
 	var input_pipe := pipe_manager.call("get_pipe", _water_input_cell) as PipeSegment
 	if input_pipe == null:
 		return false
-	# Non ricostruire né notificare la rete ad ogni frame della UI: una volta
-	# ereditato il blu dell'acqua il collegamento resta già classificato.
+	# Do not rebuild or notify the network every UI frame: once it inherits water
+	# blue, the connection is already classified.
 	if input_pipe.category != PipeSegment.Category.WATER:
 		pipe_manager.call("set_pipe_category", _water_input_cell, PipeSegment.Category.WATER)
 	return bool(pipe_manager.call("is_input_connected", _water_input_cell, Vector2i.RIGHT, PipeSegment.Category.WATER))
@@ -209,24 +209,24 @@ func _ensure_water_network_category() -> bool:
 
 func get_interaction_summary() -> String:
 	if _system_incident_faulted:
-		return "GUASTO SISTEMA SERRA · avvicinati e ripara"
-	var water_label := "acqua disponibile" if has_water_source() else ("tubo agganciato" if is_water_connected() else "tubo acqua assente")
-	var power_label := "rete attiva" if powered else ("rete disattivata" if not network_enabled else "non alimentata")
+		return "GREENHOUSE SYSTEM FAULT · approach and repair"
+	var water_label := "water available" if has_water_source() else ("pipe attached" if is_water_connected() else "water pipe missing")
+	var power_label := "network active" if powered else ("network disabled" if not network_enabled else "unpowered")
 	return "%s · %s" % [water_label, power_label]
 
 
 func get_display_name() -> String:
-	return "SERRA DI PATATE"
+	return "POTATO GREENHOUSE"
 
 
 func get_connection_label() -> String:
 	if _system_incident_faulted:
-		return "GUASTO — avvicinati e ripara"
+		return "FAULT — approach and repair"
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	var cable_connected := power_grid != null and bool(power_grid.get("connection_ok").get(self, false))
 	if not network_enabled:
-		return "RETE SERRA DISATTIVATA"
-	return "COLLEGATO ALLA RETE" if cable_connected else "CAVO ELETTRICO NON COLLEGATO"
+		return "GREENHOUSE NETWORK DISABLED"
+	return "CONNECTED TO GRID" if cable_connected else "POWER CABLE NOT CONNECTED"
 
 
 func set_network_enabled(value: bool) -> void:
@@ -235,8 +235,8 @@ func set_network_enabled(value: bool) -> void:
 	if not network_enabled:
 		set_powered(false)
 	elif changed:
-		# La rete viene ricalcolata dopo l'aggiornamento del flag, senza
-		# ricostruirsi dentro il ciclo di distribuzione della PowerGrid.
+		# Rebuild the network after updating the flag without rebuilding inside the
+		# PowerGrid distribution loop.
 		_queue_power_consumer_refresh()
 
 
@@ -274,8 +274,8 @@ func get_remaining_growth_seconds() -> float:
 		return 0.0
 	if _remaining_growth_seconds > 0.0:
 		return _remaining_growth_seconds
-	# Compatibilità con una coltura già presente prima dell'introduzione del
-	# timer persistente: ricava una sola volta il residuo dal lavoro svolto.
+	# Compatibility for a crop that existed before the persistent timer: derive
+	# its remaining work only once.
 	return maxf(0.0, _cycle_duration() - _growth_seconds)
 
 
@@ -298,18 +298,18 @@ func get_prompt_for_player(player: Node2D) -> String:
 	if not _planted:
 		var inventory := _inventory()
 		if inventory != null and int(inventory.call("count_item", "potato_seeds")) > 0:
-			return "E  ·  SEMINA 16 PATATE NELLE AIUOLE"
-		return "AIUOLE VUOTE · acquista SEMI DI PATATE nello shop"
+			return "E  ·  PLANT 16 POTATOES IN THE BEDS"
+		return "EMPTY BEDS · buy POTATO SEEDS in the shop"
 	if _ready_to_harvest:
-		return "E  ·  RACCOGLI %d RAZIONI" % get_harvest_food()
+		return "E  ·  HARVEST %d RATIONS" % get_harvest_food()
 	var inventory := _inventory()
 	if inventory != null and inventory.has_method("get_best_potato_seed_lot"):
 		var stronger_lot: Dictionary = inventory.call("get_best_potato_seed_lot", _crop_seed_yield_level, _crop_seed_speed_level)
 		if not stronger_lot.is_empty():
-			return "SEMI GM PIÙ FORTI DISPONIBILI · E  ·  SOSTITUISCI LOTTO"
-	var water_status := "ACQUA OK" if has_water_source() else ("TUBO COLLEGATO · flusso assente" if is_water_connected() else "COLLEGA ACQUA A SINISTRA")
-	var power_status := " · crescita +60% · consumo elettrico aumentato" if powered else " · senza alimentazione"
-	return "PATATE: pronte tra %s\n%s%s" % [_format_crop_time(get_remaining_growth_seconds()), water_status, power_status]
+			return "STRONGER GM SEEDS AVAILABLE · E  ·  REPLACE LOT"
+	var water_status := "WATER OK" if has_water_source() else ("PIPE CONNECTED · no flow" if is_water_connected() else "CONNECT WATER ON THE LEFT")
+	var power_status := " · growth +60% · increased power use" if powered else " · no power"
+	return "POTATOES: ready in %s\n%s%s" % [_format_crop_time(get_remaining_growth_seconds()), water_status, power_status]
 
 
 func handle_airlock_key(player: Node2D, keycode: int) -> bool:
@@ -340,7 +340,7 @@ func _build_visuals() -> void:
 	_sprite.name = "GreenhouseBase"
 	_sprite.texture = TRANSPARENCY.without_white_background(BASE_TEXTURE)
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Come la cupola base: sopra la TileMap ma sotto il player (z 1).
+	# Like the base dome: above TileMap but below the player (z 1).
 	_sprite.z_index = 0
 	add_child(_sprite)
 	_glass_sprite = Sprite2D.new()
@@ -360,7 +360,7 @@ func _build_visuals() -> void:
 		_bed_sprites.append(bed)
 	_build_crop_sprites()
 	_build_night_lighting()
-	# Costruzione esplicita della camera con corridoio e due porte, come cupola base.
+	# Explicit airlock construction with corridor and two doors, like the base dome.
 	_corridor_sprite = Sprite2D.new()
 	_corridor_sprite.name = "AirlockCorridor"
 	_corridor_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -388,8 +388,8 @@ func _refresh_visuals() -> void:
 	var outward: Vector2 = DIRECTION_VECTORS[entrance_direction]
 	var corridor_length := corridor_frame.region.size.x if not is_zero_approx(outward.x) else corridor_frame.region.size.y
 	_corridor_sprite.texture = corridor_frame
-	# La porta interna resta a 72px. Il corridoio inizia al suo lato esterno
-	# (80px) e la porta esterna ne chiude l'altra estremità (112px).
+	# The inner door stays at 72 px. The corridor starts at its outer side (80 px)
+	# and the outer door closes its far end (112 px).
 	_corridor_sprite.position = outward * (get_radius() + corridor_length * 0.5)
 	_outer_door_sprite.position = outward * (get_radius() + corridor_length - _door_depth(direction_name) * 0.5)
 	_inner_door_sprite.position = outward * (get_radius() - _door_depth(direction_name) * 0.5)
@@ -405,7 +405,7 @@ func _build_crop_sprites() -> void:
 				crop.name = "PotatoPlant%02d" % _crop_sprites.size()
 				crop.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				crop.position = bed_center + Vector2(-8.0 + column * 16.0, -24.0 + row * 16.0)
-				# La patata è solo la pianta: sopra la terra ma sotto il player.
+				# The potato sprite is only the plant: above soil but below the player.
 				crop.z_index = 0
 				crop.visible = false
 				add_child(crop)
@@ -461,8 +461,8 @@ func _update_night_lighting() -> void:
 
 
 func get_occupied_power_cells() -> Array[Vector2i]:
-	# L'impronta di costruzione deve coincidere con la collisione reale, senza
-	# includere il raccordo acqua esterno o bloccare un tubo ai bordi.
+	# The building footprint must match real collision without including the
+	# external water connector or blocking an edge pipe.
 	var cells: Array[Vector2i] = []
 	var min_cell := Vector2i(floori((global_position.x - WALL_COLLISION_RADIUS) / TILE_SIZE), floori((global_position.y - WALL_COLLISION_RADIUS) / TILE_SIZE))
 	var max_cell := Vector2i(floori((global_position.x + WALL_COLLISION_RADIUS) / TILE_SIZE), floori((global_position.y + WALL_COLLISION_RADIUS) / TILE_SIZE))
@@ -475,8 +475,8 @@ func get_occupied_power_cells() -> Array[Vector2i]:
 
 
 func _build_boundary_and_corridor() -> void:
-	# Porte, corridoio, gate e collisioni sono esattamente quelli della cupola
-	# base: cambiano soltanto il raggio e gli sprite della serra.
+	# Doors, corridor, gate, and collisions exactly match the base dome; only
+	# radius and greenhouse sprites differ.
 	super._build_boundary_and_corridor()
 	_beds_collision = StaticBody2D.new()
 	_beds_collision.name = "GreenhouseBedCollision"
@@ -509,8 +509,8 @@ func _build_port_markers() -> void:
 func _register_connections() -> void:
 	if is_preview or not is_inside_tree():
 		return
-	# Il tubo occupa la cella subito a ovest; il raccordo visibile colma il
-	# tratto finale fino alla parete, senza sembrare staccato dalla serra.
+	# The pipe occupies the cell directly west; the visible connector fills the
+	# final section to the wall without looking detached from the greenhouse.
 	var water_position := global_position + Vector2(-get_radius() - 16.0, 0.0)
 	_water_input_cell = Vector2i(floori(water_position.x / TILE_SIZE), floori(water_position.y / TILE_SIZE))
 	var pipe_manager := get_node_or_null("/root/PipeManager")
@@ -533,14 +533,13 @@ func _update_interior_art() -> void:
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	var inside := player != null and contains_world_point(player.global_position)
-	# Fuori il vetro protegge visivamente la cupola; all'interno è quasi trasparente.
+	# Outside, glass visibly protects the dome; inside, it is nearly transparent.
 	_glass_sprite.modulate = Color(1.0, 0.96, 0.78, 0.18 if inside else 0.68) if _is_night_light_active() else Color(1.0, 1.0, 1.0, 0.22 if inside else 0.72)
 
 
 func _refresh_existing_visual_assets() -> void:
-	# Le serre create prima della correzione conservano ImageTexture generate
-	# con la maschera vecchia. Aggiornarle una sola volta evita di chiedere al
-	# giocatore di demolirle e ricostruirle dopo un hot-reload.
+	# Greenhouses created before the fix keep ImageTextures made with the old mask.
+	# Refresh once to avoid asking the player to rebuild after a hot reload.
 	if _visual_asset_revision >= VISUAL_ASSET_REVISION:
 		return
 	if _sprite != null:
@@ -585,7 +584,7 @@ func _get_plant_oxygen_per_second() -> float:
 	if not _planted:
 		return 0.0
 	var clock := get_node_or_null("/root/WorldClock")
-	# Di notte le piante producono solo se la serra è illuminata dalla rete.
+	# At night, plants produce only while the greenhouse is grid-lit.
 	if clock != null and not bool(clock.call("is_day")) and not powered:
 		return 0.0
 	var stage_factor: float = float([0.18, 0.42, 0.68, 0.86, 1.0][maxi(0, get_crop_stage())])
@@ -646,7 +645,7 @@ func _try_harvest_nearby() -> bool:
 	if player == null or not contains_world_point(player.global_position) or player.global_position.distance_to(global_position) > 66.0:
 		return false
 	var inventory := _inventory()
-	if inventory != null and bool(inventory.call("add_item", "food_ration", "Razioni di patate", get_harvest_food(), false)):
+	if inventory != null and bool(inventory.call("add_item", "food_ration", "Potato Rations", get_harvest_food(), false)):
 		_ready_to_harvest = false
 		_completed_cycles += 1
 		_growth_seconds = 0.0
@@ -667,9 +666,9 @@ func get_harvest_food() -> int:
 
 
 func _roll_harvest_food() -> int:
-	# Ogni lotto base produce 4 o 5 razioni con probabilità uguale. Il bonus
-	# genetico viene applicato dopo il tiro, quindi resta legato al lotto e non
-	# cambia retroattivamente quando lo shop sblocca un livello nuovo.
+	# Every base lot yields 4 or 5 rations with equal probability. Genetic bonus
+	# applies after the roll, remains tied to that lot, and never retroactively
+	# changes when the shop unlocks a new level.
 	var base_amount := HARVEST_FOOD if _rng.randi_range(0, 1) == 1 else HARVEST_FOOD - 1
 	return maxi(1, roundi(float(base_amount) * (1.0 + float(_crop_seed_yield_level) * 0.20)))
 
@@ -680,8 +679,8 @@ func get_crop_seed_configuration() -> Dictionary:
 
 func _refresh_crop_visuals() -> void:
 	var stage := get_crop_stage()
-	# Gli sprite forniti rappresentano solo la pianta: rimuoviamo lo sfondo JPEG
-	# prima di atlasarli, così la terra e il vaso restano sempre visibili sotto.
+	# Supplied sprites show only the plant: remove the JPEG background before
+	# atlasing so soil and pot always remain visible beneath.
 	var sheet: Texture2D = TRANSPARENCY.without_white_background(FIRST_GROWTH_SHEET if _completed_cycles == 0 else REGROWTH_SHEET)
 	var frame_count := 5 if _completed_cycles == 0 else 4
 	for crop in _crop_sprites:
@@ -710,23 +709,23 @@ func _get_crop_achievement_multiplier() -> float:
 
 
 func get_machine_specs() -> Dictionary:
-	var power_state := "GUASTO — RIPARAZIONE RICHIESTA" if _system_incident_faulted else ("ATTIVA (+60% crescita)" if powered else ("abilitata, in attesa rete" if network_enabled else "disattivata manualmente"))
+	var power_state := "FAULT — REPAIR REQUIRED" if _system_incident_faulted else ("ACTIVE (+60% growth)" if powered else ("enabled, awaiting grid" if network_enabled else "manually disabled"))
 	var specs := [
-		"Tubo acqua sinistra: %s" % ("collegato" if is_water_connected() else "non collegato"),
-		"Sorgente acqua: %s" % ("disponibile" if has_water_source() else "assente o senza rete"),
-		"Elettricità: %s · %.0f kW" % [power_state, get_power_demand_kw()],
-		"O₂ serra: %.1f / %.0f (piante %.3f unità/s)" % [oxygen_reserve, GREENHOUSE_OXYGEN_CAPACITY, _get_plant_oxygen_per_second()],
-		"Coltura: %s" % ("pronta" if _ready_to_harvest else (_format_crop_time(get_remaining_growth_seconds()) if _planted else "da seminare")),
-		"Acqua usata: %.1f L" % _water_consumed_liters,
-		"Genetica lotto: resa %d/5 · velocità %d/5" % [_crop_seed_yield_level, _crop_seed_speed_level],
-		"Raccolta: %d razioni" % get_harvest_food(),
+		"Left water pipe: %s" % ("connected" if is_water_connected() else "not connected"),
+		"Water source: %s" % ("available" if has_water_source() else "absent or off-grid"),
+		"Power: %s · %.0f kW" % [power_state, get_power_demand_kw()],
+		"Greenhouse O₂: %.1f / %.0f (plants %.3f units/s)" % [oxygen_reserve, GREENHOUSE_OXYGEN_CAPACITY, _get_plant_oxygen_per_second()],
+		"Crop: %s" % ("ready" if _ready_to_harvest else (_format_crop_time(get_remaining_growth_seconds()) if _planted else "needs planting")),
+		"Water used: %.1f L" % _water_consumed_liters,
+		"Lot genetics: yield %d/5 · speed %d/5" % [_crop_seed_yield_level, _crop_seed_speed_level],
+		"Harvest: %d rations" % get_harvest_food(),
 	]
 	return {
-		"title": "SERRA DI PATATE",
-		"category": "AGRICOLTURA PRESSURIZZATA",
-		"status": "GUASTO — RIPARAZIONE RICHIESTA" if _system_incident_faulted else ("RACCOLTA PRONTA" if _ready_to_harvest else ("IN CRESCITA" if _planted else "AIUOLE VUOTE")),
+		"title": "POTATO GREENHOUSE",
+		"category": "PRESSURIZED AGRICULTURE",
+		"status": "FAULT — REPAIR REQUIRED" if _system_incident_faulted else ("HARVEST READY" if _ready_to_harvest else ("GROWING" if _planted else "EMPTY BEDS")),
 		"status_color": Color("ff6258") if _system_incident_faulted else (Color("72eda0") if _ready_to_harvest else Color("8cd9ff")),
-		"principle": "Due aiuole da otto piante coltivano un lotto sincronizzato di patate. La prima crescita richiede 5 minuti, le successive 3 minuti.",
+		"principle": "Two beds of eight plants grow one synchronized potato lot. First growth takes 5 minutes; later cycles take 3 minutes.",
 		"specs": specs,
 	}
 

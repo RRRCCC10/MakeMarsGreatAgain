@@ -62,7 +62,7 @@ func _refresh_visuals() -> void:
 			atlas_position = Vector2i(0, 16)
 		Category.HYDROGEN:
 			atlas_position = Vector2i(32, 16)
-	# Ogni categoria occupa due frame consecutivi: dritto, poi croce.
+	# Each category occupies two consecutive frames: straight, then cross.
 	if shape_type == ShapeType.CROSS:
 		atlas_position.x += FRAME_SIZE.x
 	var texture := AtlasTexture.new()

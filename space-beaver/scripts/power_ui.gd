@@ -1,10 +1,10 @@
 extends CanvasLayer
 
-## Centro di distribuzione elettrica.
+## Electrical distribution center.
 ##
-## Sostituisce il vecchio HUD permanente con una sola pagina operativa: qui si
-## leggono i flussi e si abilita/disabilita ogni elemento della rete. Il mondo
-## resta bloccato dalla UIState mentre la pagina è aperta.
+## Replaces the old permanent HUD with one operational page. Read flows and
+## enable or disable every grid element here. UIState blocks the world while
+## the page is open.
 
 const PAGE_MODAL_ID := &"power_network"
 const REFRESH_INTERVAL := 0.20
@@ -117,16 +117,16 @@ func _build_ui() -> void:
 
 	var title_row := HBoxContainer.new()
 	content.add_child(title_row)
-	var title := _label("CENTRO DI DISTRIBUZIONE ELETTRICA", 22, Color("ffe07c"))
+	var title := _label("ELECTRICAL DISTRIBUTION CENTER", 22, Color("ffe07c"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_color_override("font_outline_color", Color("03070a"))
 	title.add_theme_constant_override("outline_size", 3)
 	title_row.add_child(title)
-	var close_hint := _label("L / ESC · CHIUDI", 12, Color("9edcf2"))
+	var close_hint := _label("L / ESC · CLOSE", 12, Color("9edcf2"))
 	close_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	title_row.add_child(close_hint)
 
-	var subtitle := _label("Qui vedi solo ciò che è collegato alla rete. Usa un pulsante per attivare o disattivare un elemento.", 12, Color("bacbd2"))
+	var subtitle := _label("Only grid-connected elements appear here. Use a button to enable or disable an element.", 12, Color("bacbd2"))
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(subtitle)
 
@@ -145,22 +145,22 @@ func _build_ui() -> void:
 	metric_grid.add_theme_constant_override("h_separation", 7)
 	metric_grid.add_theme_constant_override("v_separation", 7)
 	overview_rows.add_child(metric_grid)
-	_metrics["production"] = _make_metric(metric_grid, "PRODUZIONE", Color("71e6a4"))
-	_metrics["demand"] = _make_metric(metric_grid, "RICHIESTA", Color("ffb46b"))
-	_metrics["battery"] = _make_metric(metric_grid, "RISERVA", Color("79aaff"))
-	_metrics["solar"] = _make_metric(metric_grid, "SOLE", Color("ffe38b"))
-	_metrics["autonomy"] = _make_metric(metric_grid, "AUTONOMIA", Color("91c8db"))
+	_metrics["production"] = _make_metric(metric_grid, "PRODUCTION", Color("71e6a4"))
+	_metrics["demand"] = _make_metric(metric_grid, "DEMAND", Color("ffb46b"))
+	_metrics["battery"] = _make_metric(metric_grid, "RESERVE", Color("79aaff"))
+	_metrics["solar"] = _make_metric(metric_grid, "SUN", Color("ffe38b"))
+	_metrics["autonomy"] = _make_metric(metric_grid, "AUTONOMY", Color("91c8db"))
 
 	var devices_header := HBoxContainer.new()
 	content.add_child(devices_header)
-	var devices_title := _label("ELEMENTI DELLA RETE", 14, Color("7ee5ff"))
+	var devices_title := _label("GRID ELEMENTS", 14, Color("7ee5ff"))
 	devices_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	devices_header.add_child(devices_title)
 	_device_count = _label("", 11, Color("9eb6bf"))
 	_device_count.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	devices_header.add_child(_device_count)
 
-	var table_header := _label("ELEMENTI DELLA RETE · ogni scheda ha il proprio comando", 10, Color("77929c"))
+	var table_header := _label("GRID ELEMENTS · each card has its own control", 10, Color("77929c"))
 	content.add_child(table_header)
 
 	var scroll := ScrollContainer.new()
@@ -178,7 +178,7 @@ func _build_ui() -> void:
 	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_notice.custom_minimum_size = Vector2(0, 18)
 	content.add_child(_notice)
-	var footer := _label("VERDE operativo · GIALLO in attesa o senza cavo · ROSSO disconnesso · L / ESC chiude", 10, Color("78959f"))
+	var footer := _label("GREEN operational · YELLOW awaiting power or no cable · RED disconnected · L / ESC closes", 10, Color("78959f"))
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(footer)
@@ -216,16 +216,16 @@ func _refresh() -> void:
 		return
 	var power_grid := _power_grid()
 	if power_grid == null:
-		_network_status.text = "RETE NON DISPONIBILE"
-		_network_note.text = "Il controllore della rete elettrica non è stato inizializzato."
+		_network_status.text = "GRID UNAVAILABLE"
+		_network_note.text = "The power-grid controller has not initialized."
 		return
 	var stats: Dictionary = power_grid.call("get_stats")
-	var status := str(stats.get("status", "RETE INCOMPLETA"))
-	_network_status.text = "STATO RETE · " + status
+	var status := str(stats.get("status", "GRID INCOMPLETE"))
+	_network_status.text = "GRID STATUS · " + status
 	_network_status.add_theme_color_override("font_color", _status_color(status))
 	var hour := float(stats.get("hour", 0.0))
 	_network_note.text = "%s · %02d:%02d · %d pannelli collegati su %d · %d batterie collegate su %d" % [
-		str(stats.get("phase", "OPERAZIONI")),
+		str(stats.get("phase", "OPERATIONS")),
 		floori(hour),
 		floori((hour - floorf(hour)) * 60.0),
 		int(stats.get("panels_connected", 0)),
@@ -236,14 +236,14 @@ func _refresh() -> void:
 	_metrics["production"].text = "%d kW" % roundi(float(stats.get("production_kw", 0.0)))
 	_metrics["demand"].text = "%d kW" % roundi(float(stats.get("demand_kw", 0.0)))
 	_metrics["battery"].text = "%d / %d kWh" % [roundi(float(stats.get("connected_battery_kwh", 0.0))), roundi(float(stats.get("connected_battery_capacity_kwh", 0.0)))]
-	_metrics["solar"].text = "%d%% luce" % roundi(float(stats.get("solar_factor", 0.0)) * 100.0)
+	_metrics["solar"].text = "%d%% light" % roundi(float(stats.get("solar_factor", 0.0)) * 100.0)
 	var autonomy := float(stats.get("battery_autonomy_hours", -1.0))
-	_metrics["autonomy"].text = "STABILE" if autonomy < 0.0 else "%.1f h" % autonomy
+	_metrics["autonomy"].text = "STABLE" if autonomy < 0.0 else "%.1f h" % autonomy
 	_rebuild_device_rows(Array(power_grid.call("get_network_devices")))
 
 
 func _rebuild_device_rows(devices: Array) -> void:
-	_device_count.text = "%d dispositivi rilevati" % devices.size()
+	_device_count.text = "%d devices detected" % devices.size()
 	if devices.is_empty():
 		for key in _device_row_by_id.keys():
 			var old_row := _device_row_by_id[key] as Control
@@ -251,7 +251,7 @@ func _rebuild_device_rows(devices: Array) -> void:
 				old_row.queue_free()
 		_device_row_by_id.clear()
 		if _empty_state == null or not is_instance_valid(_empty_state):
-			_empty_state = _label("Nessun elemento elettrico costruito. Acquista e posiziona un pannello, un trasformatore o un dispositivo da alimentare.", 13, Color("9db5bd"))
+			_empty_state = _label("No electrical element built. Buy and place a panel, transformer, or device to power.", 13, Color("9db5bd"))
 			_empty_state.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			_empty_state.custom_minimum_size = Vector2(0, 72)
 			_device_rows.add_child(_empty_state)
@@ -340,7 +340,7 @@ func _update_device_row(row: Control, entry: Dictionary) -> void:
 		return
 	var enabled := bool(entry.get("enabled", false))
 	var connected := bool(entry.get("connected", false))
-	var role := str(entry.get("role", "ELEMENTO"))
+	var role := str(entry.get("role", "ELEMENT"))
 	var state_text := str(entry.get("status", ""))
 	var role_badge := row.get_meta("role_badge") as Label
 	var name := row.get_meta("name_label") as Label
@@ -352,7 +352,7 @@ func _update_device_row(row: Control, entry: Dictionary) -> void:
 		role_badge.text = role
 		role_badge.add_theme_color_override("font_color", _role_color(role))
 	if name != null:
-		name.text = str(entry.get("name", "ELEMENTO"))
+		name.text = str(entry.get("name", "ELEMENT"))
 	if state != null:
 		state.text = state_text
 		state.add_theme_color_override("font_color", _status_color(state_text))
@@ -361,8 +361,8 @@ func _update_device_row(row: Control, entry: Dictionary) -> void:
 	if detail != null:
 		detail.text = str(entry.get("detail", ""))
 	if button != null:
-		button.text = "SCOLLEGA" if enabled else "COLLEGA"
-		button.tooltip_text = "Scollega questo elemento dalla rete" if enabled else "Abilita questo elemento"
+		button.text = "DISCONNECT" if enabled else "CONNECT"
+		button.tooltip_text = "Disconnect this element from the grid" if enabled else "Enable this element"
 		button.disabled = not bool(entry.get("can_toggle", false))
 		button.add_theme_stylebox_override("normal", _button_style(Color("a9444f") if enabled else Color("39785f")))
 		button.add_theme_stylebox_override("hover", _button_style(Color("d95a66") if enabled else Color("55ad83")))
@@ -379,33 +379,33 @@ func _toggle_device(device: Node, requested_enabled: Variant = null) -> void:
 	if requested_enabled != null:
 		should_enable = bool(requested_enabled)
 	if bool(power_grid.call("set_device_network_enabled", device, should_enable)):
-		_notice.text = ("COLLEGATO · " if should_enable else "SCOLLEGATO · ") + _device_name(device)
+		_notice.text = ("CONNECTED · " if should_enable else "DISCONNECTED · ") + _device_name(device)
 		_notice.add_theme_color_override("font_color", Color("a7eecc"))
 	else:
-		_notice.text = "QUESTO ELEMENTO NON SUPPORTA IL CONTROLLO MANUALE"
+		_notice.text = "THIS ELEMENT DOES NOT SUPPORT MANUAL CONTROL"
 	_refresh_elapsed = REFRESH_INTERVAL
 	_refresh()
 
 
 func _power_text(role: String, value: float, enabled: bool, connected: bool) -> String:
 	if not enabled:
-		return "nessun flusso · disattivato"
+		return "no flow · disabled"
 	if not connected:
-		return "nessun flusso · cavo assente"
+		return "no flow · cable absent"
 	match role:
-		"GENERAZIONE":
-			return "%.0f kW disponibili" % value
-		"ACCUMULO":
-			return "%.0f kWh immagazzinati" % value
-		"CONSUMO":
-			return "%.0f kW richiesti" % value
-	return "ponte di rete"
+		"GENERATION":
+			return "%.0f kW available" % value
+		"STORAGE":
+			return "%.0f kWh stored" % value
+		"CONSUMPTION":
+			return "%.0f kW requested" % value
+	return "grid bridge"
 
 
 func _device_name(device: Node) -> String:
 	if device != null and is_instance_valid(device) and device.has_method("get_display_name"):
 		return str(device.call("get_display_name")).to_upper()
-	return str(device.name).to_upper() if device != null and is_instance_valid(device) else "ELEMENTO"
+	return str(device.name).to_upper() if device != null and is_instance_valid(device) else "ELEMENT"
 
 
 func _power_grid() -> Node:
@@ -424,19 +424,19 @@ func _close_modal() -> void:
 
 
 func _status_color(status: String) -> Color:
-	if status in ["OPERATIVO", "RETE ATTIVA", "IN CARICA", "RETE DIRETTA", "BATTERIA"]:
+	if status in ["OPERATIONAL", "GRID ACTIVE", "CHARGING", "DIRECT GRID", "BATTERY"]:
 		return Color("78e9aa")
-	if status in ["COLLEGATO · IN ATTESA", "IN ATTESA DI LUCE", "RETE INCOMPLETA", "CAVO NON COLLEGATO"]:
+	if status in ["CONNECTED · AWAITING POWER", "AWAITING LIGHT", "GRID INCOMPLETE", "CABLE NOT CONNECTED"]:
 		return Color("ffd278")
 	return Color("f16d70")
 
 
 func _role_color(role: String) -> Color:
 	match role:
-		"GENERAZIONE": return Color("78e9aa")
-		"CONVERSIONE": return Color("7ed8f4")
-		"ACCUMULO": return Color("82aaff")
-		"CONSUMO": return Color("ffb56f")
+		"GENERATION": return Color("78e9aa")
+		"CONVERSION": return Color("7ed8f4")
+		"STORAGE": return Color("82aaff")
+		"CONSUMPTION": return Color("ffb56f")
 	return Color("c3d4d9")
 
 

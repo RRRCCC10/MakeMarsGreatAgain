@@ -1,9 +1,9 @@
 extends Node2D
 
-## Mappa autoriale suddivisa in asset statici da 256 × 256 tile.
-## Il mondo completo resta 2.000 × 2.000 tile, ma in scena vivono soltanto
-## i nove chunk attorno al giocatore. Le scene dei chunk non contengono
-## logica procedurale: sono il risultato della TileMap dipinta dall'autore.
+## Authored map split into static 256 × 256-tile assets.
+## The complete world remains 2,000 × 2,000 tiles, but only the nine chunks
+## around the player live in the scene. Chunk scenes contain no procedural
+## logic: they are the result of the creator's painted TileMap.
 
 const TILE_SIZE := 16
 const CHUNK_SIZE := 256
@@ -28,7 +28,7 @@ func _ready() -> void:
 func _setup() -> void:
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	if player == null:
-		push_error("MapStreaming: player non trovato")
+		push_error("MapStreaming: player not found")
 		return
 	_refresh_persistent_chunks()
 	_update_active_chunks(true)
@@ -61,7 +61,7 @@ func _ensure_chunk(chunk: Vector2i) -> void:
 		return
 	var chunk_scene := load(CHUNK_PATH % [chunk.x, chunk.y]) as PackedScene
 	if chunk_scene == null:
-		push_error("MapStreaming: chunk mancante %s" % (CHUNK_PATH % [chunk.x, chunk.y]))
+		push_error("MapStreaming: missing chunk %s" % (CHUNK_PATH % [chunk.x, chunk.y]))
 		return
 	var terrain_chunk := chunk_scene.instantiate()
 	terrain_chunk.name = "TerrainChunk_%d_%d" % [chunk.x, chunk.y]
@@ -100,15 +100,15 @@ func get_world_rect() -> Rect2i:
 
 
 func get_world_pixel_rect() -> Rect2:
-	"""Limiti fisici della mappa dipinta, espressi in coordinate del mondo."""
+	"""Physical bounds of the painted map, expressed in world coordinates."""
 	return Rect2(Vector2(WORLD_RECT.position) * TILE_SIZE, Vector2(WORLD_RECT.size) * TILE_SIZE)
 
 
 func clamp_world_position(world_position: Vector2, margin: float = 0.0) -> Vector2:
-	"""Mantiene un attore dentro i 2.000 × 2.000 tile della mappa.
+	"""Keeps an actor inside the 2,000 × 2,000-tile map.
 
-	La margin evita che il collider o lo sprite attraversino il bordo: il centro
-	dell'attore resta quindi sempre nella porzione realmente giocabile.
+	The margin prevents the collider or sprite from crossing the border, so the
+	actor's center always remains in the genuinely playable area.
 	"""
 	var bounds := get_world_pixel_rect()
 	var safe_margin := maxf(0.0, margin)
@@ -173,8 +173,8 @@ func _on_buildable_entries_changed() -> void:
 func _refresh_persistent_chunks() -> bool:
 	var next_persistent: Dictionary = {}
 	for entry in BuildableRegistry.get_entries():
-		# I tubi non hanno simulazioni autonome. Tutti gli altri elementi
-		# registrati sono strutture o macchinari e mantengono vivo il chunk.
+		# Pipes have no autonomous simulation. Every other registered element is a
+		# structure or machine and keeps its chunk alive.
 		if str(entry.get("kind", "")) == "pipe":
 			continue
 		var structure := entry.get("node") as Node2D

@@ -1,7 +1,7 @@
 extends CanvasLayer
 
-## Barra di accesso rapido alle tre pagine principali. I pannelli restano
-## modali e continuano a usare UIState: qui ci sono solo i comandi visibili.
+## Quick-access bar for the three main pages. Panels remain modal and use
+## UIState; this layer only contains their visible controls.
 
 const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const ELECTRICAL_MISSION_ID := "stable_grid"
@@ -26,8 +26,8 @@ func _process(_delta: float) -> void:
 	var shop_open := _panel_is_open("ShopUI")
 	var power_open := _panel_is_open("PowerUI")
 	var achievements_open := AchievementManager.is_board_open
-	# La hotbar/zaino è un pannello interattivo: i tasti rapidi non devono
-	# restargli sopra né dal punto di vista visivo né da quello dell'input.
+	# The hotbar/backpack is interactive, so quick buttons must not overlap it
+	# visually or intercept its input.
 	_root.visible = not _landing_is_active() and not Inventory.is_open and not shop_open and not power_open and not achievements_open
 
 
@@ -35,9 +35,8 @@ func _build_ui() -> void:
 	_root = Control.new()
 	_root.name = "QuickActionsRoot"
 	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Questo layer vive sopra l'inventario: PASS intercetta comunque il mouse
-	# prima dei pannelli sottostanti. IGNORE lascia davvero passare le aree
-	# vuote, mentre i figli (la colonna con i tre pulsanti) restano cliccabili.
+	# This layer sits above inventory. PASS still intercepts the mouse before
+	# underlying panels; IGNORE lets empty areas through while child buttons work.
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
@@ -55,13 +54,13 @@ func _build_ui() -> void:
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(row)
 
-	_shop_button = _make_button("SHOP", "Apri l'emporio logistico (B)")
+	_shop_button = _make_button("SHOP", "Open the logistics store (B)")
 	_shop_button.pressed.connect(_open_shop)
 	row.add_child(_shop_button)
-	_power_button = _make_button("ELETTRICITÀ", "Completa la missione RETE ELETTRICA per sbloccare il pannello")
+	_power_button = _make_button("POWER", "Complete the POWER GRID mission to unlock this panel")
 	_power_button.pressed.connect(_open_power)
 	row.add_child(_power_button)
-	_achievement_button = _make_button("ACHIEVEMENT", "Apri la tavola degli obiettivi (J)")
+	_achievement_button = _make_button("ACHIEVEMENTS", "Open the objective board (J)")
 	_achievement_button.pressed.connect(_open_achievements)
 	row.add_child(_achievement_button)
 
@@ -101,7 +100,7 @@ func _refresh() -> void:
 		return
 	var unlocked := AchievementManager.is_reached(ELECTRICAL_MISSION_ID)
 	_power_button.disabled = not unlocked
-	_power_button.text = "ELETTRICITÀ" if unlocked else "ELETTRICITÀ · BLOCCATO"
+	_power_button.text = "POWER" if unlocked else "POWER · LOCKED"
 
 
 func _on_achievement_updated(_achievement_id: String) -> void:

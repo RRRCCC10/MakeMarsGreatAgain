@@ -18,7 +18,7 @@ func _run() -> void:
 	var inventory := root.get_node_or_null("Inventory")
 	var achievements := root.get_node_or_null("AchievementManager")
 	var camera := root.get_node_or_null("FieldCamera")
-	_expect(inventory != null and achievements != null and camera != null, "Autoload inventario, achievement e telecamera devono esistere")
+	_expect(inventory != null and achievements != null and camera != null, "Test assertion failed")
 	if inventory == null or achievements == null or camera == null:
 		_finish()
 		return
@@ -27,30 +27,30 @@ func _run() -> void:
 	camera.call("reset_for_new_mission")
 	for sample_index in 8:
 		achievements.call("record_field_sample", "roccia_test_%d" % sample_index, "common")
-	_expect(bool(achievements.call("claim", "first_field_sample")), "Prima pietra deve aprire il contratto della sacca")
-	_expect(bool(achievements.call("claim", "field_notes")), "Taccuino deve poter essere riscattato prima della sacca")
-	_expect(bool(achievements.call("claim", "sample_satchel")), "Sacca campioni deve consegnare la ricompensa fisica")
+	_expect(bool(achievements.call("claim", "first_field_sample")), "Test assertion failed")
+	_expect(bool(achievements.call("claim", "field_notes")), "Test assertion failed")
+	_expect(bool(achievements.call("claim", "sample_satchel")), "Test assertion failed")
 	var camera_slot := -1
 	for index in inventory.backpack.size():
 		if str(inventory.backpack[index].get("id", "")) == "field_camera":
 			camera_slot = index
 			break
-	_expect(camera_slot >= 0, "La telecamera consegnata deve essere realmente presente nello zaino")
+	_expect(camera_slot >= 0, "Test assertion failed")
 	if camera_slot >= 0:
 		inventory.call("select_backpack", camera_slot)
-		_expect(bool(inventory.call("move_selected_to_hotbar", 1)), "La telecamera deve potersi equipaggiare in uno slot rapido")
+		_expect(bool(inventory.call("move_selected_to_hotbar", 1)), "Test assertion failed")
 		inventory.call("select_hotbar", 1)
 	var photo: Dictionary = camera.call("take_photo")
 	await process_frame
-	_expect(not photo.is_empty(), "P deve produrre uno scatto con metadati di campo")
-	_expect(int(camera.call("get_photo_count")) == 1 and int(camera.call("get_unsent_count")) == 1, "Uno scatto deve restare nel rullino finché non viene inviato")
-	_expect(bool(camera.call("transmit_oldest_photo")), "O deve trasmettere lo scatto non inviato alla Terra")
-	_expect(int(camera.call("get_photo_count", true)) == 1 and int(camera.call("get_unsent_count")) == 0, "La trasmissione deve aggiornare lo stato del rullino")
-	_expect(int(achievements.call("get_progress", "first_photo")) == 1, "Un invio fotografico deve avanzare il contratto Primo scatto")
+	_expect(not photo.is_empty(), "Test assertion failed")
+	_expect(int(camera.call("get_photo_count")) == 1 and int(camera.call("get_unsent_count")) == 1, "Test assertion failed")
+	_expect(bool(camera.call("transmit_oldest_photo")), "Test assertion failed")
+	_expect(int(camera.call("get_photo_count", true)) == 1 and int(camera.call("get_unsent_count")) == 0, "Test assertion failed")
+	_expect(int(achievements.call("get_progress", "first_photo")) == 1, "Test assertion failed")
 	camera.call("open_archive")
-	_expect(bool(camera.get("is_archive_open")), "C deve aprire l'archivio fotografico")
+	_expect(bool(camera.get("is_archive_open")), "Test assertion failed")
 	camera.call("close_archive")
-	_expect(not bool(camera.get("is_archive_open")), "L'archivio deve richiudersi senza bloccare il gioco")
+	_expect(not bool(camera.get("is_archive_open")), "Test assertion failed")
 	_finish()
 
 

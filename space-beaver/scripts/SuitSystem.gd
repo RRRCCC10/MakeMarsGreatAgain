@@ -7,7 +7,7 @@ const STANDARD_SUIT_ID := "suit_standard"
 const SUIT_ORDER: Array[String] = ["suit_standard", "suit_reinforced", "suit_explorer", "suit_storm"]
 const SUITS := {
 	"suit_standard": {
-		"name": "Tuta EVA standard",
+		"name": "Standard EVA Suit",
 		"short_name": "EVA STANDARD",
 		"solar_protection": 0.30,
 		"cosmic_protection": 0.05,
@@ -15,21 +15,21 @@ const SUITS := {
 		"oxygen_capacity": 100.0,
 		"movement_multiplier": 1.0,
 		"tint": Color("fff1e4"),
-		"description": "Tuta iniziale leggera. Schermatura di base, O₂ 100 e protezione termica limitata fino a −50°C: di notte uscire è rischioso.",
+		"description": "Light starting suit. Basic shielding, O₂ 100, and limited thermal protection down to −50°C: going outside at night is risky.",
 	},
 	"suit_reinforced": {
-		"name": "Tuta EVA rinforzata",
-		"short_name": "EVA RINFORZATA",
+		"name": "Reinforced EVA Suit",
+		"short_name": "REINFORCED EVA",
 		"solar_protection": 0.45,
 		"cosmic_protection": 0.08,
 		"cold_tolerance_c": -72.0,
 		"oxygen_capacity": 130.0,
 		"movement_multiplier": 0.98,
 		"tint": Color("a8d8ff"),
-		"description": "Strati polimerici ricchi di idrogeno. Solare 45%, O₂ 130 e freddo fino a −72°C.",
+		"description": "Hydrogen-rich polymer layers. Solar 45%, O₂ 130, and cold resistance down to −72°C.",
 	},
 	"suit_explorer": {
-		"name": "Tuta da esplorazione",
+		"name": "Exploration Suit",
 		"short_name": "EVA EXPLORER",
 		"solar_protection": 0.60,
 		"cosmic_protection": 0.12,
@@ -37,10 +37,10 @@ const SUITS := {
 		"oxygen_capacity": 160.0,
 		"movement_multiplier": 1.0,
 		"tint": Color("a9f0c0"),
-		"description": "Composito avanzato, mobilita' completa, O₂ 160 e freddo fino a −90°C.",
+		"description": "Advanced composite, full mobility, O₂ 160, and cold resistance down to −90°C.",
 	},
 	"suit_storm": {
-		"name": "Tuta anti-tempesta solare",
+		"name": "Solar-Storm Suit",
 		"short_name": "EVA STORM",
 		"solar_protection": 0.75,
 		"cosmic_protection": 0.18,
@@ -48,7 +48,7 @@ const SUITS := {
 		"oxygen_capacity": 200.0,
 		"movement_multiplier": 0.94,
 		"tint": Color("e1b5ff"),
-		"description": "Massima protezione portatile: solare 75%, O₂ 200 e freddo fino a −112°C.",
+		"description": "Maximum portable protection: solar 75%, O₂ 200, and cold resistance down to −112°C.",
 	},
 }
 

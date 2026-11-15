@@ -1,12 +1,11 @@
 extends Node
 
-## Punto unico e prioritario per l'interazione con i rover.
+## Single, high-priority point for rover interaction.
 ##
-## L'interazione non appartiene ai pannelli della cupola o dei macchinari:
-## questi possono mostrare informazioni e usare E in _unhandled_input, ma non
-## devono mai poter intercettare l'imbarco. Essendo un autoload, questo nodo
-## riceve l'input prima della scena di gioco e rende E affidabile anche vicino
-## a una base, una macchina o un'interfaccia informativa.
+## Interaction does not belong to dome or machine panels. They can show
+## information and use E in _unhandled_input, but must never intercept boarding.
+## As an autoload, this node receives input before the game scene and keeps E
+## reliable near a base, a machine, or an informational interface.
 
 const INTERACTION_KEY := KEY_E
 const ROVER_CLEAN_DISTANCE := 94.0
@@ -45,8 +44,8 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or event.echo:
 		return
-	# Legge sia il carattere prodotto dal layout sia il tasto fisico. In questo
-	# modo E continua a funzionare anche con un layout di tastiera differente.
+	# Read both the character produced by the layout and the physical key, so E
+	# continues to work with a different keyboard layout.
 	if event.keycode != INTERACTION_KEY and event.physical_keycode != INTERACTION_KEY:
 		return
 	if not event.pressed:
@@ -70,8 +69,8 @@ func _input(event: InputEvent) -> void:
 		return
 	var dusty_rover := _find_dusty_rover(player)
 	if dusty_rover != null:
-		# Una pressione breve conserva il comando storico di salita; la pulizia
-		# parte solo dopo una pressione continua, evitando il conflitto tra E.
+		# A short press preserves the original boarding command; cleaning begins only
+		# after a continuous hold, avoiding an E-key conflict.
 		_pending_player = player
 		_pending_rover = dusty_rover
 		_pending_clean_target = dusty_rover
@@ -82,8 +81,8 @@ func _input(event: InputEvent) -> void:
 		return
 	var dirty_water_drill := _find_dirty_water_drill(player)
 	if dirty_water_drill != null and not _target_blocked_inside_dome(player, dirty_water_drill):
-		# Come per il rover, E breve mantiene l'azione contestuale; solo una
-		# pressione continua avvia la pulizia della sabbia.
+		# As with the rover, a short E press keeps the contextual action; only a
+		# continuous press begins sand cleaning.
 		_pending_player = player
 		_pending_rover = null
 		_pending_clean_target = dirty_water_drill

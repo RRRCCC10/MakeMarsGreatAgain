@@ -5,142 +5,142 @@ signal message_changed(message: String, is_error: bool)
 
 const CATALOG := {
 	"solar_panel": {
-		"name": "Pannello solare",
+		"name": "Solar Panel",
 		"price": 500_000_000,
 		"category": "energy",
 		"placeable": true,
-		"description": "Produce 100 kW durante il giorno. Richiede un'uscita libera a destra.",
+		"description": "Generates 100 kW during daylight. Requires a clear output on its right side.",
 	},
 	"transformer": {
-		"name": "Trasformatore",
+		"name": "Transformer",
 		"price": 1_000_000_000,
 		"category": "energy",
 		"placeable": true,
-		"description": "Collega pannelli, batterie e macchinari. Puoi acquistarne più di uno: ogni trasformatore avvia una rete indipendente.",
+		"description": "Connects panels, batteries, and machines. You can buy more than one: each transformer starts an independent grid.",
 	},
 	"battery": {
-		"name": "Batteria",
+		"name": "Battery",
 		"price": 750_000_000,
 		"category": "energy",
 		"placeable": true,
-		"description": "Accumula 500 kWh e alimenta la rete quando i pannelli non bastano.",
+		"description": "Stores 500 kWh and powers the grid when panels are insufficient.",
 	},
 	"ice_drill": {
-		"name": "Trivella di ghiaccio",
+		"name": "Ice Drill",
 		"price": 1_250_000_000,
 		"category": "extraction",
 		"placeable": true,
-		"description": "Consuma 60 kW e produce 80 L/h: abbastanza per serra ed elettrolizzatore con una riserva. Uscita dell'acqua a destra, nella cella centrale.",
+		"description": "Uses 60 kW and produces 80 L/h: enough for the greenhouse and electrolyzer with a reserve. Water exits on the right at the central cell.",
 	},
 	"rock_drill": {
-		"name": "Trivella mineraria",
+		"name": "Mineral Drill",
 		"price": 1_550_000_000,
 		"category": "extraction",
 		"placeable": true,
-		"description": "Consuma 85 kW, estrae un campione ogni 12 s e conserva fino a 32 rocce. Il bioma di posa determina le scoperte, inclusa una rara al 5%.",
+		"description": "Uses 85 kW, extracts one sample every 12 s, and stores up to 32 rocks. The placement biome determines discoveries, including a 5% rare sample.",
 	},
 	"electrolyzer": {
-		"name": "Elettrolizzatore",
+		"name": "Electrolyzer",
 		"price": 1_800_000_000,
 		"category": "life_support",
 		"placeable": true,
-		"description": "Consuma 65 kW e acqua da una tubazione in basso a sinistra. Produce H₂ e O₂ in continuo; le due uscite possono essere collegate separatamente e i gas non vengono accumulati nella macchina.",
+		"description": "Uses 65 kW and water from a lower-left pipe. Produces continuous H₂ and O₂; each output can be connected separately and the gases are not stored in the machine.",
 	},
 	"sabatier": {
-		"name": "Reattore Sabatier",
+		"name": "Sabatier Reactor",
 		"price": 2_200_000_000,
 		"category": "life_support",
 		"placeable": true,
-		"description": "Consuma 50 kW e idrogeno. Si installa nell'unico spazio a sinistra del razzo e carica direttamente il metano nel razzo, senza tubi.",
+		"description": "Uses 50 kW and hydrogen. Install it in the only space left of the rocket to load methane directly into the rocket without pipes.",
 	},
 	"xrd_diffractometer": {
-		"name": "Diffrattometro a raggi X",
+		"name": "X-ray Diffractometer",
 		"price": 1_600_000_000,
 		"category": "research",
 		"placeable": true,
-		"description": "Analizza un campione in 2 min 30 s. Si installa in qualunque cupola abitativa e trasmette un rapporto scientifico alla Terra.",
+		"description": "Analyzes a sample in 2 min 30 s. Install it in any habitat dome to transmit a scientific report to Earth.",
 	},
 	"raman_spectrometer": {
-		"name": "Spettrometro Raman",
+		"name": "Raman Spectrometer",
 		"price": 2_000_000_000,
 		"category": "research",
 		"placeable": true,
-		"description": "Analizza un campione in 3 minuti. Si installa in qualunque cupola abitativa e trasmette un rapporto scientifico alla Terra.",
+		"description": "Analyzes a sample in 3 minutes. Install it in any habitat dome to transmit a scientific report to Earth.",
 	},
 	"icp_ms": {
-		"name": "Spettrometro ICP-MS",
+		"name": "ICP-MS Spectrometer",
 		"price": 2_800_000_000,
 		"category": "research",
 		"placeable": true,
-		"description": "Analisi elementare avanzata in 4 minuti. Si installa in qualunque cupola abitativa e genera il rapporto più remunerativo.",
+		"description": "Performs advanced elemental analysis in 4 minutes. Install it in any habitat dome to generate the highest-value report.",
 	},
 	"dome_small": {
-		"name": "Cupola base piccola",
+		"name": "Small Base Dome",
 		"price": 1_200_000_000,
 		"category": "habitats",
 		"placeable": true,
-		"description": "Cupola piccola. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
+		"description": "Small dome. Its initial O₂ reserve must be supplied through a pipe; minimal thermal shelter and grid-powered heating.",
 	},
 	"dome_medium": {
-		"name": "Cupola base media",
+		"name": "Medium Base Dome",
 		"price": 2_400_000_000,
 		"category": "habitats",
 		"placeable": true,
-		"description": "Cupola media. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
+		"description": "Medium dome. Its initial O₂ reserve must be supplied through a pipe; minimal thermal shelter and grid-powered heating.",
 	},
 	"dome_large": {
-		"name": "Cupola base grande",
+		"name": "Large Base Dome",
 		"price": 4_000_000_000,
 		"category": "habitats",
 		"placeable": true,
-		"description": "Cupola grande. Riserva iniziale di O₂ da rifornire con tubo; riparo termico minimo, riscaldamento con rete elettrica.",
+		"description": "Large dome. Its initial O₂ reserve must be supplied through a pipe; minimal thermal shelter and grid-powered heating.",
 	},
 	"greenhouse": {
-		"name": "Serra di patate",
+		"name": "Potato Greenhouse",
 		"price": 3_200_000_000,
 		"category": "habitats",
 		"placeable": true,
-		"description": "Serra con camera di decompressione, due aiuole da 8 piante e raccordo acqua sul lato sinistro.",
+		"description": "Greenhouse with an airlock, two beds of 8 plants, and a water connector on the left side.",
 	},
 	"potato_seeds": {
-		"name": "Semi di patate (lotto)",
+		"name": "Potato Seeds (batch)",
 		"price": 120_000_000,
 		"category": "habitats",
 		"placeable": false,
-		"description": "Un lotto semina tutte e 16 le piante della serra. Dopo il raccolto le piante ricrescono.",
+		"description": "One batch plants all 16 greenhouse plants. Plants regrow after harvesting.",
 	},
 	"suit_reinforced": {
-		"name": "Tuta EVA rinforzata",
+		"name": "Reinforced EVA Suit",
 		"price": 650_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Solare 45%, cosmica 8%, O₂ 130 e protezione termica fino a −82°C.",
+		"description": "Solar 45%, cosmic 8%, O₂ 130, and thermal protection to −82°C.",
 	},
 	"suit_explorer": {
-		"name": "Tuta EVA Explorer",
+		"name": "Explorer EVA Suit",
 		"price": 1_100_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Solare 60%, cosmica 12%, O₂ 160 e protezione termica fino a −96°C.",
+		"description": "Solar 60%, cosmic 12%, O₂ 160, and thermal protection to −96°C.",
 	},
 	"suit_storm": {
-		"name": "Tuta EVA Storm",
+		"name": "Storm EVA Suit",
 		"price": 1_800_000_000,
 		"category": "equipment",
 		"placeable": false,
-		"description": "Solare 75%, cosmica 18%, O₂ 200 e protezione termica fino a −110°C.",
+		"description": "Solar 75%, cosmic 18%, O₂ 200, and thermal protection to −110°C.",
 	},
 }
 
 const CATEGORY_ORDER := ["equipment", "vehicles", "habitats", "energy", "extraction", "life_support", "research"]
 const CATEGORY_LABELS := {
-	"equipment": "TUTE ED EQUIPAGGIAMENTO EVA",
-	"vehicles": "VEICOLI DI ESPLORAZIONE",
-	"habitats": "HABITAT E CUPOLE",
-	"energy": "ENERGIA E DISTRIBUZIONE",
-	"extraction": "ESTRAZIONE RISORSE",
-	"life_support": "SUPPORTO VITALE",
-	"research": "RICERCA E ANALISI",
+	"equipment": "EVA SUITS AND EQUIPMENT",
+	"vehicles": "EXPLORATION VEHICLES",
+	"habitats": "HABITATS AND DOMES",
+	"energy": "POWER AND DISTRIBUTION",
+	"extraction": "RESOURCE EXTRACTION",
+	"life_support": "LIFE SUPPORT",
+	"research": "RESEARCH AND ANALYSIS",
 }
 const SEED_UPGRADE_COSTS := {
 	"yield": [300_000_000, 500_000_000, 750_000_000, 1_050_000_000, 1_400_000_000],
@@ -181,22 +181,22 @@ func close() -> void:
 
 func purchase(item_id: String) -> bool:
 	if not CATALOG.has(item_id):
-		message_changed.emit("Oggetto non disponibile.", true)
+		message_changed.emit("Item unavailable.", true)
 		return false
 	if SuitSystem.is_suit(item_id) and (SuitSystem.owns_suit(item_id) or DeliveryManager.count_uncollected(item_id) > 0):
-		message_changed.emit("Questa tuta e' gia' di proprieta' della missione.", true)
+		message_changed.emit("This suit is already owned by the mission.", true)
 		return false
 	var definition: Dictionary = CATALOG[item_id]
 	var price := int(definition["price"])
 	if not Economy.spend(price):
-		message_changed.emit("Budget insufficiente.", true)
+		message_changed.emit("Insufficient budget.", true)
 		return false
 	var configuration := get_current_seed_configuration() if item_id == "potato_seeds" else {}
 	if not DeliveryManager.queue_item(item_id, definition, 1, configuration):
 		Economy.add_funds(price)
-		message_changed.emit("Impossibile preparare la spedizione.", true)
+		message_changed.emit("Unable to prepare the shipment.", true)
 		return false
-	message_changed.emit("%s aggiunto all'ordine unico. Partenza tra pochi secondi." % definition["name"], false)
+	message_changed.emit("%s added to the consolidated order. Launching in a few seconds." % definition["name"], false)
 	return true
 
 
@@ -210,10 +210,10 @@ func get_dome_addon_prices() -> Dictionary:
 
 func purchase_dome(item_id: String, configuration: Dictionary = {}) -> bool:
 	if item_id not in ["dome_small", "dome_medium", "dome_large"] or not CATALOG.has(item_id):
-		message_changed.emit("Configurazione cupola non valida.", true)
+		message_changed.emit("Invalid dome configuration.", true)
 		return false
 	if bool(configuration.get("rover_pad", false)) and item_id == "dome_small":
-		message_changed.emit("La base rover richiede una cupola media o grande.", true)
+		message_changed.emit("The rover pad requires a medium or large dome.", true)
 		return false
 	var options := {
 		"lead_shielding": bool(configuration.get("lead_shielding", false)),
@@ -226,15 +226,15 @@ func purchase_dome(item_id: String, configuration: Dictionary = {}) -> bool:
 		if options[option]:
 			price += int(add_on_prices[option])
 	if not Economy.spend(price):
-		message_changed.emit("Budget insufficiente per questa configurazione.", true)
+		message_changed.emit("Insufficient budget for this configuration.", true)
 		return false
 	var definition: Dictionary = CATALOG[item_id].duplicate(true)
 	definition["name"] = _dome_order_name(str(definition["name"]), options)
 	if not DeliveryManager.queue_item(item_id, definition, 1, options):
 		Economy.add_funds(price)
-		message_changed.emit("Impossibile preparare la spedizione.", true)
+		message_changed.emit("Unable to prepare the shipment.", true)
 		return false
-	message_changed.emit("Cupola configurata aggiunta all'ordine · %s." % Economy.format_money(price), false)
+	message_changed.emit("Configured dome added to the order · %s." % Economy.format_money(price), false)
 	return true
 
 
@@ -252,11 +252,11 @@ func get_dome_total_price(item_id: String, configuration: Dictionary = {}) -> in
 func _dome_order_name(base_name: String, options: Dictionary) -> String:
 	var parts := PackedStringArray([base_name])
 	if options["lead_shielding"]:
-		parts.append("piombo")
+		parts.append("lead shielding")
 	if options["hydrogen_shielding"]:
-		parts.append("schermatura idrogenata")
+		parts.append("hydrogen shielding")
 	if options["rover_pad"]:
-		parts.append("base rover")
+		parts.append("rover pad")
 	return " · ".join(parts)
 
 
@@ -292,25 +292,25 @@ func get_current_seed_configuration() -> Dictionary:
 
 
 func get_potato_seed_description() -> String:
-	var base := "Un lotto semina tutte e 16 le piante della serra. Il lotto conserva i suoi livelli genetici anche dopo l'acquisto."
+	var base := "One batch plants all 16 greenhouse plants. The batch keeps its genetic levels after purchase."
 	if not are_seed_genetics_unlocked():
-		return base + " Bioingegneria: completa Primo raccolto e la missione Perseverance."
-	return "%s Livelli ordinati: resa %d/%d · velocità %d/%d." % [base, potato_seed_yield_level, MAX_SEED_UPGRADE_LEVEL, potato_seed_speed_level, MAX_SEED_UPGRADE_LEVEL]
+		return base + " Bioengineering: complete First Harvest and the Perseverance mission."
+	return "%s Purchased levels: yield %d/%d · speed %d/%d." % [base, potato_seed_yield_level, MAX_SEED_UPGRADE_LEVEL, potato_seed_speed_level, MAX_SEED_UPGRADE_LEVEL]
 
 
 func purchase_seed_upgrade(track: String) -> bool:
 	if not are_seed_genetics_unlocked():
-		message_changed.emit("Bioingegneria bloccata: completa Primo raccolto e la missione Perseverance.", true)
+		message_changed.emit("Bioengineering locked: complete First Harvest and the Perseverance mission.", true)
 		return false
 	if track not in SEED_UPGRADE_COSTS:
 		return false
 	var level := get_seed_upgrade_level(track)
 	if level >= MAX_SEED_UPGRADE_LEVEL:
-		message_changed.emit("Upgrade genetico già al livello massimo.", true)
+		message_changed.emit("Genetic upgrade already at the maximum level.", true)
 		return false
 	var price := get_seed_upgrade_price(track)
 	if price < 0 or not Economy.spend(price):
-		message_changed.emit("Budget insufficiente per l'upgrade genetico.", true)
+		message_changed.emit("Insufficient budget for the genetic upgrade.", true)
 		return false
 	if track == "yield":
 		potato_seed_yield_level += 1
@@ -319,7 +319,7 @@ func purchase_seed_upgrade(track: String) -> bool:
 	var achievements := get_node_or_null("/root/AchievementManager")
 	if achievements != null and achievements.has_method("record"):
 		achievements.call("record", "genetic_modification")
-	message_changed.emit("Semi GM aggiornati: %s livello %d. I nuovi lotti mantengono il miglioramento." % ["resa" if track == "yield" else "velocità", get_seed_upgrade_level(track)], false)
+	message_changed.emit("GM seeds upgraded: %s level %d. New batches retain the improvement." % ["yield" if track == "yield" else "speed", get_seed_upgrade_level(track)], false)
 	state_changed.emit()
 	return true
 

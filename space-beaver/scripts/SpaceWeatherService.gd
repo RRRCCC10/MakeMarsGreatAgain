@@ -1,8 +1,8 @@
 extends Node
 
-## Servizio dati, deliberatamente separato da Radiation.gd.
-## DONKI influenza soltanto quale profilo gia' esistente usare; non puo' mai
-## anticipare, moltiplicare o rendere piu' duro il calendario del gameplay.
+## Data service deliberately separated from Radiation.gd.
+## DONKI only affects which existing profile is used; it can never advance,
+## multiply, or make the gameplay schedule harsher.
 
 const CACHE_PATH := "user://donki_space_weather_cache.json"
 const CACHE_MAX_AGE_SECONDS := 6.0 * 60.0 * 60.0
@@ -10,8 +10,8 @@ const INITIAL_FETCH_DELAY_SECONDS := 5.0
 const HISTORY_DAYS := 30
 const INTRODUCTION_SOL := 3
 
-# Dal 30 settembre 2026 CCMC ospita il catalogo pubblico DONKI. Il vecchio
-# endpoint NASA resta come compatibilita' con installazioni o mirror precedenti.
+# Since September 30, 2026, CCMC hosts the public DONKI catalogue. The old NASA
+# endpoint remains for compatibility with older installations or mirrors.
 const CCMC_WSA_ENLIL_ENDPOINT := "https://ccmc.gsfc.nasa.gov/DONKI-API/get/WSAEnlilSimulations"
 const NASA_WSA_ENLIL_ENDPOINT := "https://api.nasa.gov/DONKI/WSAEnlilSimulations"
 
@@ -45,15 +45,15 @@ func _process(delta: float) -> void:
 
 
 func reset_for_new_mission() -> void:
-	# Una nuova partita puo' utilizzare nuovamente la cache, ma non deve mai
-	# forzare una chiamata HTTP ne' un evento durante il tutorial.
+	# A new game can reuse the cache but must never force an HTTP request or an
+	# event during the tutorial.
 	_used_candidate_ids.clear()
 	_last_selected_candidate.clear()
 
 
 func choose_event_profile(fallback_profile: String, completed_events: int, current_sol: int) -> String:
-	# La prima tempesta resta sempre didattica e minore. Radiation.gd controlla
-	# gia' il conto alla rovescia; questo e' un secondo guard-rail.
+	# The first storm always remains instructional and minor. Radiation.gd already
+	# controls its countdown; this is a second guardrail.
 	if completed_events <= 0 or current_sol < INTRODUCTION_SOL:
 		return "minor"
 	for candidate in _candidate_pool:
@@ -67,7 +67,7 @@ func choose_event_profile(fallback_profile: String, completed_events: int, curre
 
 
 func get_schedule_statistics() -> Dictionary:
-	# Valori in ore di gioco: il ritmo e' proprieta' del gioco, non dell'API.
+	# Values are game hours: pacing belongs to the game, not the API.
 	const FIRST_MEAN_HOURS := 84.0
 	const REPEAT_MEAN_HOURS := 96.0
 	const WARNING_AND_EVENT_MEAN_HOURS := 1.5 + (0.65 * 2.5) + (0.35 * 4.0)
@@ -149,8 +149,8 @@ func _on_request_completed(result: int, response_code: int, _headers: PackedStri
 
 
 func _handle_fetch_failure() -> void:
-	# Il formato storico NASA e' un fallback non bloccante: fallire entrambi gli
-	# endpoint e' normale in modalita' offline e lascia intatto il gameplay.
+	# The historic NASA format is a non-blocking fallback: both endpoints failing
+	# is normal offline and leaves gameplay intact.
 	if not _using_legacy_fallback:
 		_request_refresh(true)
 		return

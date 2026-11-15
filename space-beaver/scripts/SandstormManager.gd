@@ -1,9 +1,9 @@
 extends Node
 
-## Meteo e sabbia sono separati dalla simulazione delle singole macchine.
-## I bersagli registrati decidono come cambiano aspetto e funzionamento quando
-## ricevono set_sand_accumulation(); questo manager coordina tempi, avvisi,
-## pulizia a pressione continua e intensificazione dei guasti.
+## Weather and sand are separated from each individual machine simulation.
+## Registered targets decide how appearance and behavior change when they
+## receive set_sand_accumulation(); this manager coordinates timing, alerts,
+## hold-to-clean input, and increasingly severe faults.
 
 signal storm_state_changed(new_state: int)
 signal sand_level_changed(target: Node2D, level: int)
@@ -17,16 +17,16 @@ const WARNING_SECONDS := 45.0
 const MIN_STORM_SECONDS := 75.0
 const MAX_STORM_SECONDS := 120.0
 const SAND_STEP_SECONDS := 36.0
-# La tempesta ha piu' finestre in cui puo' depositare sabbia, ma non tutte
-# colpiscono ogni oggetto. Il terzo livello resta possibile solo come evento
-# raro: nella pratica il risultato normale e' uno o due livelli per tempesta.
+# A storm has several chances to deposit sand, but not every target is hit.
+# The third level remains possible only as a rare event: in practice, one or
+# two accumulation levels per storm are the normal result.
 const SAND_DEPOSIT_CHANCE := 0.72
 const SAND_THIRD_LEVEL_CHANCE := 0.12
 const CLEAN_DISTANCE := 94.0
 const CLEAN_MODAL := &"sand_cleaning"
 const OUTDOOR_DEBUFF_PROFILES := [
 	{
-		"label": "RAFFICHE TAGLIENTI",
+		"label": "CUTTING GUSTS",
 		"movement_multiplier": 0.94,
 		"oxygen_multiplier": 1.15,
 		"hunger_multiplier": 1.05,
@@ -34,7 +34,7 @@ const OUTDOOR_DEBUFF_PROFILES := [
 		"wind_chill_c": -4.0,
 	},
 	{
-		"label": "NUVOLA DI POLVERE",
+		"label": "DUST CLOUD",
 		"movement_multiplier": 0.88,
 		"oxygen_multiplier": 1.30,
 		"hunger_multiplier": 1.10,
@@ -42,7 +42,7 @@ const OUTDOOR_DEBUFF_PROFILES := [
 		"wind_chill_c": -8.0,
 	},
 	{
-		"label": "WHITEOUT MARZIANO",
+		"label": "MARTIAN WHITEOUT",
 		"movement_multiplier": 0.82,
 		"oxygen_multiplier": 1.50,
 		"hunger_multiplier": 1.18,
@@ -126,8 +126,8 @@ func unregister_target(target: Node) -> void:
 
 
 func get_incident_rate_multiplier() -> float:
-	# Durante il vento la polvere entra nei giunti e rende più probabili tutti i
-	# guasti normali; i pannelli hanno inoltre la loro regola irreversibile.
+	# Wind-driven dust enters joints and makes ordinary faults more likely;
+	# solar panels also have their own irreversible failure rule.
 	return 2.5 if state == State.ACTIVE else 1.0
 
 
@@ -165,7 +165,7 @@ func get_outdoor_wind_chill_c(player: Node2D) -> float:
 
 
 func get_outdoor_debuff_label(player: Node2D) -> String:
-	return str(_outdoor_debuff_profile.get("label", "TEMPESTA")) if is_player_exposed_to_storm(player) else "RIPARATO"
+	return str(_outdoor_debuff_profile.get("label", "STORM")) if is_player_exposed_to_storm(player) else "CLEAR"
 
 
 func get_active_outdoor_effects(player: Node2D) -> Dictionary:
@@ -186,10 +186,10 @@ func _outdoor_multiplier(key: String, player: Node2D) -> float:
 func get_state_label() -> String:
 	match state:
 		State.WARNING:
-			return "TEMPESTA IN ARRIVO"
+			return "STORM APPROACHING"
 		State.ACTIVE:
-			return "TEMPESTA DI SABBIA ATTIVA"
-	return "METEO STABILE"
+			return "SANDSTORM ACTIVE"
+	return "WEATHER STABLE"
 
 
 func get_remaining_seconds() -> float:
@@ -253,7 +253,7 @@ func toggle_nearby_solar_tarp(player: Node2D) -> bool:
 	if closest == null or not bool(closest.call("can_toggle_solar_tarp")):
 		return false
 	var covered := bool(closest.call("toggle_solar_tarp"))
-	_show_notice("TELO %s\n%s" % ["INSTALLATO" if covered else "RIMOSSO", "Il pannello è protetto dalla sabbia." if covered else "Il pannello può di nuovo produrre energia."])
+	_show_notice("TARP %s\n%s" % ["INSTALLED" if covered else "REMOVED", "The panel is protected from sand." if covered else "The panel can generate power again."])
 	return true
 
 
@@ -276,14 +276,14 @@ func get_nearby_sand_prompt(player: Node2D) -> String:
 	if closest == null:
 		return ""
 	if closest.has_method("is_solar_destroyed") and bool(closest.call("is_solar_destroyed")):
-		return "PANNELLO DISTRUTTO · rimuovilo e acquistane uno nuovo"
+		return "PANEL DESTROYED · remove it and purchase a new one"
 	if closest.has_method("is_solar_tarped") and bool(closest.call("is_solar_tarped")):
-		return "T · RIMUOVI TELO DAL PANNELLO"
+		return "T · REMOVE PANEL TARP"
 	if closest.has_method("can_toggle_solar_tarp") and bool(closest.call("can_toggle_solar_tarp")):
-		return "T · METTI TELO PROTETTIVO"
+		return "T · INSTALL PROTECTIVE TARP"
 	var level := _sand_level(closest)
 	if level > 0:
-		return "TIENI E · SPOLVERA (%s)" % _sand_label(level)
+		return "HOLD E · CLEAN (%s)" % _sand_label(level)
 	return ""
 
 
@@ -327,7 +327,7 @@ func _start_warning() -> void:
 	state = State.WARNING
 	_state_remaining = WARNING_SECONDS
 	storm_state_changed.emit(state)
-	_show_notice("ALLERTA METEO\nUna tempesta di sabbia raggiungerà la base tra breve. Proteggi i pannelli con T.")
+	_show_notice("WEATHER ALERT\nA sandstorm will reach the base shortly. Protect panels with T.")
 
 
 func _start_storm() -> void:
@@ -337,7 +337,7 @@ func _start_storm() -> void:
 	_storm_deposit_count = 0
 	_outdoor_debuff_profile = Dictionary(OUTDOOR_DEBUFF_PROFILES[_rng.randi_range(0, OUTDOOR_DEBUFF_PROFILES.size() - 1)]).duplicate(true)
 	storm_state_changed.emit(state)
-	_show_notice("TEMPESTA DI SABBIA\nAll'aperto: %s. Rientra o consuma più risorse." % str(_outdoor_debuff_profile.get("label", "VENTO FORTE")))
+	_show_notice("SANDSTORM\nOutdoors: %s. Return inside or consume more resources." % str(_outdoor_debuff_profile.get("label", "STRONG WIND")))
 
 
 func _end_storm() -> void:
@@ -346,7 +346,7 @@ func _end_storm() -> void:
 	_storm_deposit_count = 0
 	_schedule_calm_period()
 	storm_state_changed.emit(state)
-	_show_notice("TEMPESTA PASSATA\nLa sabbia rimasta sulle macchine va rimossa a mano.")
+	_show_notice("STORM PASSED\nSand remaining on machines must be removed by hand.")
 
 
 func _deposit_sand_once() -> void:
@@ -369,9 +369,9 @@ func _deposit_on_target(target: Node2D) -> void:
 		return
 	var old_level := _sand_level(target)
 	if old_level >= 3:
-		# IncidentManager mantiene un solo guasto attivo per non sovraccaricare
-		# il giocatore. Un oggetto già sepolto ritenta quindi il guasto ai passi
-		# successivi, non appena l'incidente precedente è stato gestito.
+		# IncidentManager keeps only one active fault to avoid overwhelming the
+		# player. A buried target retries on later steps once the former incident
+		# has been resolved.
 		if target.has_method("on_sand_buried"):
 			target.call("on_sand_buried")
 		return
@@ -403,11 +403,11 @@ func _process_cleaning(delta: float) -> void:
 		return
 	var level := _sand_level(target)
 	if level > 0 and target.has_method("set_sand_accumulation"):
-		# Una sola spolveratura completa rimuove tutta la sabbia accumulata,
-		# invece di costringere il giocatore a ripetere E una volta per livello.
+		# One complete cleaning removes all accumulated sand instead of requiring
+		# the player to repeat E once for every level.
 		target.call("set_sand_accumulation", 0)
 		sand_level_changed.emit(target, 0)
-	_show_notice("SABBIA RIMOSSA\n%s: PULITO" % str(data.get("display_name", "MACCHINARIO")))
+	_show_notice("SAND REMOVED\n%s: CLEAN" % str(data.get("display_name", "MACHINE")))
 	_finish_cleaning(true)
 
 
@@ -451,12 +451,12 @@ func _player_inside_pressurized_dome(player: Node2D) -> bool:
 func _sand_label(level: int) -> String:
 	match level:
 		1:
-			return "SPORCO"
+			return "DIRTY"
 		2:
-			return "COPERTO"
+			return "COVERED"
 		3:
-			return "SEPOLTO"
-	return "PULITO"
+			return "BURIED"
+	return "CLEAN"
 
 
 func _target_key(target: Node) -> String:
@@ -548,32 +548,32 @@ func _update_weather_ui() -> void:
 	_weather_panel.visible = true
 	var seconds := ceili(_state_remaining)
 	if state == State.WARNING:
-		_weather_label.text = "⚠ TEMPESTA IN ARRIVO  ·  %ds\nMetti il telo sui pannelli solari: T" % seconds
+		_weather_label.text = "⚠ STORM APPROACHING  ·  %ds\nInstall solar-panel tarps: T" % seconds
 	else:
-		_weather_label.text = "TEMPESTA DI SABBIA ATTIVA  ·  %ds\nAll'aperto: %s · consumi EVA aumentati" % [seconds, str(_outdoor_debuff_profile.get("label", "VENTO FORTE"))]
+		_weather_label.text = "SANDSTORM ACTIVE  ·  %ds\nOutdoors: %s · increased EVA consumption" % [seconds, str(_outdoor_debuff_profile.get("label", "STRONG WIND"))]
 
 
 func _update_weather_panel_position() -> void:
 	if _weather_panel == null:
 		return
-	# Il pannello della macchina vive in un CanvasLayer separato dalla scena
-	# principale: il gruppo resta affidabile anche quando l'HUD viene ricreato.
+	# The machine panel lives in a CanvasLayer separate from the main scene, so
+	# the group stays reliable even when the HUD is rebuilt.
 	var machine_panel: Control
 	for candidate in get_tree().get_nodes_in_group("machine_status_ui"):
 		if candidate is Control and is_instance_valid(candidate) and candidate.visible:
 			machine_panel = candidate as Control
 			break
 	if machine_panel != null and machine_panel.visible:
-		# Il pannello macchina occupa il centro alto; l'avviso scende sotto i
-		# sistemi EVA, dove resta leggibile senza coprire dati utili.
+		# The machine panel occupies the top center; place the alert beneath the
+		# EVA systems, where it remains readable without covering useful data.
 		_weather_panel.anchor_left = 0.0
 		_weather_panel.anchor_right = 0.0
 		_weather_panel.anchor_top = 0.0
 		_weather_panel.anchor_bottom = 0.0
 		_weather_panel.offset_left = 16.0
 		_weather_panel.offset_right = 386.0
-		# Le GUI allegati spostano temperatura a 141..267 px: qui restiamo
-		# sotto quel pannello, senza coprire né la scheda macchina né i dati EVA.
+		# The supplied GUI layout places temperature at 141..267 px: stay below
+		# that panel without covering either the machine card or EVA data.
 		_weather_panel.offset_top = 282.0
 		_weather_panel.offset_bottom = 374.0
 	else:

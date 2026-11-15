@@ -60,39 +60,39 @@ func _get_death_data(reason: String) -> Dictionary:
 		"oxygen":
 			return {
 				"code": "O₂ // 000",
-				"title": "RISERVA D'OSSIGENO ESAURITA",
-				"message": "La pressione parziale dell'ossigeno nella tuta e' scesa sotto la soglia vitale. Su Marte l'atmosfera, composta quasi interamente da CO₂, non puo' sostenere la respirazione umana.",
-				"epilogue": "La missione termina nel silenzio del pianeta rosso.",
+				"title": "OXYGEN RESERVE DEPLETED",
+				"message": "The suit oxygen partial pressure fell below the life-support threshold. Mars's atmosphere, almost entirely CO₂, cannot support human breathing.",
+				"epilogue": "The mission ends in the silence of the red planet.",
 				"color": Color("74cfff"),
 			}
 		"water":
 			return {
 				"code": "H₂O // 000",
-				"title": "DISIDRATAZIONE CRITICA",
-				"message": "Le riserve idriche sono finite. Senza acqua il corpo non riesce piu' a regolare la temperatura ne' a mantenere la circolazione necessaria alla sopravvivenza.",
-				"epilogue": "La base aveva energia, ma non la risorsa piu' essenziale.",
+				"title": "CRITICAL DEHYDRATION",
+				"message": "Water reserves are depleted. Without water, the body can no longer regulate temperature or maintain the circulation required for survival.",
+				"epilogue": "The base had power, but not its most essential resource.",
 				"color": Color("5ee2e7"),
 			}
 		"radiation":
 			return {
 				"code": "RAD // 4000+",
-				"title": "DANNO RADIOLOGICO IRREVERSIBILE",
-				"message": "La dose assorbita ha superato la capacita' dell'organismo di riparare i tessuti danneggiati. Su Marte la radiazione non si vede, ma ogni esposizione lascia una traccia.",
-				"epilogue": "Una base stabile deve proteggere la vita anche dal cielo.",
+				"title": "IRREVERSIBLE RADIATION DAMAGE",
+				"message": "The absorbed dose exceeded the body's ability to repair damaged tissue. On Mars radiation is invisible, but every exposure leaves a mark.",
+				"epilogue": "A stable base must protect life from the sky as well.",
 				"color": Color("e779ff"),
 			}
 		"cold":
 			return {
 				"code": "TERM // 28.0°C",
-				"title": "IPOTERMIA FATALE",
-				"message": "Il freddo ha sottratto piu' calore di quanto la tuta potesse trattenere. La temperatura corporea e' scesa sotto la soglia in cui cuore, muscoli e cervello riescono a funzionare in modo coordinato.",
-				"epilogue": "Su Marte, la notte non e' soltanto buia: e' un sistema da progettare e sopravvivere.",
+				"title": "FATAL HYPOTHERMIA",
+				"message": "Cold removed more heat than the suit could retain. Body temperature fell below the threshold at which heart, muscles, and brain can coordinate.",
+				"epilogue": "On Mars, night is not merely dark: it is a system to engineer and survive.",
 				"color": Color("70c9ea"),
 			}
 	return {
 		"code": "KCAL // 000",
-		"title": "RISERVE ALIMENTARI ESAURITE",
-		"message": "Il deficit energetico prolungato ha reso impossibile continuare le operazioni. Ogni sistema della base dipendeva ancora dalla forza dell'unico astronauta.",
-		"epilogue": "Su Marte anche una serra e' un sistema di supporto vitale.",
+		"title": "FOOD RESERVES DEPLETED",
+		"message": "The prolonged energy deficit made it impossible to continue operations. Every base system still depended on the strength of a single astronaut.",
+		"epilogue": "On Mars, even a greenhouse is a life-support system.",
 		"color": Color("ffbf66"),
 	}

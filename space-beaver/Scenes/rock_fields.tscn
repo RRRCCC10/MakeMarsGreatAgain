@@ -4,7 +4,7 @@
 
 [node name="RockFields" type="Node2D"]
 
-; Pianura di Ares — regolite rossa comune e pietra ferrica rara.
+; Ares Plain — common red regolith and rare iron-rich rock.
 [node name="AresCommon01" parent="." instance=ExtResource("1_rock")]
 position = Vector2(-3500, -2500)
 rock_variant = "roccia_rossa"
@@ -81,7 +81,7 @@ rock_variant = "pietra_rossastra"
 position = Vector2(9120, -4960)
 rock_variant = "pietra_rossastra"
 
-; Calotta nord — ghiaccio polveroso comune e ghiaccio blu compatto raro.
+; Northern Ice Cap — common powdery ice and rare compact blue ice.
 [node name="PolarCommon01" parent="." instance=ExtResource("1_rock")]
 position = Vector2(-1800, -14100)
 rock_variant = "ghiaccio_leggero"
@@ -158,7 +158,7 @@ rock_variant = "ghiaccio_blu"
 position = Vector2(7840, -15520)
 rock_variant = "ghiaccio_blu"
 
-; Crateri d'impatto — pietra da cratere comune e vetro d'impatto raro.
+; Impact Craters — common crater rock and rare impact glass.
 [node name="CraterCommon01" parent="." instance=ExtResource("1_rock")]
 position = Vector2(-7100, -4200)
 rock_variant = "roccia_grigia"
@@ -235,7 +235,7 @@ rock_variant = "roccia_scura"
 position = Vector2(-7200, -4000)
 rock_variant = "roccia_scura"
 
-; Altopiano vulcanico — roccia basaltica comune e basalto nero raro.
+; Volcanic Plateau — common basaltic rock and rare black basalt.
 [node name="TharsisCommon01" parent="." instance=ExtResource("1_rock")]
 position = Vector2(-8480, -5600)
 rock_variant = "roccia_basaltica"
@@ -312,7 +312,7 @@ rock_variant = "basalto"
 position = Vector2(10720, -3680)
 rock_variant = "basalto"
 
-; Bordo della calotta — roccia criogenica comune e ghiaccio profondo raro.
+; Ice-Cap Edge — common cryogenic rock and rare deep ice.
 [node name="ValleyCommon01" parent="." instance=ExtResource("1_rock")]
 position = Vector2(-10000, -12500)
 rock_variant = "roccia_ghiacciata"

@@ -34,7 +34,7 @@ func _build_ui() -> void:
 	var rows := VBoxContainer.new()
 	rows.add_theme_constant_override("separation", 3)
 	panel.add_child(rows)
-	rows.add_child(_label("GESTIONE TERMICA EVA", 13, TEXT_COLOR))
+	rows.add_child(_label("EVA THERMAL MANAGEMENT", 13, TEXT_COLOR))
 	ambient_label = _label("", 12, Color("9fc7d5"))
 	rows.add_child(ambient_label)
 	core_label = _label("", 12, OXYGEN_COLOR)
@@ -51,16 +51,16 @@ func _refresh(data: Dictionary) -> void:
 	var effective := float(data.get("effective_temperature_c", ambient))
 	var core := float(data.get("core_temperature_c", 37.0))
 	var sheltered := bool(data.get("is_sheltered", false))
-	var shelter_suffix := "  ·  %s +%d°C" % [str(data.get("shelter_name", "RIFUGIO")), roundi(float(data.get("shelter_bonus_c", 0.0)))] if sheltered else "  ·  ESPOSTO"
-	ambient_label.text = "ESTERNO  %+.0f°C  ·  %s%s" % [ambient, str(data.get("biome_name", "MARTE")), shelter_suffix]
-	core_label.text = "CORE  %.1f°C    EVA FINO A %+.0f°C" % [core, float(data.get("suit_tolerance_c", -65.0))]
+	var shelter_suffix := "  ·  %s +%d°C" % [str(data.get("shelter_name", "SHELTER")), roundi(float(data.get("shelter_bonus_c", 0.0)))] if sheltered else "  ·  EXPOSED"
+	ambient_label.text = "OUTSIDE  %+.0f°C  ·  %s%s" % [ambient, str(data.get("biome_name", "MARS")), shelter_suffix]
+	core_label.text = "CORE  %.1f°C    EVA RATED TO %+.0f°C" % [core, float(data.get("suit_tolerance_c", -65.0))]
 	var color: Color = data.get("condition_color", Color.WHITE)
-	status_label.text = "STATO  " + str(data.get("condition", "TERMICO STABILE"))
+	status_label.text = "STATUS  " + str(data.get("condition", "THERMALLY STABLE"))
 	status_label.add_theme_color_override("font_color", color)
 	core_label.add_theme_color_override("font_color", color)
 	var move_percent := roundi(float(data.get("movement_multiplier", 1.0)) * 100.0)
 	var oxygen_percent := roundi(float(data.get("oxygen_multiplier", 1.0)) * 100.0)
-	effects_label.text = "EFFETTI  movimento %d%%  ·  consumo O₂ %d%%  ·  carico freddo %.0f°C" % [move_percent, oxygen_percent, float(data.get("cold_gap_c", 0.0))]
+	effects_label.text = "EFFECTS  movement %d%%  ·  O₂ use %d%%  ·  cold load %.0f°C" % [move_percent, oxygen_percent, float(data.get("cold_gap_c", 0.0))]
 
 
 func _label(text: String, size: int, color: Color) -> Label:

@@ -1,16 +1,16 @@
 extends CanvasLayer
 
-## Tavola in stile advancement: una radice, rami indipendenti e nodi
-## connessi da linee. Il progresso di ogni nodo viene sempre mostrato, ma una
-## ricompensa richiede che i suoi predecessori siano stati riscossi.
+## Advancement-style board: one root, independent branches, and line-connected
+## nodes. Every node's progress is always shown, but a reward requires its
+## predecessors to be claimed.
 
 const CARD_SIZE := Vector2(130.0, 70.0)
 const GRAPH_SIZE := Vector2(2_200.0, 800.0)
 
-# Due contratti sul campo partono subito, senza rete o macchinari. Da qui il
-# grafo si divide in sopravvivenza, habitat, laboratorio e biologia polare.
+# Two field contracts start immediately, with no grid or machinery. From there,
+# the graph splits into survival, habitat, laboratory, and polar biology.
 const GRAPH_POSITIONS := {
-	# Contratti a piedi: due radici completamente indipendenti dalla base.
+	# On-foot contracts: two roots completely independent from the base.
 	"first_field_sample": Vector2(24.0, 30.0),
 	"field_notes": Vector2(190.0, 30.0),
 	"sample_satchel": Vector2(356.0, 30.0),
@@ -20,7 +20,7 @@ const GRAPH_POSITIONS := {
 	"biome_survey": Vector2(190.0, 210.0),
 	"long_range_survey": Vector2(356.0, 210.0),
 	"polar_expedition": Vector2(522.0, 210.0),
-	# Fotografia: missioni civili e scientifiche eseguibili senza rete.
+	# Photography: civilian and scientific missions that work without a grid.
 	"first_photo": Vector2(24.0, 610.0),
 	"contact_sheet": Vector2(190.0, 610.0),
 	"mars_postcard": Vector2(356.0, 610.0),
@@ -36,7 +36,7 @@ const GRAPH_POSITIONS := {
 	"lab_in_frame": Vector2(1_684.0, 610.0),
 	"primordial_frost_photo": Vector2(1_850.0, 610.0),
 	"life_witness_image": Vector2(2_016.0, 610.0),
-	# Sopravvivenza e habitat.
+	# Survival and habitat.
 	"first_base": Vector2(24.0, 400.0),
 	"airlock_cycle": Vector2(190.0, 300.0),
 	"ice_drill": Vector2(356.0, 300.0),
@@ -45,7 +45,7 @@ const GRAPH_POSITIONS := {
 	"greenhouse": Vector2(356.0, 400.0),
 	"first_planting": Vector2(522.0, 400.0),
 	"first_harvest": Vector2(688.0, 480.0),
-	# Ricerca economica, dati rari e biologia polare.
+	# Research economics, rare data, and polar biology.
 	"first_lab": Vector2(688.0, 400.0),
 	"first_extraction": Vector2(854.0, 300.0),
 	"first_report": Vector2(854.0, 400.0),
@@ -104,8 +104,8 @@ var _time := 0.0
 
 
 func _ready() -> void:
-	# Sopra ogni HUD: la tavola è una schermata dedicata, non un pannello sopra
-	# le barre di sopravvivenza o le finestre del mondo.
+	# Above every HUD: the board is a dedicated screen, not a panel over survival
+	# bars or world windows.
 	layer = 100
 	_build_ui()
 	AchievementManager.achievement_updated.connect(_on_achievement_updated)
@@ -194,27 +194,27 @@ func _build_ui() -> void:
 	var title_row := HBoxContainer.new()
 	content.add_child(title_row)
 	var title := Label.new()
-	title.text = "// RETE DEI CONTRATTI DI MISSIONE //"
+	title.text = "// MISSION CONTRACT NETWORK //"
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color("ffe37b"))
 	title_row.add_child(title)
 	var close_label := Label.new()
-	close_label.text = "J / ESC · CHIUDI"
+	close_label.text = "J / ESC · CLOSE"
 	close_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	close_label.add_theme_font_size_override("font_size", 12)
 	close_label.add_theme_color_override("font_color", Color("91cfe9"))
 	title_row.add_child(close_label)
 
 	var subtitle := Label.new()
-	subtitle.text = "La ricerca è il motore economico della prima metà della missione: ogni rapporto paga, ogni contratto paga molto di più. Le frecce indicano i prerequisiti."
+	subtitle.text = "Research drives the mission's first-half economy: every report pays, and every contract pays much more. Arrows show prerequisites."
 	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	subtitle.add_theme_font_size_override("font_size", 11)
 	subtitle.add_theme_color_override("font_color", Color("c0d1db"))
 	content.add_child(subtitle)
 
 	var legend := Label.new()
-	legend.text = "ROSSO: BLOCCATO   ·   GRIGIO: IN CORSO   ·   COLORE: RISCOSSO   ·   ORO PULSANTE: RISCATTA"
+	legend.text = "RED: LOCKED   ·   GREY: IN PROGRESS   ·   COLOR: CLAIMED   ·   PULSING GOLD: CLAIM"
 	legend.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	legend.add_theme_font_size_override("font_size", 9)
 	legend.add_theme_color_override("font_color", Color("9ab6c2"))
@@ -284,13 +284,13 @@ func _rebuild_graph() -> void:
 	_add_branch_lane(Rect2(990.0, 10.0, 860.0, 170.0), Color("183b45"))
 	_add_branch_lane(Rect2(1_160.0, 190.0, 400.0, 350.0), Color("2c2841"))
 	_add_branch_lane(Rect2(10.0, 560.0, 2_180.0, 230.0), Color("163543"))
-	_add_branch_label("CONTRATTI A PIEDI  /  RACCOLTA", Vector2(18.0, 13.0), Color("efc68e"))
-	_add_branch_label("ESPLORAZIONE  /  MAPPA", Vector2(18.0, 193.0), Color("81d8ff"))
-	_add_branch_label("SOPRAVVIVENZA  /  HABITAT", Vector2(18.0, 288.0), Color("9ce66f"))
-	_add_branch_label("RICERCA  /  CONTRATTI TERRA", Vector2(682.0, 13.0), Color("d4b6ff"))
-	_add_branch_label("CRIOSFERA  /  SEGNALI COMPATIBILI", Vector2(998.0, 13.0), Color("a8f3ff"))
-	_add_branch_label("STRUMENTI  /  BREVETTI", Vector2(1_168.0, 193.0), Color("d48cff"))
-	_add_branch_label("ARCHIVIO FOTOGRAFICO  /  CONTRATTI SENZA RETE", Vector2(18.0, 573.0), Color("93e8f6"))
+	_add_branch_label("ON-FOOT CONTRACTS  /  COLLECTION", Vector2(18.0, 13.0), Color("efc68e"))
+	_add_branch_label("EXPLORATION  /  MAP", Vector2(18.0, 193.0), Color("81d8ff"))
+	_add_branch_label("SURVIVAL  /  HABITAT", Vector2(18.0, 288.0), Color("9ce66f"))
+	_add_branch_label("RESEARCH  /  EARTH CONTRACTS", Vector2(682.0, 13.0), Color("d4b6ff"))
+	_add_branch_label("CRYOSPHERE  /  COMPATIBLE SIGNALS", Vector2(998.0, 13.0), Color("a8f3ff"))
+	_add_branch_label("INSTRUMENTS  /  PATENTS", Vector2(1_168.0, 193.0), Color("d48cff"))
+	_add_branch_label("PHOTO ARCHIVE  /  GRID-FREE CONTRACTS", Vector2(18.0, 573.0), Color("93e8f6"))
 
 	var definitions := AchievementManager.get_ordered_definitions()
 	var links := GraphLinks.new()
@@ -408,7 +408,7 @@ func _make_card(definition: Dictionary) -> Control:
 	copy.add_theme_constant_override("separation", 1)
 	body.add_child(copy)
 	var title := Label.new()
-	title.text = str(definition.get("title", "OBIETTIVO"))
+	title.text = str(definition.get("title", "OBJECTIVE"))
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.custom_minimum_size = Vector2(0.0, 26.0)
 	title.add_theme_font_size_override("font_size", 9)
@@ -435,12 +435,12 @@ func _stripe_color(definition: Dictionary, status: String) -> Color:
 
 func _status_text(achievement_id: String, status: String) -> String:
 	if status == "locked":
-		return "BLOCCATO"
+		return "LOCKED"
 	if status == "available":
-		return "IN CORSO"
+		return "IN PROGRESS"
 	if status == "claimable":
-		return "✦ RISCATTA ✦"
-	return "✓ RISCOSSO"
+		return "✦ CLAIM ✦"
+	return "✓ CLAIMED"
 
 
 func _on_card_pressed(achievement_id: String) -> void:
@@ -457,19 +457,19 @@ func _show_detail(achievement_id: String) -> void:
 		return
 	var status := AchievementManager.get_status(achievement_id)
 	var reward: Dictionary = definition.get("reward", {})
-	var text := "%s — %s\nRicompensa: %s" % [str(definition.get("title", "")), str(definition.get("description", "")), str(reward.get("label", "nessuna"))]
+	var text := "%s — %s\nReward: %s" % [str(definition.get("title", "")), str(definition.get("description", "")), str(reward.get("label", "none"))]
 	if status == "locked":
 		var prerequisites := AchievementManager.get_prerequisites(achievement_id)
 		var names: Array[String] = []
 		for prerequisite_id in prerequisites:
 			names.append(str(AchievementManager.get_definition(prerequisite_id).get("title", prerequisite_id)))
-		text += "\nRiscatta prima: " + ", ".join(names) + ". Il progresso è già salvato."
+		text += "\nClaim first: " + ", ".join(names) + ". Progress is already saved."
 	elif status == "available":
-		text += "\nDisponibile: completa l'obiettivo per rendere la ricompensa riscattabile."
+		text += "\nAvailable: complete the objective to make the reward claimable."
 	elif status == "claimable":
-		text += "\nPRONTA: clicca il nodo luccicante per riscuotere e sbloccare i successivi."
+		text += "\nREADY: click the glowing node to claim it and unlock the next ones."
 	else:
-		text += "\nRicompensa già riscossa."
+		text += "\nReward already claimed."
 	_detail.text = text
 
 
@@ -507,12 +507,12 @@ func _on_achievement_updated(_achievement_id: String) -> void:
 
 func _on_achievement_claimable(achievement_id: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("OBIETTIVO PRONTO · %s · premi J" % str(definition.get("title", "")))
+	_show_notification("OBJECTIVE READY · %s · press J" % str(definition.get("title", "")))
 
 
 func _on_achievement_claimed(achievement_id: String, reward_label: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("RICOMPENSA RISCOSSA · %s · %s" % [str(definition.get("title", "")), reward_label])
+	_show_notification("REWARD CLAIMED · %s · %s" % [str(definition.get("title", "")), reward_label])
 
 
 func _show_notification(message: String) -> void:

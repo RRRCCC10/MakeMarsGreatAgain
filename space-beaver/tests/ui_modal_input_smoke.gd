@@ -1,7 +1,5 @@
 extends SceneTree
 
-## Smoke test del contratto di input delle GUI. Verifica i casi che in passato
-## lasciavano il mondo attivo: finestre sovrapposte, E/azioni e movimento.
 
 var failures: Array[String] = []
 
@@ -29,7 +27,7 @@ func _run() -> void:
 	var shop_ui := current_scene.get_node_or_null("ShopUI")
 	var quick_actions_ui := current_scene.get_node_or_null("QuickActionsUI")
 	var achievement_success_ui := current_scene.get_node_or_null("AchievementSuccessUI")
-	_expect(ui_state != null and inventory != null and shop != null and achievements != null and registry != null and player != null and board != null and map_ui != null and inventory_ui != null and shop_ui != null and quick_actions_ui != null and achievement_success_ui != null, "mancano i nodi necessari alla verifica GUI")
+	_expect(ui_state != null and inventory != null and shop != null and achievements != null and registry != null and player != null and board != null and map_ui != null and inventory_ui != null and shop_ui != null and quick_actions_ui != null and achievement_success_ui != null, "Test assertion failed")
 	if ui_state == null or inventory == null or shop == null or achievements == null or registry == null or player == null or board == null or map_ui == null or inventory_ui == null or shop_ui == null or quick_actions_ui == null or achievement_success_ui == null:
 		_finish()
 		return
@@ -38,64 +36,64 @@ func _run() -> void:
 	shop.call("close")
 	ui_state.call("reset_for_new_mission")
 	inventory.call("reset_for_new_mission")
-	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi di patate", 1, false)), "I semi di prova devono entrare nello zaino")
+	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi di patate", 1, false)), "Test assertion failed")
 	var seed_index := _find_inventory_slot(inventory.get("backpack"), "potato_seeds")
-	_expect(seed_index >= 0, "I semi di prova devono avere uno slot nello zaino")
-	_expect(bool(inventory.call("open")), "l'inventario deve aprirsi quando non esiste una GUI modale")
-	_expect(str(ui_state.get("active_modal")) == "inventory", "l'inventario deve registrarsi come GUI attiva")
+	_expect(seed_index >= 0, "Test assertion failed")
+	_expect(bool(inventory.call("open")), "Test assertion failed")
+	_expect(str(ui_state.get("active_modal")) == "inventory", "Test assertion failed")
 	await process_frame
 	var backpack_buttons: Array = inventory_ui.get("backpack_buttons")
 	var hotbar_buttons: Array = inventory_ui.get("hotbar_buttons")
 	var quick_actions_root := quick_actions_ui.get("_root") as Control
 	var achievement_root := achievement_success_ui.get("_root") as Control
-	_expect(quick_actions_root != null and not quick_actions_root.visible, "I pulsanti rapidi devono sparire mentre lo zaino è aperto")
-	_expect(achievement_root != null and _all_controls_ignore_mouse(achievement_root), "La notifica achievement non deve intercettare click della GUI")
-	_expect(seed_index >= 0 and seed_index < backpack_buttons.size(), "Il pulsante dello slot zaino deve esistere")
-	_expect(hotbar_buttons.size() > 1, "I pulsanti della hotbar devono esistere")
+	_expect(quick_actions_root != null and not quick_actions_root.visible, "Test assertion failed")
+	_expect(achievement_root != null and _all_controls_ignore_mouse(achievement_root), "Test assertion failed")
+	_expect(seed_index >= 0 and seed_index < backpack_buttons.size(), "Test assertion failed")
+	_expect(hotbar_buttons.size() > 1, "Test assertion failed")
 	if seed_index >= 0 and seed_index < backpack_buttons.size() and hotbar_buttons.size() > 1:
 		(backpack_buttons[seed_index] as Button).pressed.emit()
 		await process_frame
-		_expect(int(inventory.get("selected_backpack_index")) == seed_index, "Il click del pulsante zaino deve selezionare l'oggetto")
+		_expect(int(inventory.get("selected_backpack_index")) == seed_index, "Test assertion failed")
 		(hotbar_buttons[1] as Button).pressed.emit()
 		await process_frame
-		_expect(str(inventory.get("hotbar")[1].get("id", "")) == "potato_seeds", "Il click del pulsante hotbar deve spostare l'oggetto selezionato")
+		_expect(str(inventory.get("hotbar")[1].get("id", "")) == "potato_seeds", "Test assertion failed")
 	board.call("open")
-	_expect(not bool(achievements.get("is_board_open")), "la tavola non deve aprirsi sopra l'inventario")
-	_expect(not bool(map_ui.call("open_map")), "la minimappa non deve aprirsi sopra l'inventario")
+	_expect(not bool(achievements.get("is_board_open")), "Test assertion failed")
+	_expect(not bool(map_ui.call("open_map")), "Test assertion failed")
 	var player_start := player.global_position
 	Input.action_press("move_right")
 	await physics_frame
 	Input.action_release("move_right")
-	_expect(player.global_position.distance_to(player_start) < 0.01, "con inventario aperto il player non deve muoversi")
+	_expect(player.global_position.distance_to(player_start) < 0.01, "Test assertion failed")
 	inventory_ui.call("_input", _key(KEY_ESCAPE))
-	_expect(not bool(inventory.get("is_open")), "Esc deve chiudere l'inventario")
+	_expect(not bool(inventory.get("is_open")), "Test assertion failed")
 
-	_expect(bool(shop.call("open")), "lo shop deve aprirsi dopo la chiusura dell'inventario")
+	_expect(bool(shop.call("open")), "Test assertion failed")
 	board.call("open")
-	_expect(not bool(achievements.get("is_board_open")), "la tavola non deve aprirsi sopra lo shop")
-	_expect(not bool(registry.call("open_modal")), "un pannello del mondo non deve aprirsi sopra lo shop")
+	_expect(not bool(achievements.get("is_board_open")), "Test assertion failed")
+	_expect(not bool(registry.call("open_modal")), "Test assertion failed")
 	shop_ui.call("_input", _key(KEY_B))
-	_expect(not bool(shop.get("is_open")), "B deve chiudere lo shop quando è lo shop attivo")
+	_expect(not bool(shop.get("is_open")), "Test assertion failed")
 
 	board.call("open")
-	_expect(bool(achievements.get("is_board_open")), "la tavola deve aprirsi a mondo libero")
-	_expect(not bool(inventory.call("open")), "l'inventario non deve aprirsi sopra la tavola")
+	_expect(bool(achievements.get("is_board_open")), "Test assertion failed")
+	_expect(not bool(inventory.call("open")), "Test assertion failed")
 	board.call("_unhandled_input", _key(KEY_ESCAPE))
-	_expect(not bool(achievements.get("is_board_open")), "Esc deve chiudere la tavola achievement")
+	_expect(not bool(achievements.get("is_board_open")), "Test assertion failed")
 
-	_expect(bool(map_ui.call("open_map")), "la minimappa deve aprirsi a mondo libero")
-	_expect(bool(ui_state.call("blocks_world_actions")), "la minimappa deve bloccare le azioni nel mondo")
-	_expect(bool(ui_state.call("allows_world_movement")), "la minimappa deve essere l'eccezione che consente il movimento")
-	_expect(not bool(inventory.call("open")), "l'inventario non deve aprirsi mentre la minimappa è aperta")
-	_expect(not bool(registry.call("open_modal")), "nessun pannello macchina deve aprirsi sopra la minimappa")
+	_expect(bool(map_ui.call("open_map")), "Test assertion failed")
+	_expect(bool(ui_state.call("blocks_world_actions")), "Test assertion failed")
+	_expect(bool(ui_state.call("allows_world_movement")), "Test assertion failed")
+	_expect(not bool(inventory.call("open")), "Test assertion failed")
+	_expect(not bool(registry.call("open_modal")), "Test assertion failed")
 	player_start = player.global_position
 	Input.action_press("move_right")
 	await physics_frame
 	Input.action_release("move_right")
-	_expect(player.global_position.x > player_start.x, "la minimappa deve consentire al player di camminare")
+	_expect(player.global_position.x > player_start.x, "Test assertion failed")
 	map_ui.call("_unhandled_input", _key(KEY_ESCAPE))
-	_expect(not bool(map_ui.get("is_open")), "Esc deve chiudere la minimappa")
-	_expect(not bool(ui_state.call("has_open_modal")), "chiudere la minimappa deve liberare il mondo")
+	_expect(not bool(map_ui.get("is_open")), "Test assertion failed")
+	_expect(not bool(ui_state.call("has_open_modal")), "Test assertion failed")
 	_finish()
 
 

@@ -1,7 +1,7 @@
 extends CanvasLayer
 
-## Tavola orizzontale della missione. Tutte le tappe mostrano il loro progresso,
-## ma ogni ricompensa sblocca visivamente e logicamente la successiva.
+## Horizontal mission board. Every milestone shows its progress, while each
+## reward visually and logically unlocks the next one.
 
 const CARD_SIZE := Vector2(172.0, 190.0)
 
@@ -94,13 +94,13 @@ func _build_ui() -> void:
 	margins.add_child(content)
 
 	var title := Label.new()
-	title.text = "// TAVOLA DEGLI OBIETTIVI //"
+	title.text = "// OBJECTIVE BOARD //"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color("ffe37b"))
 	content.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = "La linea avanza da sinistra a destra: completa e riscuoti una tappa per rendere disponibile la successiva."
+	subtitle.text = "The line advances from left to right: complete and claim a milestone to make the next one available."
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 12)
 	subtitle.add_theme_color_override("font_color", Color("c0d1db"))
@@ -131,7 +131,7 @@ func _build_ui() -> void:
 	_detail.add_theme_color_override("font_color", Color("d7e8ef"))
 	content.add_child(_detail)
 	_hint = Label.new()
-	_hint.text = "J · chiudi la tavola     |     Clicca una tappa luccicante per riscuotere la ricompensa"
+	_hint.text = "J · close board     |     Click a glowing milestone to claim its reward"
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.add_theme_font_size_override("font_size", 12)
 	_hint.add_theme_color_override("font_color", Color("87cdef"))
@@ -151,8 +151,8 @@ func _build_ui() -> void:
 	_notification.add_theme_color_override("font_outline_color", Color("071017"))
 	_notification.add_theme_constant_override("outline_size", 4)
 	_notification.visible = false
-	# Il messaggio resta visibile anche con la tavola chiusa: informa subito il
-	# giocatore che una tappa luccica ed è pronta da riscuotere premendo J.
+	# The message remains visible even while the board is closed, immediately
+	# informing the player that a milestone glows and can be claimed with J.
 	add_child(_notification)
 
 
@@ -227,7 +227,7 @@ func _make_card(definition: Dictionary) -> Control:
 	icon.add_theme_color_override("font_color", Color("6c7880") if status in ["locked", "available"] else Color(definition.get("color", Color.WHITE)))
 	stack.add_child(icon)
 	var title := Label.new()
-	title.text = str(definition.get("title", "OBIETTIVO"))
+	title.text = str(definition.get("title", "OBJECTIVE"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.custom_minimum_size = Vector2(0.0, 32.0)
@@ -235,7 +235,7 @@ func _make_card(definition: Dictionary) -> Control:
 	title.add_theme_color_override("font_color", Color("e6eff2") if status != "locked" else Color("a57b7f"))
 	stack.add_child(title)
 	var progress := Label.new()
-	progress.text = "PROGRESSO %d / %d" % [AchievementManager.get_progress(achievement_id), AchievementManager.get_target(achievement_id)]
+	progress.text = "PROGRESS %d / %d" % [AchievementManager.get_progress(achievement_id), AchievementManager.get_target(achievement_id)]
 	progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	progress.add_theme_font_size_override("font_size", 10)
 	progress.add_theme_color_override("font_color", Color("a7c4cf"))
@@ -253,13 +253,13 @@ func _make_card(definition: Dictionary) -> Control:
 
 func _status_text(achievement_id: String, status: String) -> String:
 	if status == "locked":
-		return "▰ BLOCCATO"
+		return "▰ LOCKED"
 	if status == "available":
-		return "IN CORSO"
+		return "IN PROGRESS"
 	if status == "claimable":
-		return "✦ RISCUOTI ✦"
+		return "✦ CLAIM ✦"
 	var reward: Dictionary = AchievementManager.get_definition(achievement_id).get("reward", {})
-	return "✓ " + str(reward.get("label", "RISCOSSO"))
+	return "✓ " + str(reward.get("label", "CLAIMED"))
 
 
 func _on_card_pressed(achievement_id: String) -> void:
@@ -276,15 +276,15 @@ func _show_detail(achievement_id: String) -> void:
 		return
 	var status := AchievementManager.get_status(achievement_id)
 	var reward: Dictionary = definition.get("reward", {})
-	var text := "%s — %s\nRicompensa: %s" % [str(definition.get("title", "")), str(definition.get("description", "")), str(reward.get("label", "nessuna"))]
+	var text := "%s — %s\nReward: %s" % [str(definition.get("title", "")), str(definition.get("description", "")), str(reward.get("label", "none"))]
 	if status == "locked":
-		text += "\nCompleta e riscuoti la tappa precedente per sbloccare questa ricompensa. Il progresso resta comunque registrato."
+		text += "\nComplete and claim the previous milestone to unlock this reward. Progress remains recorded."
 	elif status == "available":
-		text += "\nDisponibile: completa l'obiettivo per rendere la ricompensa riscattabile."
+		text += "\nAvailable: complete the objective to make the reward claimable."
 	elif status == "claimable":
-		text += "\nPRONTA: clicca la tappa luccicante per riscuotere e sbloccare la successiva."
+		text += "\nREADY: click the glowing milestone to claim it and unlock the next one."
 	else:
-		text += "\nRicompensa già riscossa."
+		text += "\nReward already claimed."
 	_detail.text = text
 
 
@@ -295,12 +295,12 @@ func _on_achievement_updated(_achievement_id: String) -> void:
 
 func _on_achievement_claimable(achievement_id: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("OBIETTIVO PRONTO · %s · premi J" % str(definition.get("title", "")))
+	_show_notification("OBJECTIVE READY · %s · press J" % str(definition.get("title", "")))
 
 
 func _on_achievement_claimed(achievement_id: String, reward_label: String) -> void:
 	var definition := AchievementManager.get_definition(achievement_id)
-	_show_notification("RICOMPENSA RISCOSSA · %s · %s" % [str(definition.get("title", "")), reward_label])
+	_show_notification("REWARD CLAIMED · %s · %s" % [str(definition.get("title", "")), reward_label])
 
 
 func _show_notification(message: String) -> void:

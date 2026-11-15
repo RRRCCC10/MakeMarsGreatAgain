@@ -30,7 +30,7 @@ func _run() -> void:
 	grid.reset_for_new_mission()
 	player.global_position = Vector2(-8_000.0, -8_000.0)
 	economy.call("add_funds", 3_000_000_000)
-	_expect(bool(shop.call("purchase", "transformer")) and bool(shop.call("purchase", "transformer")), "Lo shop deve permettere di acquistare due trasformatori")
+	_expect(bool(shop.call("purchase", "transformer")) and bool(shop.call("purchase", "transformer")), "Test assertion failed")
 
 	var first := _place_network(grid, Vector2i(-220, 180))
 	var second := _place_network(grid, Vector2i(220, 180))
@@ -45,9 +45,9 @@ func _run() -> void:
 	var second_transformer = second.get("transformer")
 	var first_consumer := first.get("consumer") as TestConsumer
 	var second_consumer := second.get("consumer") as TestConsumer
-	_expect(grid.transformers.size() == 2, "Due trasformatori piazzati devono rimanere due nodi distinti")
-	_expect(bool(grid.connection_ok.get(first_transformer, false)) and bool(grid.connection_ok.get(second_transformer, false)), "Entrambe le reti lontane devono collegare pannelli, batterie e carico")
-	_expect(grid._transformer_for_device.get(first_consumer) == first_transformer and grid._transformer_for_device.get(second_consumer) == second_transformer, "Ogni carico deve restare assegnato al proprio trasformatore più vicino")
+	_expect(grid.transformers.size() == 2, "Test assertion failed")
+	_expect(bool(grid.connection_ok.get(first_transformer, false)) and bool(grid.connection_ok.get(second_transformer, false)), "Test assertion failed")
+	_expect(grid._transformer_for_device.get(first_consumer) == first_transformer and grid._transformer_for_device.get(second_consumer) == second_transformer, "Test assertion failed")
 
 	second.get("panel").set_network_enabled(false)
 	grid.rebuild_network()
@@ -55,9 +55,9 @@ func _run() -> void:
 	clock.time_scale = 1.0
 	clock.set_game_hour(12.0)
 	grid._update_energy(1.0)
-	_expect(first_consumer.powered, "La prima rete deve alimentare il proprio macchinario")
-	_expect(not second_consumer.powered, "Una rete senza pannello non deve ricevere energia dalla rete distante")
-	_expect(grid.network_status == "RETI INDIPENDENTI · 1/2 ATTIVE", "La UI deve segnalare correttamente che una sola rete indipendente è attiva")
+	_expect(first_consumer.powered, "Test assertion failed")
+	_expect(not second_consumer.powered, "Test assertion failed")
+	_expect(grid.network_status == "INDEPENDENT GRIDS · 1/2 ACTIVE", "Test assertion failed")
 	clock.running = false
 	_finish()
 
@@ -67,7 +67,7 @@ func _place_network(grid: Node, origin: Vector2i) -> Dictionary:
 	var transformer = grid.place_device(current_scene, "transformer", origin + Vector2i(6, 0))
 	var battery = grid.place_device(current_scene, "battery", origin + Vector2i(11, -1))
 	if panel == null or transformer == null or battery == null:
-		_fail("Impossibile piazzare una rete di test lontana")
+		_fail("Unable to place a distant test grid")
 		return {}
 	var consumer := TestConsumer.new()
 	consumer.name = "Carico di prova"

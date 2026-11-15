@@ -15,9 +15,9 @@ const ROCK_TEXTURES: Dictionary = {
 	"basalto": preload("res://assets/sprites/rocks/basalto.png"),
 }
 
-## I nuovi minerali riutilizzano volutamente le silhouette già presenti: nella
-## pixel art a questa scala la provenienza geologica è comunicata da nome,
-## rarità e valore scientifico, senza introdurre sprite incoerenti.
+## New minerals intentionally reuse existing silhouettes: at this pixel-art
+## scale, name, rarity, and scientific value convey geological provenance
+## without introducing inconsistent sprites.
 const ROCK_TEXTURE_VARIANTS: Dictionary = {
 	"andesite_marziana": "roccia_grigia",
 	"shoshonite_olivinica": "basalto",
@@ -35,90 +35,88 @@ const ROCK_TEXTURE_VARIANTS: Dictionary = {
 }
 static var base_rock_material: ShaderMaterial
 
-## Ogni coppia e' legata a una formazione geologica concreta della mappa.
-## L'id dell'oggetto resta distinto: due campioni uguali si accumulano insieme,
-## mentre un campione raro non si confonde con quello comune.
+## Every pair is tied to a concrete geological formation on the map. Item IDs
+## remain distinct: identical samples stack together while rare ones stay apart.
 const ROCK_DEFINITIONS: Dictionary = {
 	"roccia_base": {
-		"item_id": "rock", "name": "Pietra marziana", "biome": "Sabbia di atterraggio", "rarity": "common", "research_multiplier": 0.55, "drill_biome": 0,
+		"item_id": "rock", "name": "Martian Stone", "biome": "Landing Sand", "rarity": "common", "research_multiplier": 0.55, "drill_biome": 0,
 	},
 	"roccia_rossa": {
-		"item_id": "rock_roccia_rossa", "name": "Regolite rossa", "biome": "Pianura di Ares", "rarity": "common", "research_multiplier": 0.80, "drill_biome": 1,
+		"item_id": "rock_roccia_rossa", "name": "Red Regolith", "biome": "Ares Plain", "rarity": "common", "research_multiplier": 0.80, "drill_biome": 1,
 	},
 	"pietra_rossastra": {
-		"item_id": "rock_pietra_rossastra", "name": "Pietra ferrica", "biome": "Pianura di Ares", "rarity": "rare", "research_multiplier": 1.35,
+		"item_id": "rock_pietra_rossastra", "name": "Ferric Stone", "biome": "Ares Plain", "rarity": "rare", "research_multiplier": 1.35,
 	},
 	"ghiaccio_leggero": {
-		"item_id": "rock_ghiaccio_leggero", "name": "Ghiaccio polveroso", "biome": "Nucleo polare", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 4,
+		"item_id": "rock_ghiaccio_leggero", "name": "Dusty Ice", "biome": "Polar Core", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 4,
 	},
 	"ghiaccio_blu": {
-		"item_id": "rock_ghiaccio_blu", "name": "Ghiaccio blu compatto", "biome": "Nucleo polare", "rarity": "rare", "research_multiplier": 1.70,
+		"item_id": "rock_ghiaccio_blu", "name": "Compact Blue Ice", "biome": "Polar Core", "rarity": "rare", "research_multiplier": 1.70,
 	},
 	"roccia_grigia": {
-		"item_id": "rock_roccia_grigia", "name": "Pietra da cratere", "biome": "Crateri d'impatto", "rarity": "common", "research_multiplier": 0.95, "drill_biome": 2,
+		"item_id": "rock_roccia_grigia", "name": "Crater Stone", "biome": "Impact Craters", "rarity": "common", "research_multiplier": 0.95, "drill_biome": 2,
 	},
 	"roccia_scura": {
-		"item_id": "rock_roccia_scura", "name": "Vetro d'impatto", "biome": "Crateri d'impatto", "rarity": "rare", "research_multiplier": 1.85,
+		"item_id": "rock_roccia_scura", "name": "Impact Glass", "biome": "Impact Craters", "rarity": "rare", "research_multiplier": 1.85,
 	},
 	"roccia_basaltica": {
-		"item_id": "rock_roccia_basaltica", "name": "Roccia basaltica", "biome": "Formazione basaltica", "rarity": "common", "research_multiplier": 1.10, "drill_biome": 5,
+		"item_id": "rock_roccia_basaltica", "name": "Basaltic Rock", "biome": "Basalt Formation", "rarity": "common", "research_multiplier": 1.10, "drill_biome": 5,
 	},
 	"basalto": {
-		"item_id": "rock_basalto", "name": "Basalto nero", "biome": "Formazione basaltica", "rarity": "rare", "research_multiplier": 1.65,
+		"item_id": "rock_basalto", "name": "Black Basalt", "biome": "Basalt Formation", "rarity": "rare", "research_multiplier": 1.65,
 	},
 	"roccia_ghiacciata": {
-		"item_id": "rock_roccia_ghiacciata", "name": "Roccia criogenica", "biome": "Bordo della calotta", "rarity": "common", "research_multiplier": 1.20, "drill_biome": 3,
+		"item_id": "rock_roccia_ghiacciata", "name": "Cryogenic Rock", "biome": "Ice-Cap Edge", "rarity": "common", "research_multiplier": 1.20, "drill_biome": 3,
 	},
 	"ghiaccio_profondo": {
-		"item_id": "rock_ghiaccio_profondo", "name": "Ghiaccio profondo", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 1.90,
+		"item_id": "rock_ghiaccio_profondo", "name": "Deep Ice", "biome": "Ice-Cap Edge", "rarity": "rare", "research_multiplier": 1.90,
 	},
 	"ghiaccio_profondo_primordiale": {
-		"item_id": "rock_ghiaccio_profondo_primordiale", "name": "Campione di ghiaccio profondo (modello)", "biome": "Strati profondi marziani", "rarity": "ultra_rare", "research_multiplier": 4.50, "deep_ice": true,
+		"item_id": "rock_ghiaccio_profondo_primordiale", "name": "Primordial Deep-Ice Sample (model)", "biome": "Deep Martian Layers", "rarity": "ultra_rare", "research_multiplier": 4.50, "deep_ice": true,
 	},
-	# Nuovi campioni della trivella mineraria: due comuni e una scoperta al 5%
-	# per ciascuno dei sei biomi della mappa.
+	# New mining-drill samples: two common samples and a 5% discovery for each
+	# of the map's six biomes.
 	"andesite_marziana": {
-		"item_id": "rock_andesite_marziana", "name": "Andesite marziana", "biome": "Pianura di atterraggio", "rarity": "common", "research_multiplier": 0.70, "drill_biome": 0,
+		"item_id": "rock_andesite_marziana", "name": "Martian Andesite", "biome": "Landing Plain", "rarity": "common", "research_multiplier": 0.70, "drill_biome": 0,
 	},
 	"shoshonite_olivinica": {
-		"item_id": "rock_shoshonite_olivinica", "name": "Shoshonite olivinica", "biome": "Pianura di atterraggio", "rarity": "rare", "research_multiplier": 1.60, "drill_biome": 0,
+		"item_id": "rock_shoshonite_olivinica", "name": "Olivine Shoshonite", "biome": "Landing Plain", "rarity": "rare", "research_multiplier": 1.60, "drill_biome": 0,
 	},
 	"ematite_nodulare": {
-		"item_id": "rock_ematite_nodulare", "name": "Ematite nodulare", "biome": "Regolite scura", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 1,
+		"item_id": "rock_ematite_nodulare", "name": "Nodular Hematite", "biome": "Dark Regolith", "rarity": "common", "research_multiplier": 1.00, "drill_biome": 1,
 	},
 	"goethite_idrata": {
-		"item_id": "rock_goethite_idrata", "name": "Goethite idrata", "biome": "Regolite scura", "rarity": "rare", "research_multiplier": 1.95, "drill_biome": 1,
+		"item_id": "rock_goethite_idrata", "name": "Hydrated Goethite", "biome": "Dark Regolith", "rarity": "rare", "research_multiplier": 1.95, "drill_biome": 1,
 	},
 	"breccia_da_impatto": {
-		"item_id": "rock_breccia_da_impatto", "name": "Breccia da impatto", "biome": "Cratere roccioso", "rarity": "common", "research_multiplier": 1.15, "drill_biome": 2,
+		"item_id": "rock_breccia_da_impatto", "name": "Impact Breccia", "biome": "Rocky Crater", "rarity": "common", "research_multiplier": 1.15, "drill_biome": 2,
 	},
 	"impactite_vetrosa": {
-		"item_id": "rock_impactite_vetrosa", "name": "Impactite vetrosa", "biome": "Cratere roccioso", "rarity": "rare", "research_multiplier": 2.15, "drill_biome": 2,
+		"item_id": "rock_impactite_vetrosa", "name": "Glassy Impactite", "biome": "Rocky Crater", "rarity": "rare", "research_multiplier": 2.15, "drill_biome": 2,
 	},
 	"regolite_perclorata": {
-		"item_id": "rock_regolite_perclorata", "name": "Regolite perclorata", "biome": "Bordo della calotta", "rarity": "common", "research_multiplier": 1.30, "drill_biome": 3,
+		"item_id": "rock_regolite_perclorata", "name": "Perchlorate Regolith", "biome": "Ice-Cap Edge", "rarity": "common", "research_multiplier": 1.30, "drill_biome": 3,
 	},
 	"sali_solfati_idrati": {
-		"item_id": "rock_sali_solfati_idrati", "name": "Sali solfati idrati", "biome": "Bordo della calotta", "rarity": "rare", "research_multiplier": 2.25, "drill_biome": 3,
+		"item_id": "rock_sali_solfati_idrati", "name": "Hydrated Sulfate Salts", "biome": "Ice-Cap Edge", "rarity": "rare", "research_multiplier": 2.25, "drill_biome": 3,
 	},
 	"ghiaccio_laminato": {
-		"item_id": "rock_ghiaccio_laminato", "name": "Ghiaccio laminato", "biome": "Ghiaccio polare", "rarity": "common", "research_multiplier": 1.45, "drill_biome": 4,
+		"item_id": "rock_ghiaccio_laminato", "name": "Layered Ice", "biome": "Polar Ice", "rarity": "common", "research_multiplier": 1.45, "drill_biome": 4,
 	},
 	"ghiaccio_salmastro": {
-		"item_id": "rock_ghiaccio_salmastro", "name": "Ghiaccio salmastro", "biome": "Ghiaccio polare", "rarity": "rare", "research_multiplier": 2.45, "drill_biome": 4,
+		"item_id": "rock_ghiaccio_salmastro", "name": "Briny Ice", "biome": "Polar Ice", "rarity": "rare", "research_multiplier": 2.45, "drill_biome": 4,
 	},
 	"basalto_vescicolare": {
-		"item_id": "rock_basalto_vescicolare", "name": "Basalto vescicolare", "biome": "Altopiano basaltico", "rarity": "common", "research_multiplier": 1.50, "drill_biome": 5,
+		"item_id": "rock_basalto_vescicolare", "name": "Vesicular Basalt", "biome": "Basaltic Plateau", "rarity": "common", "research_multiplier": 1.50, "drill_biome": 5,
 	},
 	"olivina_ferrifera": {
-		"item_id": "rock_olivina_ferrifera", "name": "Olivina ferrifera", "biome": "Altopiano basaltico", "rarity": "rare", "research_multiplier": 2.55, "drill_biome": 5,
+		"item_id": "rock_olivina_ferrifera", "name": "Ferric Olivine", "biome": "Basaltic Plateau", "rarity": "rare", "research_multiplier": 2.55, "drill_biome": 5,
 	},
 }
 
-## Il manifesto di ritorno richiede una sola aliquota di ogni litologia che il
-## gioco permette di raccogliere. L'ordine è intenzionale: è lo stesso usato
-## dal razzo e dalla tavola missioni, quindi non dipende dall'ordine casuale di
-## una Dictionary.
+## The return manifest requires one aliquot of every lithology collectible in
+## the game. This intentional order matches the rocket and mission board and
+## never depends on Dictionary iteration order.
 const RETURN_MISSION_VARIANTS: Array[String] = [
 	"roccia_base", "roccia_rossa", "pietra_rossastra",
 	"roccia_grigia", "roccia_scura", "roccia_basaltica", "basalto",
@@ -170,9 +168,8 @@ static func get_return_mission_catalog() -> Array[Dictionary]:
 
 
 static func get_icon_texture_for_item_id(item_id: String) -> Texture2D:
-	## La scelta dei campioni nel laboratorio usa la stessa miniatura della
-	## pietra raccolta nel mondo, inclusi i minerali che riutilizzano una
-	## silhouette comune.
+	## The laboratory sample picker uses the same thumbnail as the collected
+	## world rock, including minerals that reuse a common silhouette.
 	for variant_value in ROCK_DEFINITIONS.keys():
 		var variant := str(variant_value)
 		var definition: Dictionary = ROCK_DEFINITIONS[variant]
@@ -184,14 +181,13 @@ static func get_icon_texture_for_item_id(item_id: String) -> Texture2D:
 
 
 static func drill_variant_for_biome(source_id: int, roll_percent: float, common_roll: float) -> String:
-	## Il ghiaccio profondo primordiale è un campione di perforazione che può comparire ovunque
-	## (1%), ma sui poli sale al 10%. Viene controllato prima del raro locale:
-	## nella calotta il giocatore rinuncia a un po' di varietà in cambio della
-	## migliore probabilità di una scoperta biologica straordinaria.
+	## Primordial deep ice is a drill sample that can appear everywhere (1%) but
+	## rises to 10% at the poles. It is checked before the local rare sample: at
+	## the cap the player trades some variety for a better biological discovery chance.
 	if roll_percent < deep_ice_probability_for_biome(source_id):
 		return "ghiaccio_profondo_primordiale"
-	## Ogni altro bioma possiede il proprio campione raro al 5%. I due campioni
-	## comuni dividono il resto della produzione.
+	## Every other biome has its own 5% rare sample. The two common samples share
+	## the rest of production.
 	var common_variants: Array[String] = []
 	var rare_variant := ""
 	for variant in ROCK_DEFINITIONS:
@@ -218,7 +214,7 @@ func resource_definition() -> Dictionary:
 
 
 func get_display_name() -> String:
-	return str(resource_definition().get("name", "Pietra"))
+	return str(resource_definition().get("name", "Stone"))
 
 
 func collect() -> bool:
@@ -244,8 +240,8 @@ func _apply_variant() -> void:
 	var texture_variant := str(ROCK_TEXTURE_VARIANTS.get(rock_variant, rock_variant))
 	sprite.texture = ROCK_TEXTURES.get(texture_variant, ROCK_TEXTURES["roccia_rossa"])
 	if rock_variant == "roccia_base":
-		# La pietra originale ha un fondo bianco: lo stesso mascheramento della
-		# scena storica la conserva visivamente nella sabbia di atterraggio.
+		# The original rock has a white background; the historical scene masking
+		# keeps it visually embedded in landing sand.
 		if base_rock_material == null:
 			var shader := Shader.new()
 			shader.code = "shader_type canvas_item;\nvoid fragment() {\n    vec4 pixel = texture(TEXTURE, UV);\n    if (pixel.r > 0.90 && pixel.g > 0.90 && pixel.b > 0.90) { pixel.a = 0.0; }\n    COLOR = pixel;\n}"
@@ -253,7 +249,7 @@ func _apply_variant() -> void:
 			base_rock_material.shader = shader
 		sprite.material = base_rock_material
 	else:
-		# Le nuove sprite hanno già la trasparenza: il vecchio shader serviva
-		# soltanto a rimuovere il fondo bianco della roccia provvisoria.
+		# New sprites already have transparency; the old shader only removed the
+		# temporary rock's white background.
 		sprite.material = null
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST

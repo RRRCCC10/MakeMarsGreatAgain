@@ -26,8 +26,8 @@ func _run() -> void:
 		device.set_network_enabled(true)
 	power_grid.rebuild_network()
 
-	_expect(bool(power_grid.connection_ok.get(transformer, false)), "Il trasformatore deve risultare collegato quando ingresso e uscita sono cablati")
-	_expect(transformer.get_connection_label() == "COLLEGATO ALLA RETE", "Il menu del trasformatore non deve restare in attesa")
+	_expect(bool(power_grid.connection_ok.get(transformer, false)), "Test assertion failed")
+	_expect(transformer.get_connection_label() == "CONNECTED TO GRID", "Test assertion failed")
 
 	battery_a.set_battery_energy_kwh(100.0)
 	battery_b.set_battery_energy_kwh(300.0)
@@ -37,9 +37,9 @@ func _run() -> void:
 	clock.time_scale = 1.0
 	clock.set_game_hour(12.0)
 	power_grid._update_energy(20.0)
-	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 200.0), "La batteria connessa deve ricevere il surplus solare")
-	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 300.0), "La batteria disconnessa non deve ricaricarsi")
-	_expect(battery_a.flow_state == 1 and battery_b.flow_state == 0, "Solo la batteria connessa deve indicare il flusso di carica")
+	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 200.0), "Test assertion failed")
+	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 300.0), "Test assertion failed")
+	_expect(battery_a.flow_state == 1 and battery_b.flow_state == 0, "Test assertion failed")
 
 	var consumer := Node2D.new()
 	scene.add_child(consumer)
@@ -47,16 +47,16 @@ func _run() -> void:
 	power_grid.rebuild_network()
 	clock.set_game_hour(0.0)
 	power_grid._update_energy(20.0)
-	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 150.0), "Di notte deve scaricarsi solo la batteria collegata")
-	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 300.0), "La carica isolata deve restare invariata anche durante la scarica della rete")
-	_expect(battery_a.flow_state == -1 and battery_b.flow_state == 0, "Solo la batteria attiva deve indicare il flusso di scarica")
+	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 150.0), "Test assertion failed")
+	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 300.0), "Test assertion failed")
+	_expect(battery_a.flow_state == -1 and battery_b.flow_state == 0, "Test assertion failed")
 
 	battery_b.set_network_enabled(true)
 	power_grid.rebuild_network()
 	clock.set_game_hour(12.0)
 	power_grid._update_energy(20.0)
-	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 175.0), "Il surplus deve essere distribuito sulla prima batteria")
-	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 325.0), "Il surplus deve essere distribuito indipendentemente sulla seconda batteria")
+	_expect(is_equal_approx(battery_a.get_battery_energy_kwh(), 175.0), "Test assertion failed")
+	_expect(is_equal_approx(battery_b.get_battery_energy_kwh(), 325.0), "Test assertion failed")
 
 	clock.running = false
 	if failures.is_empty():

@@ -1,7 +1,7 @@
 extends Node
 
-## Registro comune per tubi, strutture e macchinari demolibili.
-## I macchinari futuri possono registrarsi specificando nome, tipo e funzione di rimozione.
+## Shared registry for removable pipes, structures, and machines.
+## Future machines can register a name, type, and removal function.
 
 signal entries_changed
 

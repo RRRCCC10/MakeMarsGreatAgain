@@ -19,25 +19,23 @@ const PATH_NEW_CELL_COST := 1.0
 const PATH_EXISTING_CELL_COST := 0.82
 const PATH_TURN_COST := 0.42
 const PATH_PARALLEL_COST := 0.28
-## L'incrocio di due canali elettrici è consentito: i canali restano separati
-## nella logica della rete, ma non devono trasformarsi in un muro invisibile.
-## Il costo elevato fa scegliere una deviazione libera ogni volta che esiste.
+## Crossing two electrical channels is permitted: channels remain separate in
+## grid logic, but must not become an invisible wall. The high cost makes the
+## routing choose a clear detour whenever one exists.
 const PATH_FOREIGN_CABLE_CROSSING_COST := 4.0
-## Con il peso pieno la ricerca procede subito verso il traguardo anche su
-## distanze molto grandi. I tratti di cavo già esistenti restano comunque
-## favoriti dal loro costo inferiore.
+## With the full weight, the search heads straight toward its goal even over very
+## large distances. Existing cable segments remain preferred by their lower cost.
 const PATH_HEURISTIC_SCALE := 1.0
 const PATH_START_DIRECTION := 4
-## Il budget è volutamente ampio: il costo viene tenuto sotto controllo dalla
-## ricerca A* entro un corridoio dinamico, non da un raggio massimo che
-## spezzerebbe le reti lontane.
+## The budget is deliberately broad. Cost stays controlled through A* search in
+## a dynamic corridor rather than a maximum radius that would break distant grids.
 const PATH_SEARCH_BUDGET := 50_000
 const PATH_CORRIDOR_PADDING := 96
 
 var panels: Array[PowerDevice] = []
 var batteries: Array[PowerDevice] = []
-# Compatibilità: `transformer` continua a indicare il primo della lista per
-# HUD e test vecchi. La rete reale, però, può avere più trasformatori.
+# Compatibility: `transformer` continues to indicate the first list item for
+# HUD and legacy tests. The real grid can, however, have multiple transformers.
 var transformers: Array[PowerDevice] = []
 var transformer: PowerDevice
 var consumers: Array[Dictionary] = []
@@ -50,8 +48,8 @@ var connection_ok: Dictionary = {}
 var _grids_by_transformer: Dictionary = {}
 var _transformer_for_device: Dictionary = {}
 
-## Riepilogo compatibile con HUD e test: l'energia reale appartiene a ogni
-## singolo PowerDevice di tipo batteria, non piu' a questa rete globale.
+## HUD- and test-compatible summary: real energy belongs to each individual
+## battery PowerDevice rather than this global grid.
 var battery_energy_kwh: float:
 	get:
 		return _get_total_battery_energy()
@@ -60,7 +58,7 @@ var battery_energy_kwh: float:
 var production_kw := 0.0
 var demand_kw := 0.0
 var network_powered := false
-var network_status := "RETE INCOMPLETA"
+var network_status := "GRID INCOMPLETE"
 var _stats_timer := 0.0
 var _routing_failure_keys: Dictionary = {}
 
@@ -95,8 +93,8 @@ func device_world_position(item_id: String, cell: Vector2i, _placement_rotation:
 	if item_id == "solar_panel":
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
 	if item_id in ["transformer", "ice_drill", "rock_drill"]:
-		# L'asse dei cavi resta allineato al centro della riga da 16px
-		# identificata da origin_cell, indipendentemente dall'altezza del frame.
+		# The cable axis remains aligned to the center of the 16 px row identified
+		# by origin_cell, regardless of frame height.
 		return Vector2(cell * CELL_SIZE) + Vector2(16.0, 8.0)
 	return cell_to_world(cell)
 
@@ -223,7 +221,7 @@ func place_device(parent: Node, item_id: String, cell: Vector2i, placement_rotat
 func pickup_rock_drill(rock_drill: RockDrill) -> bool:
 	if not is_instance_valid(rock_drill) or not Inventory.can_add_item("rock_drill"):
 		return false
-	if not Inventory.add_item("rock_drill", "Trivella mineraria", 1, true):
+	if not Inventory.add_item("rock_drill", "Mineral Drill", 1, true):
 		return false
 	rock_drill.close_storage()
 	unregister_consumer(rock_drill)
@@ -297,9 +295,9 @@ func rebuild_network() -> void:
 		_finalize_network_visuals()
 		return
 
-	# Ogni trasformatore crea tre canali propri (pannelli, trasformata,
-	# batteria). I cavi possono incrociarsi graficamente, ma non vengono mai
-	# collegati fra loro nella logica: le reti restano indipendenti.
+	# Every transformer creates three private channels (panels, transformed power,
+	# battery). Cables may graphically cross but never connect in logic, keeping
+	# grids independent.
 	var failed_routing_nodes: Array = []
 	for panel in panels:
 		if not _device_network_enabled(panel):
@@ -468,25 +466,25 @@ func get_stats() -> Dictionary:
 
 
 func get_network_devices() -> Array[Dictionary]:
-	## Modello unico per la pagina di distribuzione: ogni sorgente, accumulo e
-	## carico resta selezionabile singolarmente, senza dover cercare lo sprite
-	## sulla mappa. Il nodo reale è mantenuto nel record per il pulsante manuale.
+	## Unified model for the distribution page. Each source, store, and load stays
+	## individually selectable without hunting for a sprite on the map. The real
+	## node stays in the record for the manual button.
 	_cleanup_invalid()
 	var result: Array[Dictionary] = []
 	var seen: Dictionary = {}
 	for panel in panels:
-		_append_network_device(result, seen, panel, "GENERAZIONE", PANEL_OUTPUT_KW * WorldClock.get_solar_factor(), "produzione disponibile")
+		_append_network_device(result, seen, panel, "GENERATION", PANEL_OUTPUT_KW * WorldClock.get_solar_factor(), "available production")
 	for current_transformer in transformers:
-		_append_network_device(result, seen, current_transformer, "CONVERSIONE", 0.0, "ponte della propria rete indipendente")
+		_append_network_device(result, seen, current_transformer, "CONVERSION", 0.0, "bridge for its independent grid")
 	for battery in batteries:
 		var stored := battery.get_battery_energy_kwh()
-		_append_network_device(result, seen, battery, "ACCUMULO", stored, "%.0f / %.0f kWh" % [stored, BATTERY_CAPACITY_KWH])
+		_append_network_device(result, seen, battery, "STORAGE", stored, "%.0f / %.0f kWh" % [stored, BATTERY_CAPACITY_KWH])
 	for consumer in consumers:
 		var node := consumer.get("node") as Node
 		var demand := float(consumer.get("demand_kw", 0.0))
 		if is_instance_valid(node) and node.has_method("get_power_demand_kw"):
 			demand = float(node.call("get_power_demand_kw"))
-		_append_network_device(result, seen, node, "CONSUMO", demand, "richiesta nominale")
+		_append_network_device(result, seen, node, "CONSUMPTION", demand, "rated demand")
 	return result
 
 
@@ -494,8 +492,8 @@ func set_device_network_enabled(device: Node, enabled: bool) -> bool:
 	if not is_instance_valid(device) or not device.has_method("set_network_enabled"):
 		return false
 	device.call("set_network_enabled", enabled)
-	# Alcuni edifici aggiornano la propria registrazione in differita; il rebuild
-	# immediato rende già visibile il nuovo collegamento nella pagina.
+	# Some buildings update their registration deferred. An immediate rebuild makes
+	# the new connection visible on the page already.
 	rebuild_network()
 	stats_changed.emit(get_stats())
 	return true
@@ -514,15 +512,15 @@ func _append_network_device(result: Array[Dictionary], seen: Dictionary, device:
 	if device.get("powered") != null:
 		powered = bool(device.get("powered"))
 	var display_name := _network_device_display_name(device, role)
-	var status := "DISCONNESSO"
+	var status := "DISCONNECTED"
 	if enabled and not connected:
-		status = "CAVO NON COLLEGATO"
-	elif enabled and role == "GENERAZIONE" and power_value_kw <= 0.01:
-		status = "IN ATTESA DI LUCE"
+		status = "CABLE NOT CONNECTED"
+	elif enabled and role == "GENERATION" and power_value_kw <= 0.01:
+		status = "AWAITING LIGHT"
 	elif enabled and powered:
-		status = "OPERATIVO"
+		status = "OPERATIONAL"
 	elif enabled and connected:
-		status = "COLLEGATO · IN ATTESA"
+		status = "CONNECTED · AWAITING POWER"
 	result.append({
 		"node": device,
 		"name": display_name,
@@ -539,15 +537,15 @@ func _append_network_device(result: Array[Dictionary], seen: Dictionary, device:
 
 func _fallback_network_device_name(role: String) -> String:
 	match role:
-		"GENERAZIONE":
-			return "PANNELLO SOLARE"
-		"CONVERSIONE":
-			return "TRASFORMATORE ELETTRICO"
-		"ACCUMULO":
-			return "BATTERIA DI ACCUMULO"
-		"CONSUMO":
-			return "DISPOSITIVO DI CONSUMO"
-	return "DISPOSITIVO ELETTRICO"
+		"GENERATION":
+			return "SOLAR PANEL"
+		"CONVERSION":
+			return "POWER TRANSFORMER"
+		"STORAGE":
+			return "STORAGE BATTERY"
+		"CONSUMPTION":
+			return "POWER CONSUMER"
+	return "POWER DEVICE"
 
 
 func _network_device_display_name(device: Node, role: String) -> String:
@@ -555,9 +553,9 @@ func _network_device_display_name(device: Node, role: String) -> String:
 	if device.has_method("get_display_name"):
 		display_name = str(device.call("get_display_name")).strip_edges().to_upper()
 	if _is_technical_node_name(display_name):
-		# Object.get() restituisce null quando una Node2D generica non espone
-		# device_id; convertirlo in stringa darebbe "<null>" e impedirebbe il
-		# fallback descrittivo della scheda.
+		# Object.get() returns null when a generic Node2D does not expose device_id.
+		# Converting it to a string would produce "<null>" and prevent the card's
+		# descriptive fallback.
 		var raw_device_id: Variant = device.get("device_id")
 		var device_id := str(raw_device_id).strip_edges() if raw_device_id is String or raw_device_id is StringName else ""
 		if not device_id.is_empty():
@@ -582,8 +580,8 @@ func _update_energy(delta: float) -> void:
 	var status_by_grid: Array[String] = []
 	var stable_grid_ready := false
 	for grid_key_variant in _grids_by_transformer.keys():
-		# Le chiavi sono gli instance ID interi dei trasformatori. Tipizzarle
-		# esplicitamente evita l'inferenza ambigua segnalata dal parser Godot.
+		# Keys are transformer integer instance IDs. Type them explicitly to avoid
+		# the ambiguous inference reported by the Godot parser.
 		var grid_key: int = int(grid_key_variant)
 		var grid: Dictionary = _grids_by_transformer[grid_key]
 		var current_transformer := grid.get("transformer") as PowerDevice
@@ -602,29 +600,29 @@ func _update_energy(delta: float) -> void:
 		production_kw += grid_production
 		demand_kw += grid_demand
 		var grid_powered := false
-		var grid_status := "RETE INCOMPLETA"
+		var grid_status := "GRID INCOMPLETE"
 		if not chain_ready:
-			grid_status = "RETE DISCONNESSA" if not _device_network_enabled(current_transformer) else "RETE INCOMPLETA"
+			grid_status = "GRID DISCONNECTED" if not _device_network_enabled(current_transformer) else "GRID INCOMPLETE"
 		elif grid_production >= grid_demand:
 			grid_powered = true
 			var surplus := grid_production - grid_demand
 			var charged := _charge_batteries(grid_batteries, surplus * energy_step, battery_flows)
 			if charged > 0.0001:
-				grid_status = "IN CARICA"
+				grid_status = "CHARGING"
 			elif grid_batteries.is_empty():
-				grid_status = "RETE DIRETTA"
+				grid_status = "DIRECT GRID"
 			else:
-				grid_status = "RETE ATTIVA"
+				grid_status = "GRID ACTIVE"
 		else:
 			var deficit_energy := (grid_demand - grid_production) * energy_step
 			var available_energy := _get_battery_energy(grid_batteries)
 			if available_energy + 0.0001 >= deficit_energy:
 				grid_powered = true
 				_discharge_batteries(grid_batteries, deficit_energy, battery_flows)
-				grid_status = "BATTERIA"
+				grid_status = "BATTERY"
 			else:
-				# Ogni rete scarica esclusivamente le proprie batterie: due basi
-				# lontane restano davvero indipendenti anche durante la notte.
+				# Every grid discharges only its own batteries, keeping two distant bases
+				# genuinely independent even during the night.
 				_discharge_batteries(grid_batteries, available_energy, battery_flows)
 				grid_status = "BLACKOUT"
 		if grid_powered:
@@ -640,15 +638,15 @@ func _update_energy(delta: float) -> void:
 
 	network_powered = powered_grid_count > 0
 	if _grids_by_transformer.is_empty():
-		network_status = "RETE DISCONNESSA" if has_transformer() else "RETE INCOMPLETA"
+		network_status = "GRID DISCONNECTED" if has_transformer() else "GRID INCOMPLETE"
 	elif _grids_by_transformer.size() == 1:
-		network_status = status_by_grid.front() if not status_by_grid.is_empty() else "RETE INCOMPLETA"
+		network_status = status_by_grid.front() if not status_by_grid.is_empty() else "GRID INCOMPLETE"
 	elif powered_grid_count == _grids_by_transformer.size():
-		network_status = "RETI INDIPENDENTI ATTIVE"
+		network_status = "INDEPENDENT GRIDS ACTIVE"
 	elif powered_grid_count > 0:
-		network_status = "RETI INDIPENDENTI · %d/%d ATTIVE" % [powered_grid_count, _grids_by_transformer.size()]
+		network_status = "INDEPENDENT GRIDS · %d/%d ACTIVE" % [powered_grid_count, _grids_by_transformer.size()]
 	else:
-		network_status = "RETI INDIPENDENTI INCOMPLETE"
+		network_status = "INDEPENDENT GRIDS INCOMPLETE"
 	for panel in panels:
 		panel.set_power_state(connection_ok.get(panel, false) and solar_factor > 0.001, 0)
 	for current_transformer in transformers:
@@ -773,10 +771,9 @@ func _get_connected_battery_energy() -> float:
 
 
 func _set_total_battery_energy(value: float) -> void:
-	# Compatibilita' con salvataggi/test precedenti: quando viene impostato
-	# un totale, lo distribuiamo nelle batterie reali senza superarne la
-	# capacita'. Durante il gioco questa proprieta' non viene usata per i
-	# flussi, che rimangono rigorosamente per-dispositivo.
+	# Compatibility with previous saves and tests: when a total is set, distribute
+	# it among real batteries without exceeding their capacity. Gameplay never uses
+	# this property for flow, which remains strictly per-device.
 	var remaining := clampf(value, 0.0, get_battery_capacity())
 	for battery in batteries:
 		var assigned := minf(remaining, BATTERY_CAPACITY_KWH)
@@ -788,9 +785,9 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 	if start == goal:
 		return [start]
 	var blocked := _get_blocked_cells(true)
-	# Un cavo riusa volentieri le celle della propria corrente. Quelli delle
-	# altre sezioni non sono ostacoli fisici: un incrocio mantiene comunque i
-	# due network_id distinti e quindi non può fondere due reti per errore.
+	# A cable happily reuses cells from its own current. Other sections are not
+	# physical obstacles: a crossing preserves distinct network IDs and therefore
+	# cannot merge two grids by mistake.
 	var foreign_cable_cells: Dictionary = {}
 	for other_network_id_variant in cable_cells_by_network.keys():
 		var other_network_id := str(other_network_id_variant)
@@ -802,9 +799,8 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 	blocked.erase(start)
 	blocked.erase(goal)
 	var own_cells: Dictionary = cable_cells_by_network.get(network_id, {})
-	# Non esiste piu' un raggio massimo artificiale attorno ai due dispositivi:
-	# il percorso puo' attraversare tutta la mappa. I limiti fisici della mappa
-	# mantengono comunque finita la ricerca.
+	# There is no longer an artificial maximum radius around two devices. A path
+	# can cross the whole map; physical map limits nevertheless bound the search.
 	var min_x := mini(start.x, goal.x) - PATH_CORRIDOR_PADDING
 	var max_x := maxi(start.x, goal.x) + PATH_CORRIDOR_PADDING
 	var min_y := mini(start.y, goal.y) - PATH_CORRIDOR_PADDING
@@ -818,9 +814,9 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 			max_x = mini(max_x, world_rect.end.x - 1)
 			min_y = maxi(min_y, world_rect.position.y)
 			max_y = mini(max_y, world_rect.end.y - 1)
-	# Lo stato include anche la direzione di arrivo. In questo modo due
-	# percorsi sulla stessa cella ma con orientamento diverso non sono
-	# equivalenti: una curva ha un costo reale e viene evitata se inutile.
+	# State also includes arrival direction. Two paths on the same cell with a
+	# different orientation are not equivalent: a turn has a real cost and is
+	# avoided when unnecessary.
 	var start_state := Vector3i(start.x, start.y, PATH_START_DIRECTION)
 	var open_heap: Array[Dictionary] = []
 	var closed: Dictionary = {}
@@ -837,8 +833,8 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 			continue
 		expanded_states += 1
 		if expanded_states > PATH_SEARCH_BUDGET:
-			# Una rete completamente chiusa non deve trasformare il rebuild in un
-			# blocco del gioco: il chiamante ricevera' un errore di instradamento.
+			# A completely closed grid must not turn rebuilding into a game freeze. The
+			# caller receives a routing error instead.
 			return []
 		var current := Vector2i(current_state.x, current_state.y)
 		if current == goal:
@@ -852,8 +848,8 @@ func _find_path(start: Vector2i, goal: Vector2i, network_id: String) -> Array[Ve
 			var neighbor_state := Vector3i(neighbor.x, neighbor.y, direction_index)
 			if blocked.has(neighbor) or closed.has(neighbor_state):
 				continue
-			# Il riuso resta vantaggioso, ma non abbastanza da giustificare
-			# serpentine molto piu' lunghe del collegamento diretto.
+			# Reuse remains advantageous, but not enough to justify serpentine routes
+			# much longer than the direct connection.
 			var step_cost := PATH_EXISTING_CELL_COST if own_cells.has(neighbor) else PATH_NEW_CELL_COST
 			if foreign_cable_cells.has(neighbor):
 				step_cost += PATH_FOREIGN_CABLE_CROSSING_COST
@@ -934,7 +930,7 @@ func _report_routing_failures(failed_nodes: Array) -> void:
 		if _routing_failure_keys.has(key):
 			continue
 		var device_name := _network_device_name(device)
-		var message := "ERRORE RETE ELETTRICA\n%s: percorso impossibile o bloccato. Sposta il macchinario in un posto migliore." % device_name
+		var message := "POWER GRID ERROR\n%s: path impossible or blocked. Move the machine to a better position." % device_name
 		routing_failed.emit(device, message)
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null and incidents.has_method("show_notification"):
@@ -957,8 +953,8 @@ func _reconstruct_directed_path(came_from: Dictionary, current_state: Vector3i) 
 
 
 func _parallel_network_penalty(current: Vector2i, neighbor: Vector2i, direction: Vector2i, own_cells: Dictionary) -> float:
-	# Evita due linee lunghe e parallele a una sola cella di distanza.
-	# Il tratto finale che entra davvero nella rete non viene penalizzato.
+	# Avoid two long parallel lines one cell apart. The final segment that actually
+	# enters the grid is not penalized.
 	var perpendiculars: Array[Vector2i]
 	if direction.x != 0:
 		perpendiculars = [Vector2i.UP, Vector2i.DOWN]
@@ -1023,8 +1019,8 @@ func _attach_cable_visual(cable: CableSegment, cable_key: String, generation: in
 	if scene == null:
 		cable.queue_free()
 		return
-	# Questo callback e' differito rispetto al rebuild della rete: il SceneTree
-	# ha sbloccato il parent e l'aggiunta non compete con setup dei suoi figli.
+	# This callback is deferred relative to grid rebuilding. SceneTree has unlocked
+	# the parent, so insertion does not compete with child setup.
 	scene.add_child(cable)
 	cables[cable_key] = cable
 
@@ -1045,9 +1041,9 @@ func _clear_cables() -> void:
 
 func _get_blocked_cells(block_dome_interiors: bool = false) -> Dictionary:
 	var blocked: Dictionary = {}
-	# Un dispositivo non può comparire sotto l'astronauta. Questo vale solo per
-	# il piazzamento: un cavo può passare sotto il giocatore e non deve smettere
-	# di funzionare quando l'astronauta si ferma accanto a una batteria.
+	# A device cannot appear beneath the astronaut. This applies only to placement:
+	# a cable may pass beneath the player and must keep working when they stop near
+	# a battery.
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and not block_dome_interiors:
 		var player_min := Vector2i(floori((player.global_position.x - 12.0) / CELL_SIZE), floori((player.global_position.y - 12.0) / CELL_SIZE))
@@ -1078,9 +1074,8 @@ func _get_blocked_cells(block_dome_interiors: bool = false) -> Dictionary:
 		if entry.get("kind", "") in ["pipe", "power_device"]:
 			continue
 		var node: Node = entry.get("node")
-		# Per il piazzamento i moduli interni della cupola restano utilizzabili.
-		# I cavi invece non possono attraversare una cupola: il percorso viene
-		# calcolato con block_dome_interiors=true.
+		# For placement, interior dome modules remain usable. Cables, however, cannot
+		# cross a dome: the route is calculated with block_dome_interiors=true.
 		if is_instance_valid(node) and node.is_in_group("base_domes") and not node.is_in_group("greenhouses"):
 			if not block_dome_interiors:
 				continue
@@ -1138,13 +1133,13 @@ func _connected_panel_output_multiplier() -> float:
 func _device_network_enabled(device: Node) -> bool:
 	if not is_instance_valid(device):
 		return false
-	# Un guasto interrompe il nodo fisico senza alterarne il collegamento scelto
-	# dal giocatore. Dopo la riparazione la rete viene ricostruita e riparte.
+	# A fault interrupts the physical node without changing the player-selected
+	# connection. After repair, the grid rebuilds and resumes.
 	if device.has_method("is_incident_operational") and not bool(device.call("is_incident_operational")):
 		return false
 	if device.has_method("is_network_enabled"):
 		return bool(device.call("is_network_enabled"))
-	# Mantiene compatibili eventuali consumatori di servizio non interattivi.
+	# Keep any non-interactive service consumers compatible.
 	return true
 
 
@@ -1171,16 +1166,16 @@ func _manhattan(first: Vector2i, second: Vector2i) -> float:
 func _display_name(item_id: String) -> String:
 	match item_id:
 		"solar_panel":
-			return "PANNELLO SOLARE"
+			return "SOLAR PANEL"
 		"transformer":
-			return "TRASFORMATORE"
+			return "TRANSFORMER"
 		"battery":
-			return "BATTERIA"
+			return "BATTERY"
 		"ice_drill":
-			return "TRIVELLA DI GHIACCIO"
+			return "ICE DRILL"
 		"rock_drill":
-			return "TRIVELLA MINERARIA"
-	return "DISPOSITIVO ELETTRICO"
+			return "MINERAL DRILL"
+	return "POWER DEVICE"
 
 
 func _refresh_primary_transformer() -> void:
@@ -1200,7 +1195,7 @@ func reset_for_new_mission() -> void:
 	production_kw = 0.0
 	demand_kw = 0.0
 	network_powered = false
-	network_status = "RETE INCOMPLETA"
+	network_status = "GRID INCOMPLETE"
 	_stats_timer = 0.0
 	_routing_failure_keys.clear()
 	network_changed.emit()

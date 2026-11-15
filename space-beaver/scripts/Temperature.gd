@@ -1,28 +1,28 @@
 extends Node
 
-## Termoregolazione EVA. I valori rappresentano temperature superficiali
-## marziane tipiche, non la temperatura dell'aria rarefatta. La tuta limita
-## il flusso termico, mentre un modulo chiuso fornisce solo un riparo minimo.
+## EVA thermoregulation. Values represent typical Martian surface temperatures,
+## not thin-air temperatures. The suit limits thermal flow, while a closed
+## module provides only minimal shelter.
 
 signal changed(data: Dictionary)
 
 const NORMAL_CORE_TEMPERATURE_C := 37.0
 const LETHAL_CORE_TEMPERATURE_C := 28.0
 const SHELTER_BONUS_C := 18.0
-# Il freddo marziano deve essere una pressione di gioco reale: una notte
-# completa all'aperto con la tuta iniziale porta già verso l'ipotermia, mentre
-# il polo nord senza una tuta avanzata diventa una spedizione quasi suicida.
+# Martian cold must exert real gameplay pressure: a full outdoor night in the
+# starting suit approaches hypothermia, while the north pole without an advanced
+# suit becomes an almost suicidal expedition.
 const COOLING_PER_GAP_C_PER_HOUR := 0.014
 const OPEN_AIR_RECOVERY_C_PER_HOUR := 0.20
 const SHELTER_RECOVERY_C_PER_HOUR := 0.50
 
 const BIOME_PROFILES := {
-	0: {"name": "PIANURA DI ATTERRAGGIO", "day_c": -20.0, "night_c": -73.0},
-	1: {"name": "REGOLITE SCURA", "day_c": -17.0, "night_c": -68.0},
-	2: {"name": "CRATERE ROCCIOSO", "day_c": -35.0, "night_c": -88.0},
-	3: {"name": "BORDO DELLA CALOTTA", "day_c": -52.0, "night_c": -98.0},
-	4: {"name": "GHIACCIO POLARE", "day_c": -65.0, "night_c": -115.0},
-	5: {"name": "ALTOPIANO BASALTICO", "day_c": -30.0, "night_c": -82.0},
+	0: {"name": "LANDING PLAIN", "day_c": -20.0, "night_c": -73.0},
+	1: {"name": "DARK REGOLITH", "day_c": -17.0, "night_c": -68.0},
+	2: {"name": "ROCKY CRATER", "day_c": -35.0, "night_c": -88.0},
+	3: {"name": "ICE-CAP EDGE", "day_c": -52.0, "night_c": -98.0},
+	4: {"name": "POLAR ICE", "day_c": -65.0, "night_c": -115.0},
+	5: {"name": "BASALTIC PLATEAU", "day_c": -30.0, "night_c": -82.0},
 }
 
 var core_temperature_c := NORMAL_CORE_TEMPERATURE_C
@@ -30,9 +30,9 @@ var ambient_temperature_c := -20.0
 var effective_temperature_c := -20.0
 var cold_gap_c := 0.0
 var current_biome_source_id := 0
-var current_biome_name := "PIANURA DI ATTERRAGGIO"
+var current_biome_name := "LANDING PLAIN"
 var shelter_bonus_c := 0.0
-var shelter_name := "ESPOSTO"
+var shelter_name := "EXPOSED"
 var is_sheltered := false
 var storm_wind_chill_c := 0.0
 var _ui_timer := 0.0
@@ -94,14 +94,14 @@ func get_biome_profile(source_id: int) -> Dictionary:
 
 func get_condition_label() -> String:
 	if core_temperature_c <= LETHAL_CORE_TEMPERATURE_C:
-		return "IPOTERMIA FATALE"
+		return "FATAL HYPOTHERMIA"
 	if core_temperature_c < 31.5:
-		return "IPOTERMIA GRAVE"
+		return "SEVERE HYPOTHERMIA"
 	if core_temperature_c < 33.5:
-		return "IPOTERMIA MODERATA"
+		return "MODERATE HYPOTHERMIA"
 	if core_temperature_c < 35.5:
-		return "BRIVIDI E DESTREZZA RIDOTTA"
-	return "TERMICO STABILE"
+		return "SHIVERING AND REDUCED DEXTERITY"
+	return "THERMALLY STABLE"
 
 
 func get_condition_color() -> Color:
@@ -156,7 +156,7 @@ func reset_for_new_mission() -> void:
 	current_biome_source_id = 0
 	current_biome_name = str(BIOME_PROFILES[0]["name"])
 	shelter_bonus_c = 0.0
-	shelter_name = "ESPOSTO"
+	shelter_name = "EXPOSED"
 	is_sheltered = false
 	storm_wind_chill_c = 0.0
 	_ui_timer = 0.0
@@ -191,7 +191,7 @@ func _resolve_environment() -> Dictionary:
 
 func _get_shelter_at(world_position: Vector2) -> Dictionary:
 	var strongest_bonus := 0.0
-	var strongest_name := "ESPOSTO"
+	var strongest_name := "EXPOSED"
 	for entry in BuildableRegistry.get_entries():
 		var structure := entry.get("node") as Node2D
 		if structure == null or not is_instance_valid(structure) or not structure.has_method("contains_world_point"):
@@ -205,7 +205,7 @@ func _get_shelter_at(world_position: Vector2) -> Dictionary:
 			bonus = SHELTER_BONUS_C
 		if bonus > strongest_bonus:
 			strongest_bonus = bonus
-			strongest_name = str(entry.get("display_name", "RIFUGIO"))
+			strongest_name = str(entry.get("display_name", "SHELTER"))
 	return {"bonus_c": strongest_bonus, "name": strongest_name}
 
 

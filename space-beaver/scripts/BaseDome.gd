@@ -3,9 +3,9 @@ class_name BaseDome
 
 const TILE_SIZE := 16
 const SIZES := {
-	"dome_small": {"label": "Cupola base piccola", "radius": 62.0, "price": 1_200_000_000},
-	"dome_medium": {"label": "Cupola base media", "radius": 108.0, "price": 2_400_000_000},
-	"dome_large": {"label": "Cupola base grande", "radius": 145.0, "price": 4_000_000_000},
+	"dome_small": {"label": "Small Base Dome", "radius": 62.0, "price": 1_200_000_000},
+	"dome_medium": {"label": "Medium Base Dome", "radius": 108.0, "price": 2_400_000_000},
+	"dome_large": {"label": "Large Base Dome", "radius": 145.0, "price": 4_000_000_000},
 }
 const THERMAL_SHELTER_BONUS_C := 8.0
 const POWERED_THERMAL_SHELTER_BONUS_C := 45.0
@@ -120,11 +120,11 @@ func _ready() -> void:
 		call_deferred("_register_connections")
 		var incidents := get_node_or_null("/root/IncidentManager")
 		if incidents != null:
-			incidents.call("register_target", self, "outer_door", "PORTA ESTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
-			incidents.call("register_target", self, "inner_door", "PORTA INTERNA · %s" % str(SIZES[dome_id]["label"]), 0.5)
+			incidents.call("register_target", self, "outer_door", "OUTER DOOR · %s" % str(SIZES[dome_id]["label"]), 0.5)
+			incidents.call("register_target", self, "inner_door", "INNER DOOR · %s" % str(SIZES[dome_id]["label"]), 0.5)
 		var sandstorms := get_node_or_null("/root/SandstormManager")
 		if sandstorms != null and has_rover_charging_pad():
-			sandstorms.call("register_target", self, "PIAZZOLA RICARICA ROVER")
+			sandstorms.call("register_target", self, "ROVER CHARGING PAD")
 	_refresh_rover_pad()
 	_apply_door_frames()
 
@@ -188,8 +188,8 @@ static func can_place_at(world_position: Vector2, size_id: String, dome_configur
 
 
 static func is_placement_clear_of_player_and_rocks(center: Vector2, radius: float, direction: int = 1) -> bool:
-	## Controlla l'intera impronta della cupola e la sua camera di decompressione.
-	## Le rocce hanno un collider di circa 14px; il player ne occupa circa 12px.
+	## Checks the full dome footprint and its airlock chamber. Rocks have an
+	## approximately 14 px collider; the player occupies approximately 12 px.
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return false
@@ -288,15 +288,15 @@ func _update_oxygen_reserve(delta: float) -> void:
 		return
 	var atmospheric_demand_units := get_oxygen_loss_rate() * delta
 	var loss_units := minf(oxygen_reserve, atmospheric_demand_units)
-	# Prima si applica il consumo (anche a cupola vuota), poi si reintegra solo
-	# ciò che è stato realmente perso e che una sorgente può fornire ora.
+	# Apply consumption first, even for an empty dome, then replenish only what
+	# was actually lost and what a source can provide right now.
 	oxygen_reserve = maxf(0.0, oxygen_reserve - loss_units)
 	var reserve_space := INITIAL_OXYGEN_UNITS - oxygen_reserve
 	var refill_units := minf(maxf(atmospheric_demand_units, OXYGEN_RESERVE_REFILL_UNITS_PER_SECOND * delta), reserve_space)
 	if refill_units <= 0.0 or not is_oxygen_connected():
 		return
-	# La richiesta segue il consumo atmosferico effettivo: il macchinario resta
-	# comunque il limite reale, perché può consegnare solo il suo flusso corrente.
+	# Demand follows actual atmospheric consumption. The machine remains the real
+	# limit because it can supply only its current flow.
 	var requested_kg := refill_units / OXYGEN_UNITS_PER_KG
 	if requested_kg <= 0.0:
 		return
@@ -326,30 +326,30 @@ func _refresh_dome_status() -> void:
 	var pipe_manager := get_node_or_null("/root/PipeManager")
 	if pipe_manager != null and pipe_manager.has_method("get_connected_source_nodes"):
 		connected_sources = pipe_manager.call("get_connected_source_nodes", _oxygen_input_cell, Vector2i.LEFT, PipeSegment.Category.OXYGEN)
-	var source_status := "nessuna sorgente collegata"
+	var source_status := "no connected source"
 	if not connected_sources.is_empty():
 		var source_names := PackedStringArray()
 		for source in connected_sources:
 			var name := str(source.call("get_display_name")) if source.has_method("get_display_name") else str(source.name)
 			var flow := float(source.call("get_fluid_output_available_for_category", PipeSegment.Category.OXYGEN)) if source.has_method("get_fluid_output_available_for_category") else -1.0
-			source_names.append("%s (%s)" % [name, "flusso disponibile %.3f kg/tick" % flow if flow >= 0.0 else "rete connessa; flusso non esposto"])
+			source_names.append("%s (%s)" % [name, "available flow %.3f kg/tick" % flow if flow >= 0.0 else "network connected; flow not exposed"])
 		source_status = ", ".join(source_names)
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	var power_connected := power_grid != null and bool(power_grid.get("connection_ok").get(self, false))
 	var occupied := _player_is_inside()
 	var shields := PackedStringArray()
 	if bool(configuration.get("lead_shielding", false)):
-		shields.append("piombo")
+		shields.append("lead")
 	if bool(configuration.get("hydrogen_shielding", false)):
-		shields.append("materiale idrogenato")
-	var shield_status := ", ".join(shields) if not shields.is_empty() else "nessuna"
-	var pad_status := "assente" if not has_rover_charging_pad() else ("alimentata · %.0f kW" % get_rover_pad_charge_rate_kw() if is_rover_pad_powered() else "presente · attende alimentazione")
-	_dome_status_label.text = "%s\nO₂ cupola: %.1f / %.0f (%.0f%%)\nConsumo: %.2f unità/s (%s) — passivo %.2f + occupante %.2f\nAutonomia stimata al consumo attuale: %s\nTubo O₂: %s\nSorgente/i: %s\nRicarica riserva: max %.1f unità/s\nRiscaldamento: %s — bonus %.0f °C\nSchermature: %s\nBase rover: %s\nTasto destro sul raccordo per chiudere" % [str(SIZES[dome_id]["label"]), oxygen_reserve, INITIAL_OXYGEN_UNITS, get_oxygen_reserve_percent() * 100.0, loss_rate, "giocatore dentro" if occupied else "cupola vuota", OXYGEN_PASSIVE_LOSS_PER_SECOND, OXYGEN_OCCUPANT_LOSS_PER_SECOND if occupied else 0.0, _format_duration(seconds_left), "collegato" if not connected_sources.is_empty() else "scollegato", source_status, OXYGEN_RESERVE_REFILL_UNITS_PER_SECOND, "alimentato" if powered and power_connected else ("rete collegata, non alimentato" if power_connected else "non alimentato"), get_thermal_shelter_bonus_c(), shield_status, pad_status]
+		shields.append("hydrogen-rich material")
+	var shield_status := ", ".join(shields) if not shields.is_empty() else "none"
+	var pad_status := "absent" if not has_rover_charging_pad() else ("powered · %.0f kW" % get_rover_pad_charge_rate_kw() if is_rover_pad_powered() else "present · awaiting power")
+	_dome_status_label.text = "%s\nDome O₂: %.1f / %.0f (%.0f%%)\nUse: %.2f units/s (%s) — passive %.2f + occupant %.2f\nEstimated endurance at current use: %s\nO₂ pipe: %s\nSource(s): %s\nReserve refill: max %.1f units/s\nHeating: %s — bonus %.0f °C\nShielding: %s\nRover pad: %s\nRight-click the coupling to close" % [str(SIZES[dome_id]["label"]), oxygen_reserve, INITIAL_OXYGEN_UNITS, get_oxygen_reserve_percent() * 100.0, loss_rate, "player inside" if occupied else "dome empty", OXYGEN_PASSIVE_LOSS_PER_SECOND, OXYGEN_OCCUPANT_LOSS_PER_SECOND if occupied else 0.0, _format_duration(seconds_left), "connected" if not connected_sources.is_empty() else "disconnected", source_status, OXYGEN_RESERVE_REFILL_UNITS_PER_SECOND, "powered" if powered and power_connected else ("network connected, unpowered" if power_connected else "unpowered"), get_thermal_shelter_bonus_c(), shield_status, pad_status]
 
 
 func _format_duration(seconds: float) -> String:
 	if is_inf(seconds):
-		return "indefinita"
+		return "indefinite"
 	var total_minutes := int(floor(seconds / 60.0))
 	return "%d h %02d min" % [total_minutes / 60, total_minutes % 60]
 
@@ -370,7 +370,7 @@ func set_network_enabled(value: bool) -> void:
 
 
 func get_display_name() -> String:
-	return str(SIZES.get(dome_id, SIZES["dome_small"]).get("label", "Cupola abitativa")).to_upper()
+	return str(SIZES.get(dome_id, SIZES["dome_small"]).get("label", "Habitat Dome")).to_upper()
 
 
 func set_powered(value: bool) -> void:
@@ -411,8 +411,8 @@ func _player_is_at_rover_pad(player: Node2D) -> bool:
 		return false
 	if _player_is_inside_main_room(player):
 		return false
-	# Il collider fisico ferma il player appena fuori dalla piattaforma; l'area
-	# di utilizzo deve includere quel bordo, altrimenti E non arriva al dock.
+	# Physical collision stops the player just outside the pad, so the interaction
+	# area must include that edge or E cannot reach the dock.
 	var bounds := Rect2(get_rover_pad_position() - Vector2(36.0, 36.0), Vector2(72.0, 72.0))
 	return bounds.has_point(player.global_position)
 
@@ -424,8 +424,8 @@ func _player_is_inside_main_room(player: Node2D) -> bool:
 
 
 func _get_rover_parking_position() -> Vector2:
-	# Il mezzo occupa la metà alta della base: restano riconoscibili sia il rover
-	# sia l'anello di ricarica sottostante.
+	# The vehicle occupies the upper half of the base, keeping both rover and
+	# charging ring recognizable.
 	return get_rover_pad_position() + Vector2(-2.0, -13.0)
 
 
@@ -490,45 +490,45 @@ func get_prompt_for_player(player: Node2D) -> String:
 	if is_preview or player == null or not is_instance_valid(player):
 		return ""
 	if is_incident_faulted("outer_door") and player.global_position.distance_to(get_outer_door_position()) <= 62.0:
-		return "PORTA ESTERNA IN GUASTO · E  ·  RIPARA"
+		return "OUTER DOOR FAULT · E  ·  REPAIR"
 	if is_incident_faulted("inner_door") and player.global_position.distance_to(get_inner_door_position()) <= 58.0:
-		return "PORTA INTERNA IN GUASTO · E  ·  RIPARA"
-	# Dall'interno si possono usare solo le azioni della camera d'aria: i
-	# comandi del dock e del rover esterno non devono attraversare la cupola.
+		return "INNER DOOR FAULT · E  ·  REPAIR"
+	# From inside, only airlock actions are usable; dock and external rover
+	# commands must not pass through the dome.
 	if _player_is_inside_main_room(player) and player.global_position.distance_to(get_inner_door_position()) > 34.0:
 		return ""
 	if _player_is_at_rover_pad(player):
 		var rover := _get_existing_rover()
 		if rover == null:
-			return "E  ·  COMPRA ROVER (%s)%s" % [_format_money(ROVER_PURCHASE_COST), "\n" + _rover_pad_feedback if not _rover_pad_feedback.is_empty() else ""]
+			return "E  ·  BUY ROVER (%s)%s" % [_format_money(ROVER_PURCHASE_COST), "\n" + _rover_pad_feedback if not _rover_pad_feedback.is_empty() else ""]
 		if is_rover_on_charging_pad(rover):
 			var battery_percent := roundi(float(rover.get("battery_energy_kwh")) / Rover.BATTERY_CAPACITY_KWH * 100.0)
-			return "ROVER ATTRACCATO · %d%% BATTERIA\nE  ·  SALI SUL ROVER · %s" % [battery_percent, "RICARICA RAPIDA" if is_rover_pad_powered() else "IN ATTESA DI ALIMENTAZIONE"]
-		return "E  ·  RICHIAMA ROVER (%s)%s" % [_format_money(ROVER_RECALL_COST), "\n" + _rover_pad_feedback if not _rover_pad_feedback.is_empty() else ""]
+			return "ROVER DOCKED · %d%% BATTERY\nE  ·  BOARD ROVER · %s" % [battery_percent, "FAST CHARGING" if is_rover_pad_powered() else "AWAITING POWER"]
+		return "E  ·  RECALL ROVER (%s)%s" % [_format_money(ROVER_RECALL_COST), "\n" + _rover_pad_feedback if not _rover_pad_feedback.is_empty() else ""]
 	if _airlock_busy:
 		if is_in_corridor(player.global_position) or player.global_position.distance_to(get_outer_door_position()) <= 36.0 or player.global_position.distance_to(get_inner_door_position()) <= 30.0:
-			return "Porta in movimento — attendi"
+			return "Door moving — wait"
 		return ""
 	if _sequence_active and player == _sequence_player:
 		return _sequence_prompt()
 	if is_in_corridor(player.global_position):
 		if _sequence_complete:
-			return "F  ·  Apri la porta %s" % ("interna" if _airlock_path == "enter" else "esterna")
+			return "F  ·  Open %s door" % ("inner" if _airlock_path == "enter" else "outer")
 		if _outer_door_open or _inner_door_open:
 			var projected := (player.global_position - global_position).dot(DIRECTION_VECTORS[entrance_direction])
 			if _airlock_path == "enter" and _outer_door_open and projected > get_radius() + 8.0:
-				return "Attraversa la porta esterna per entrare"
+				return "Cross the outer door to enter"
 			if _airlock_path == "exit" and _inner_door_open and projected < get_radius() + 8.0:
-				return "Attraversa la porta interna per uscire"
-			return "Attendi la chiusura della porta alle tue spalle"
+				return "Cross the inner door to exit"
+			return "Wait for the door behind you to close"
 		if _airlock_path not in ["enter", "exit"]:
-			return "Apri la prima porta con E prima di avviare la sequenza"
-		return "F  ·  Avvia la sequenza di %s" % ("pressurizzazione" if _airlock_path == "enter" else "decompressione")
+			return "Open the first door with E before starting the sequence"
+		return "F  ·  Start %s sequence" % ("pressurization" if _airlock_path == "enter" else "decompression")
 	if not is_in_corridor(player.global_position) and contains_world_point(player.global_position) and player.global_position.distance_to(get_inner_door_position()) <= 30.0:
-		return "E  ·  Chiudi la porta interna" if _inner_door_open else "E  ·  Apri la porta verso il corridoio"
+		return "E  ·  Close inner door" if _inner_door_open else "E  ·  Open door to corridor"
 	var projected := (player.global_position - global_position).dot(DIRECTION_VECTORS[entrance_direction])
 	if not contains_world_point(player.global_position) and projected >= get_radius() + 32.0 and player.global_position.distance_to(get_outer_door_position()) <= 36.0:
-		return "E  ·  Chiudi la porta esterna" if _outer_door_open else "E  ·  Apri la porta verso l'esterno"
+		return "E  ·  Close outer door" if _outer_door_open else "E  ·  Open door to outside"
 	return ""
 
 
@@ -666,8 +666,8 @@ func _refresh_rover_pad() -> void:
 	if _rover_pad_body == null or not is_instance_valid(_rover_pad_body):
 		_rover_pad_body = StaticBody2D.new()
 		_rover_pad_body.name = "RoverPadBody"
-		# Il player urta la base (layer 2, come le rocce); il rover la ignora
-		# perché usa la sola layer 1 per poter partire senza restare incastrato.
+		# The player collides with the base (layer 2, like rocks); the rover ignores
+		# it by using only layer 1 so it can leave without getting stuck.
 		_rover_pad_body.collision_layer = 2
 		_rover_pad_body.collision_mask = 0
 		_rover_pad_body.position = Vector2(-get_radius() - 32.0, 0.0)
@@ -702,14 +702,14 @@ func _update_rover_pad_status() -> void:
 	var docked := rover != null and is_rover_on_charging_pad(rover)
 	_rover_pad_label.visible = docked
 	if docked:
-		# Non forzare l'aspetto "parcheggiato" dopo che il player e' salito:
-		# il rover puo' restare per un istante sulla piazzola prima di partire.
+		# Do not force the parked appearance after the player boards: the rover can
+		# remain on the pad briefly before leaving.
 		if rover.has_method("present_docked_at_base") and not is_instance_valid(rover.get("driver") as Node):
 			rover.call("present_docked_at_base")
 		var battery_percent := 0
 		if rover.get("battery_energy_kwh") != null:
 			battery_percent = roundi(float(rover.get("battery_energy_kwh")) / Rover.BATTERY_CAPACITY_KWH * 100.0)
-		_rover_pad_label.text = "ROVER · %d%% · %s" % [battery_percent, "RICARICA RAPIDA" if is_rover_pad_powered() else "IN ATTESA DI ALIMENTAZIONE"]
+		_rover_pad_label.text = "ROVER · %d%% · %s" % [battery_percent, "FAST CHARGING" if is_rover_pad_powered() else "AWAITING POWER"]
 
 
 func _get_existing_rover() -> Node2D:
@@ -727,7 +727,7 @@ func _handle_rover_pad_action(player: Node2D) -> bool:
 	if rover == null:
 		var economy := get_node_or_null("/root/Economy")
 		if economy == null or not bool(economy.call("spend", ROVER_PURCHASE_COST)):
-			_rover_pad_feedback = "Fondi insufficienti per il rover"
+			_rover_pad_feedback = "Insufficient funds for rover"
 			_update_prompt()
 			return true
 		rover = ROVER_SCRIPT.new() as Node2D
@@ -735,23 +735,23 @@ func _handle_rover_pad_action(player: Node2D) -> bool:
 		rover.global_position = _get_rover_parking_position()
 		rover.set("battery_energy_kwh", Rover.STARTING_ENERGY_KWH)
 		rover.call("present_docked_at_base")
-		_rover_pad_feedback = "Rover acquistato · %d%% batteria" % roundi(Rover.STARTING_ENERGY_KWH / Rover.BATTERY_CAPACITY_KWH * 100.0)
+		_rover_pad_feedback = "Rover purchased · %d%% battery" % roundi(Rover.STARTING_ENERGY_KWH / Rover.BATTERY_CAPACITY_KWH * 100.0)
 		_update_prompt()
 		return true
 	if is_rover_on_charging_pad(rover):
-		# Non rubare E al player: il suo handler deve poter far salire sul rover.
+		# Do not take E from the player: its handler must be able to board the rover.
 		return false
 	if not rover.has_method("can_be_recalled_to_base") or not bool(rover.call("can_be_recalled_to_base")):
-		_rover_pad_feedback = "Scendi dal rover e chiudi i pannelli prima del richiamo"
+		_rover_pad_feedback = "Exit the rover and close panels before recalling it"
 		_update_prompt()
 		return true
 	var economy := get_node_or_null("/root/Economy")
 	if economy == null or not bool(economy.call("spend", ROVER_RECALL_COST)):
-		_rover_pad_feedback = "Fondi insufficienti per richiamare il rover"
+		_rover_pad_feedback = "Insufficient funds to recall rover"
 		_update_prompt()
 		return true
 	rover.call("prepare_base_recall", _get_rover_parking_position())
-	_rover_pad_feedback = "Rover richiamato · costo %s" % _format_money(ROVER_RECALL_COST)
+	_rover_pad_feedback = "Rover recalled · cost %s" % _format_money(ROVER_RECALL_COST)
 	_update_prompt()
 	return true
 
@@ -816,7 +816,7 @@ func _build_boundary_and_corridor() -> void:
 	var radius := get_radius()
 	var outward: Vector2 = DIRECTION_VECTORS[entrance_direction]
 	var side := Vector2(-outward.y, outward.x)
-	# Parete circolare con varco della larghezza del corridoio.
+	# Circular wall with a corridor-width opening.
 	var count := 72
 	var half_arc := asin(clampf(19.0 / radius, 0.0, 0.95))
 	var entrance_angle := outward.angle()
@@ -828,7 +828,7 @@ func _build_boundary_and_corridor() -> void:
 		if delta_angle <= half_arc:
 			continue
 		_add_segment(Vector2(cos(angle_a), sin(angle_a)) * radius, Vector2(cos(angle_b), sin(angle_b)) * radius)
-	# I due bordi lunghi sono la hitbox fisica del corridoio.
+	# The two long edges form the corridor's physical hitbox.
 	_add_segment(outward * radius + side * 16.0, outward * (radius + 32.0) + side * 16.0)
 	_add_segment(outward * radius - side * 16.0, outward * (radius + 32.0) - side * 16.0)
 	_outer_gate = _add_gate("OuterGate", get_radius() + 24.0, false)
@@ -873,7 +873,7 @@ func _build_prompt() -> void:
 	_prompt_panel = PanelContainer.new()
 	_prompt_panel.anchor_left = 0.5
 	_prompt_panel.anchor_right = 0.5
-	# Lascia libere barre di sete, ossigeno e fame in fondo allo schermo.
+	# Keep thirst, oxygen, and hunger bars unobstructed at the bottom of the screen.
 	_prompt_panel.anchor_top = 0.66
 	_prompt_panel.anchor_bottom = 0.66
 	_prompt_panel.offset_left = -240.0
@@ -931,11 +931,11 @@ func _sequence_prompt() -> String:
 	for index in _sequence.size():
 		var label: String = DIRECTION_KEY_LABELS[DIRECTION_KEYS.find(_sequence[index])]
 		keys.append("[%s]" % label if index == _sequence_progress else label)
-	var phase := "PRESSURIZZAZIONE" if _airlock_path == "enter" else "DECOMPRESSIONE"
+	var phase := "PRESSURIZATION" if _airlock_path == "enter" else "DECOMPRESSION"
 	var feedback := ""
 	if not _sequence_feedback.is_empty():
 		feedback = "  ·  " + _sequence_feedback
-	return "%s — premi in ordine: %s\nProgresso %d/%d  ·  WASD%s" % [phase, "  →  ".join(keys), _sequence_progress, _sequence.size(), feedback]
+	return "%s — press in order: %s\nProgress %d/%d  ·  WASD%s" % [phase, "  →  ".join(keys), _sequence_progress, _sequence.size(), feedback]
 
 
 func _start_sequence(player: Node2D) -> void:
@@ -968,7 +968,7 @@ func _accept_sequence_key(player: Node2D, keycode: int) -> void:
 			return
 	else:
 		_sequence_progress = 0
-		_sequence_feedback = "Errore: sequenza ripartita"
+		_sequence_feedback = "Error: sequence restarted"
 		_corridor_sprite.texture = _sheet_frame(CORRIDOR_SHEETS[DIRECTION_NAMES[entrance_direction]], 0)
 	_update_prompt()
 
@@ -1042,8 +1042,8 @@ func _update_airlock_state() -> void:
 	var outward: Vector2 = DIRECTION_VECTORS[entrance_direction]
 	var projected := (player.global_position - global_position).dot(outward)
 	if _airlock_path == "enter":
-		# Chiudi solo dopo che il centro del personaggio ha superato il piano
-		# della porta con spazio sufficiente, evitando di richiuderla addosso.
+		# Close only after the character center has crossed the door plane with
+		# enough clearance, preventing it from closing onto the player.
 		if _outer_door_open and in_corridor and projected <= get_radius() + 8.0:
 			_first_door_crossed = true
 			_animate_door("outer", false)
@@ -1080,8 +1080,8 @@ func is_incident_faulted(target_id: String) -> bool:
 func can_receive_incident(target_id: String) -> bool:
 	if is_preview or not _faulted_doors.has(target_id) or is_incident_faulted(target_id):
 		return false
-	# Non interrompere mai una camera d'aria durante animazione, ciclo o
-	# attraversamento: un incidente blocca l'apertura della porta a riposo.
+	# Never interrupt an airlock during animation, cycle, or crossing: an incident
+	# blocks opening a resting door.
 	return not _airlock_busy and not _sequence_active and not _outer_door_open and not _inner_door_open and _airlock_path.is_empty()
 
 
@@ -1113,10 +1113,9 @@ func _destroy() -> bool:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player != null and (contains_world_point(player.global_position) or is_in_corridor(player.global_position)):
 		return false
-	# Demolire non deve distruggere una cupola pagata: la struttura torna
-	# nell'inventario con tutti gli optional scelti nello shop. Il rover non è
-	# figlio della cupola, ma viene comunque preservato se una scena vecchia lo
-	# avesse agganciato alla base.
+	# Demolition must not destroy a purchased dome: the structure returns to the
+	# inventory with every shop option. The rover is not a dome child, but is still
+	# preserved if an older scene attached it to the base.
 	var inventory := get_node_or_null("/root/Inventory")
 	if inventory == null or not bool(inventory.call("can_add_item", dome_id)):
 		return false

@@ -1,18 +1,18 @@
 class_name RockDrill
 extends Node2D
 
-## Trivella mineraria autonoma. A differenza della trivella del ghiaccio non
-## produce un fluido: estrae campioni fisici e li conserva fino a quando il
-## giocatore decide quali portare nello zaino e quali scartare.
+## Autonomous mineral drill. Unlike the ice drill, it does not produce a fluid:
+## it extracts physical samples and stores them until the player decides which
+## ones to carry in the backpack and which ones to discard.
 
 const POWER_DEVICE_SCRIPT := preload("res://scripts/PowerDevice.gd")
 const ROCK_RESOURCE := preload("res://scripts/rock.gd")
 const DRILL_SHEET := preload("res://assets/sprites/machines/rock_drill/rock_drill_spritesheet.png")
 
 const TILE_SIZE := 16
-# Lo spritesheet è largo 128px e contiene quattro pose complete affiancate.
-# Tagliarlo a 16px spezzava ciascuna trivella a metà, alternando le due metà
-# come se fossero fotogrammi distinti.
+# The 128 px-wide sprite sheet contains four complete poses side by side.
+# Cropping it at 16 px split every drill in half and alternated the halves as
+# if they were distinct animation frames.
 const FRAME_SIZE := Vector2i(32, 48)
 const FRAME_COUNT := 4
 const POWER_DEMAND_KW := 85.0
@@ -21,12 +21,12 @@ const STORAGE_CAPACITY := 32
 const INTERACTION_DISTANCE := 74.0
 
 const BIOME_LABELS := {
-	0: "PIANURA DI ATTERRAGGIO",
-	1: "REGOLITE SCURA",
-	2: "CRATERE ROCCIOSO",
-	3: "BORDO DELLA CALOTTA",
-	4: "GHIACCIO POLARE",
-	5: "ALTOPIANO BASALTICO",
+	0: "LANDING PLAIN",
+	1: "DARK REGOLITH",
+	2: "ROCKY CRATER",
+	3: "ICE-CAP EDGE",
+	4: "POLAR ICE",
+	5: "BASALTIC PLATEAU",
 }
 
 var device_id := "rock_drill"
@@ -38,7 +38,7 @@ var powered := false
 var incident_faulted := false
 var sand_accumulation := 0
 var biome_source_id := 0
-var biome_label := "PIANURA DI ATTERRAGGIO"
+var biome_label := "LANDING PLAIN"
 var extraction_elapsed := 0.0
 var animation_elapsed := 0.0
 var animation_frame := 0
@@ -84,10 +84,10 @@ func _ready() -> void:
 	_build_storage_ui()
 	var incidents := get_node_or_null("/root/IncidentManager")
 	if incidents != null:
-		incidents.call("register_target", self, "machine", "TRIVELLA MINERARIA")
+		incidents.call("register_target", self, "machine", "MINERAL DRILL")
 	var sandstorms := get_node_or_null("/root/SandstormManager")
 	if sandstorms != null:
-		sandstorms.call("register_target", self, "TRIVELLA MINERARIA")
+		sandstorms.call("register_target", self, "MINERAL DRILL")
 
 
 func _exit_tree() -> void:
@@ -157,8 +157,8 @@ func _setup_collision() -> void:
 	physics_body.name = "RockDrillCollision"
 	var collision := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	# La colonna di perforazione può essere attraversata visivamente in alto;
-	# la base è la parte che blocca effettivamente il cammino.
+	# The drilling column is visually passable at the top; the base is the part
+	# that actually blocks movement.
 	shape.size = Vector2(27.0, 15.0)
 	collision.position = Vector2(0.0, 15.0)
 	collision.shape = shape
@@ -206,7 +206,7 @@ func _extract_sample() -> void:
 	sample_stock.append({
 		"variant": variant,
 		"id": str(definition.get("item_id", "")),
-		"name": str(definition.get("name", "Campione")),
+		"name": str(definition.get("name", "Sample")),
 		"biome": str(definition.get("biome", biome_label)),
 		"rarity": str(definition.get("rarity", "common")),
 		"research_multiplier": float(definition.get("research_multiplier", 1.0)),
@@ -228,8 +228,8 @@ func get_stock_items() -> Array[Dictionary]:
 
 
 func take_stock_item(index: int = 0) -> bool:
-	## Compatibilità con il pannello rapido: E vicino alla trivella può ritirare
-	## un campione; l'inventario dedicato consente invece di scegliere pile intere.
+	## Compatibility with the quick panel: E near the drill can retrieve one
+	## sample, while the dedicated inventory lets the player choose whole stacks.
 	if index < 0 or index >= sample_stock.size():
 		return false
 	var stock: Dictionary = sample_stock[index]
@@ -251,9 +251,9 @@ func transfer_stock_stack(index: int) -> int:
 		_consume_stock_unit(index)
 		moved += 1
 	if moved > 0:
-		storage_feedback.text = "%d campioni trasferiti nello zaino." % moved
+		storage_feedback.text = "%d samples moved to the backpack." % moved
 	else:
-		storage_feedback.text = "Zaino pieno: libera uno slot per trasferire il campione."
+		storage_feedback.text = "Backpack full: free one slot to move the sample."
 	_refresh_storage_ui()
 	return moved
 
@@ -266,7 +266,7 @@ func transfer_all_stock() -> int:
 		if index < sample_stock.size() and int(sample_stock[index].get("count", 0)) > 0:
 			index += 1
 	if moved > 0:
-		storage_feedback.text = "Trasferiti %d campioni nello zaino." % moved
+		storage_feedback.text = "Moved %d samples to the backpack." % moved
 	_refresh_storage_ui()
 	return moved
 
@@ -276,7 +276,7 @@ func discard_stock_stack(index: int) -> int:
 		return 0
 	var discarded := int(sample_stock[index].get("count", 0))
 	sample_stock.remove_at(index)
-	storage_feedback.text = "Scartati %d campioni dalla riserva." % discarded
+	storage_feedback.text = "Discarded %d samples from storage." % discarded
 	_refresh_storage_ui()
 	return discarded
 
@@ -284,7 +284,7 @@ func discard_stock_stack(index: int) -> int:
 func discard_all_stock() -> int:
 	var discarded := get_stock_count()
 	sample_stock.clear()
-	storage_feedback.text = "Riserva svuotata: %d campioni scartati." % discarded
+	storage_feedback.text = "Storage emptied: %d samples discarded." % discarded
 	_refresh_storage_ui()
 	return discarded
 
@@ -363,24 +363,24 @@ func contains_world_point(world_point: Vector2) -> bool:
 
 
 func get_display_name() -> String:
-	return "TRIVELLA MINERARIA"
+	return "MINERAL DRILL"
 
 
 func get_connection_label() -> String:
 	if incident_faulted:
-		return "GUASTO — avvicinati e ripara"
+		return "FAULT — approach and repair"
 	if not network_enabled:
-		return "DISCONNESSA"
-	return "COLLEGATO ALLA RETE" if bool(PowerGrid.connection_ok.get(self, false)) else "CAVO ELETTRICO NON COLLEGATO"
+		return "DISCONNECTED"
+	return "CONNECTED TO GRID" if bool(PowerGrid.connection_ok.get(self, false)) else "POWER CABLE NOT CONNECTED"
 
 
 func get_interaction_summary() -> String:
-	var state := "GUASTO" if incident_faulted else ("ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else "IN ATTESA DI POTENZA"))
-	return "%s · %s · %d/%d campioni" % [biome_label, state, get_stock_count(), STORAGE_CAPACITY]
+	var state := "FAULT" if incident_faulted else ("EXTRACTION ACTIVE" if powered else ("STORAGE FULL" if get_stock_count() >= STORAGE_CAPACITY else "AWAITING POWER"))
+	return "%s · %s · %d/%d samples" % [biome_label, state, get_stock_count(), STORAGE_CAPACITY]
 
 
 func get_inventory_output_label() -> String:
-	return "RISERVA CAMPIONI  ·  %d / %d" % [get_stock_count(), STORAGE_CAPACITY]
+	return "SAMPLE STORAGE  ·  %d / %d" % [get_stock_count(), STORAGE_CAPACITY]
 
 
 func get_machine_specs() -> Dictionary:
@@ -390,12 +390,12 @@ func get_machine_specs() -> Dictionary:
 			rare_count += int(stock.get("count", 0))
 	var deep_ice_percent := ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0
 	return {
-		"title": "TRIVELLA MINERARIA",
-		"category": "PROSPEZIONE GEOLOGICA IN SITU",
-		"status": "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("ESTRAZIONE ATTIVA" if powered else ("RISERVA PIENA" if get_stock_count() >= STORAGE_CAPACITY else get_connection_label())),
+		"title": "MINERAL DRILL",
+		"category": "IN-SITU GEOLOGICAL PROSPECTING",
+		"status": "FAULT — REPAIR REQUIRED" if incident_faulted else ("EXTRACTION ACTIVE" if powered else ("STORAGE FULL" if get_stock_count() >= STORAGE_CAPACITY else get_connection_label())),
 		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and get_stock_count() < STORAGE_CAPACITY else Color("ffb45d")),
-		"principle": "Una testa rotativa preleva carote dal regolite locale, le vaglia per composizione e conserva i campioni fisici. Il bioma di posa decide quali minerali può trovare.",
-		"specs": ["Bioma di posa: %s" % biome_label, "Assorbimento: %.0f kW" % POWER_DEMAND_KW, "Cadenza: 1 campione ogni %.0f s" % EXTRACTION_INTERVAL_SECONDS, "Riserva: %d / %d campioni" % [get_stock_count(), STORAGE_CAPACITY], "Campioni rari in riserva: %d" % rare_count, "Raro locale: 5%% · ghiaccio profondo primordiale: %.0f%%" % deep_ice_percent, "Totale estratto: %d" % total_samples_extracted, "E: apri riserva · V: rete"],
+		"principle": "A rotary head takes cores from the local regolith, sorts them by composition, and stores physical samples. The placement biome determines which minerals it can find.",
+		"specs": ["Placement biome: %s" % biome_label, "Power demand: %.0f kW" % POWER_DEMAND_KW, "Rate: 1 sample every %.0f s" % EXTRACTION_INTERVAL_SECONDS, "Storage: %d / %d samples" % [get_stock_count(), STORAGE_CAPACITY], "Rare samples in storage: %d" % rare_count, "Local rare: 5%% · primordial deep ice: %.0f%%" % deep_ice_percent, "Total extracted: %d" % total_samples_extracted, "E: open storage · V: grid"],
 	}
 
 
@@ -476,7 +476,7 @@ func _build_storage_ui() -> void:
 	contents.add_theme_constant_override("separation", 9)
 	panel.add_child(contents)
 	var title := Label.new()
-	title.text = "// RISERVA TRIVELLA MINERARIA //"
+	title.text = "// MINERAL DRILL STORAGE //"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", Color("ffd979"))
@@ -488,7 +488,7 @@ func _build_storage_ui() -> void:
 	storage_summary.add_theme_color_override("font_color", Color("b9d9e2"))
 	contents.add_child(storage_summary)
 	var hint := Label.new()
-	hint.text = "Clicca PRENDI per trasferire soltanto quella pila nello zaino. I campioni restano qui finché non li scegli o li scarti."
+	hint.text = "Click TAKE to move only that stack to the backpack. Samples remain here until you choose or discard them."
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.add_theme_font_size_override("font_size", 11)
@@ -511,18 +511,18 @@ func _build_storage_ui() -> void:
 	actions.add_theme_constant_override("separation", 12)
 	contents.add_child(actions)
 	var take_all := Button.new()
-	take_all.text = "[ PRENDI TUTTO ]"
+	take_all.text = "[ TAKE ALL ]"
 	take_all.custom_minimum_size = Vector2(170, 38)
 	take_all.pressed.connect(transfer_all_stock)
 	actions.add_child(take_all)
 	var discard_all := Button.new()
-	discard_all.text = "[ SCARTA RISERVA ]"
+	discard_all.text = "[ DISCARD STORAGE ]"
 	discard_all.custom_minimum_size = Vector2(190, 38)
 	discard_all.pressed.connect(discard_all_stock)
 	discard_all.add_theme_color_override("font_color", Color("ff8b78"))
 	actions.add_child(discard_all)
 	var close := Button.new()
-	close.text = "[ CHIUDI · E / ESC ]"
+	close.text = "[ CLOSE · E / ESC ]"
 	close.custom_minimum_size = Vector2(180, 38)
 	close.pressed.connect(close_storage)
 	actions.add_child(close)
@@ -531,12 +531,12 @@ func _build_storage_ui() -> void:
 func _refresh_storage_ui() -> void:
 	if storage_root == null or storage_rows == null:
 		return
-	storage_summary.text = "%s · alimentazione %s · riserva %d/%d · ghiaccio profondo (modello) %.0f%%" % [biome_label, "ATTIVA" if powered else "NON ATTIVA", get_stock_count(), STORAGE_CAPACITY, ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0]
+	storage_summary.text = "%s · power %s · storage %d/%d · deep ice (model) %.0f%%" % [biome_label, "ACTIVE" if powered else "INACTIVE", get_stock_count(), STORAGE_CAPACITY, ROCK_RESOURCE.deep_ice_probability_for_biome(biome_source_id) * 100.0]
 	for child in storage_rows.get_children():
 		child.queue_free()
 	if sample_stock.is_empty():
 		var empty := Label.new()
-		empty.text = "La riserva è vuota. Collega la trivella alla rete e attendi il primo campione geologico."
+		empty.text = "Storage is empty. Connect the drill to the grid and wait for the first geological sample."
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		empty.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		empty.custom_minimum_size = Vector2(730, 100)
@@ -556,18 +556,18 @@ func _refresh_storage_ui() -> void:
 		info.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		var stock_rarity := str(stock.get("rarity", "common"))
-		var rarity := "ULTRA RARO · GHIACCIO PROFONDO" if stock_rarity == "ultra_rare" else ("RARO · 5%" if stock_rarity == "rare" else "COMUNE")
-		info.text = "%s x%d\n%s · %s · valore ricerca ×%.2f" % [str(stock.get("name", "Campione")).to_upper(), int(stock.get("count", 0)), str(stock.get("biome", biome_label)), rarity, float(stock.get("research_multiplier", 1.0))]
+		var rarity := "ULTRA RARE · DEEP ICE" if stock_rarity == "ultra_rare" else ("RARE · 5%" if stock_rarity == "rare" else "COMMON")
+		info.text = "%s x%d\n%s · %s · research value ×%.2f" % [str(stock.get("name", "Sample")).to_upper(), int(stock.get("count", 0)), str(stock.get("biome", biome_label)), rarity, float(stock.get("research_multiplier", 1.0))]
 		info.add_theme_font_size_override("font_size", 11)
-		info.add_theme_color_override("font_color", Color("a8fff0") if rarity.begins_with("ULTRA") else (Color("ffe18b") if rarity.begins_with("RARO") else Color("d3e3e6")))
+		info.add_theme_color_override("font_color", Color("a8fff0") if rarity.begins_with("ULTRA") else (Color("ffe18b") if rarity.begins_with("RARE") else Color("d3e3e6")))
 		content.add_child(info)
 		var take := Button.new()
-		take.text = "PRENDI\nPILA"
+		take.text = "TAKE\nSTACK"
 		take.custom_minimum_size = Vector2(106, 45)
 		take.pressed.connect(transfer_stock_stack.bind(index))
 		content.add_child(take)
 		var discard := Button.new()
-		discard.text = "SCARTA\nPILA"
+		discard.text = "DISCARD\nSTACK"
 		discard.custom_minimum_size = Vector2(106, 45)
 		discard.add_theme_color_override("font_color", Color("ff9d89"))
 		discard.pressed.connect(discard_stock_stack.bind(index))

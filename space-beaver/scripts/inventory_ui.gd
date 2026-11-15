@@ -172,8 +172,8 @@ func _build_ui() -> void:
 
 	var panel := PanelContainer.new()
 	panel.name = "ResponsiveInventoryPanel"
-	# Pannello fluido: evita la vecchia finestra 760×580 fissa e sfrutta lo
-	# spazio aggiuntivo quando il giocatore amplia la finestra del gioco.
+	# Responsive panel: avoid the old fixed 760×580 window and use the extra space
+	# available when the player enlarges the game window.
 	panel.anchor_left = 0.06
 	panel.anchor_right = 0.94
 	panel.anchor_top = 0.07
@@ -188,7 +188,7 @@ func _build_ui() -> void:
 	contents.add_theme_constant_override("separation", 12)
 	panel.add_child(contents)
 	var title := Label.new()
-	title.text = "INVENTARIO  ·  TAB per chiudere"
+	title.text = "INVENTORY  ·  TAB to close"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	contents.add_child(title)
 	var equipment_panel := PanelContainer.new()
@@ -201,7 +201,7 @@ func _build_ui() -> void:
 	equipment_row.add_theme_constant_override("separation", 8)
 	equipment_panel.add_child(equipment_row)
 	var equipment_title := Label.new()
-	equipment_title.text = "// SLOT TUTA //"
+	equipment_title.text = "// SUIT SLOT //"
 	equipment_title.custom_minimum_size = Vector2(112, 0)
 	equipment_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	equipment_title.add_theme_color_override("font_color", Color("8edff2"))
@@ -250,7 +250,7 @@ func _build_ui() -> void:
 	equip_button.pressed.connect(_equip_selected_suit)
 	equipment_row.add_child(equip_button)
 	var inventory_title := Label.new()
-	inventory_title.text = "// ZAINO //"
+	inventory_title.text = "// BACKPACK //"
 	inventory_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	inventory_title.add_theme_color_override("font_color", Color("cbd8dc"))
 	contents.add_child(inventory_title)
@@ -302,7 +302,7 @@ func _build_ui() -> void:
 	detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	contents.add_child(detail_label)
-	# La hotbar resta leggibile anche quando l'inventario completo è aperto.
+	# Keep the hotbar readable even when the full inventory is open.
 	root.move_child(hotbar_row, root.get_child_count() - 1)
 
 
@@ -325,30 +325,30 @@ func _process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if selected_id == "field_camera":
-		# La telecamera ha un solo HUD dedicato (FieldCamera). Non mostrare più
-		# il vecchio prompt duplicato della hotbar.
+		# The camera has one dedicated HUD (FieldCamera). Do not show the old,
+		# duplicate hotbar prompt.
 		pickup_label.text = ""
 	elif selected_id == "water_bottle" and player != null and player.has_method("nearest_ice_drill"):
-		# Vicino alla trivella dell'acqua la borraccia ha priorità assoluta: non
-		# alternare il suggerimento di raccolta con il comando di ricarica.
+		# Near the water drill, the bottle has absolute priority. Do not alternate
+		# the pickup hint with the refill command.
 		var ice_drill := player.call("nearest_ice_drill") as Node
 		var refill_prompt := str(ice_drill.call("get_bottle_refill_prompt")) if ice_drill != null and ice_drill.has_method("get_bottle_refill_prompt") else ""
 		if not refill_prompt.is_empty():
 			if ice_drill.has_method("get_sand_accumulation") and int(ice_drill.call("get_sand_accumulation")) > 0:
-				pickup_label.text = "E breve · RIEMPI BORRACCIA\nE tenuto · SPOLVERA TRIVELLA"
+				pickup_label.text = "Tap E · REFILL BOTTLE\nHold E · CLEAN DRILL"
 			else:
 				pickup_label.text = refill_prompt
 			return
 	elif selected_id == "pipe_hammer" and player != null:
 		var builder := player.get_node_or_null("Node")
-		var help := str(builder.call("get_pipe_help_text")) if builder != null and builder.has_method("get_pipe_help_text") else "T tipo  ·  R ruota  ·  Dx demolisce"
-		pickup_label.text = "TUBO · $100 MLN\n" + help
+		var help := str(builder.call("get_pipe_help_text")) if builder != null and builder.has_method("get_pipe_help_text") else "T type  ·  R rotate  ·  Right-click dismantles"
+		pickup_label.text = "PIPE · $100 MN\n" + help
 	elif selected_id in ["pipe_hammer", "solar_panel", "transformer", "battery", "ice_drill", "rock_drill", "electrolyzer", "sabatier", "xrd_diffractometer", "raman_spectrometer", "icp_ms", "rover", "dome_small", "dome_medium", "dome_large", "greenhouse"] and player != null:
 		var builder := player.get_node_or_null("Node")
 		if builder != null and builder.has_method("get_build_help_text"):
 			pickup_label.text = str(builder.call("get_build_help_text"))
 		else:
-			pickup_label.text = "Click sinistro per posizionare"
+			pickup_label.text = "Left-click to place"
 	else:
 		var near_airlock := false
 		if player != null:
@@ -357,16 +357,16 @@ func _process(_delta: float) -> void:
 					near_airlock = true
 					break
 		if near_airlock:
-			# I prompt precisi (E/F e sequenza WASD) sono mostrati dal pannello
-			# dedicato della camera, non sostituiti dal generico suggerimento E.
+			# Precise prompts (E/F and the WASD sequence) appear in the dedicated
+			# airlock panel, not as the generic E hint.
 			pickup_label.text = ""
 		elif player != null and player.has_method("is_driving_rover") and bool(player.call("is_driving_rover")):
-			pickup_label.text = "E  ·  Scendi dal rover     ·     Raccolta rocce disponibile solo a piedi"
+			pickup_label.text = "E  ·  Exit rover     ·     Rock collection is available only on foot"
 		else:
 			if player != null and player.has_method("nearest_rock_drill") and player.nearest_rock_drill() != null:
-				pickup_label.text = "E  ·  APRI RISERVA TRIVELLA MINERARIA"
+				pickup_label.text = "E  ·  OPEN MINERAL DRILL STORAGE"
 			else:
-				pickup_label.text = "E  ·  Raccogli pietra" if player != null and player.nearest_rock() != null else "TAB  ·  Inventario     B  ·  Emporio"
+				pickup_label.text = "E  ·  Collect rock" if player != null and player.nearest_rock() != null else "TAB  ·  Inventory     B  ·  Store"
 
 
 func _landing_is_active() -> bool:
@@ -408,7 +408,7 @@ func _refresh() -> void:
 		if item.is_empty():
 			backpack_name_labels[index].text = ""
 		elif is_rock:
-			backpack_name_labels[index].text = str(item.get("name", "Pietra"))
+			backpack_name_labels[index].text = str(item.get("name", "Rock"))
 		else:
 			backpack_name_labels[index].text = "%s x%d" % [str(item.get("name", "")), int(item.get("count", 0))]
 		var backpack_icon := _item_icon(item)
@@ -424,9 +424,9 @@ func _refresh() -> void:
 		button.modulate = Color(1.0, 0.84, 0.45) if Inventory.selected_backpack_index == index else Color.WHITE
 	if Inventory.selected_backpack_index >= 0:
 		var selected := Inventory.backpack[Inventory.selected_backpack_index]
-		detail_label.text = "%s · campione geologico, non piazzabile" % str(selected.get("name", "Pietra")) if Inventory.is_rock_item(str(selected.get("id", ""))) else "%s selezionato · clicca uno slot rapido libero per equipaggiarlo (scambia se occupato)." % str(selected.get("name", ""))
+		detail_label.text = "%s · geological sample, not placeable" % str(selected.get("name", "Rock")) if Inventory.is_rock_item(str(selected.get("id", ""))) else "%s selected · click an empty quick slot to equip it (swaps if occupied)." % str(selected.get("name", ""))
 	else:
-		detail_label.text = "Clicca un oggetto nello zaino, poi uno slot rapido per equipaggiarlo. Clicca un macchinario nella hotbar per riporlo nello zaino."
+		detail_label.text = "Click an item in the backpack, then a quick slot to equip it. Click a machine in the hotbar to return it to the backpack."
 
 
 func _update_hotbar_labels(index: int, item: Dictionary) -> void:
@@ -436,24 +436,24 @@ func _update_hotbar_labels(index: int, item: Dictionary) -> void:
 		return
 	match item.get("id", ""):
 		"pipe_hammer":
-			hotbar_name_labels[index].text = "Tubi"
+			hotbar_name_labels[index].text = "Pipes"
 		"water_bottle":
-			hotbar_name_labels[index].text = "Acqua"
+			hotbar_name_labels[index].text = "Water"
 			hotbar_amount_labels[index].text = "%.1fL" % float(item.get("liters", 0.0))
 		"food_ration":
-			hotbar_name_labels[index].text = "Razioni " + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Rations " + str(item.get("count", 0))
 		"solar_panel":
-			hotbar_name_labels[index].text = "Pannello x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Panel x" + str(item.get("count", 0))
 		"transformer":
-			hotbar_name_labels[index].text = "Trasform. x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Transformer x" + str(item.get("count", 0))
 		"battery":
-			hotbar_name_labels[index].text = "Batteria x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Battery x" + str(item.get("count", 0))
 		"ice_drill":
-			hotbar_name_labels[index].text = "Trivella x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Ice Drill x" + str(item.get("count", 0))
 		"rock_drill":
-			hotbar_name_labels[index].text = "Triv. rocce x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Rock Drill x" + str(item.get("count", 0))
 		"electrolyzer":
-			hotbar_name_labels[index].text = "Elettrolizz. x" + str(item.get("count", 0))
+			hotbar_name_labels[index].text = "Electrolyzer x" + str(item.get("count", 0))
 		"sabatier":
 			hotbar_name_labels[index].text = "Sabatier x" + str(item.get("count", 0))
 		"rover":
@@ -527,7 +527,7 @@ func _get_field_camera_icon() -> Texture2D:
 		return field_camera_icon
 	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(FIELD_CAMERA_ICON_PATH))
 	if image == null or image.is_empty():
-		push_error("Impossibile caricare l'icona della telecamera: %s" % FIELD_CAMERA_ICON_PATH)
+		push_error("Unable to load camera icon: %s" % FIELD_CAMERA_ICON_PATH)
 		return null
 	field_camera_icon = ImageTexture.create_from_image(image)
 	return field_camera_icon
@@ -571,7 +571,7 @@ func _refresh_suit_slot() -> void:
 	suit_slot_icon.texture = _first_frame(PLAYER_SHEET, Vector2i(32, 32))
 	suit_slot_icon.modulate = definition.get("tint", Color.WHITE)
 	suit_slot_name.text = str(definition.get("short_name", "EVA"))
-	suit_stats_label.text = "SOL %d%%   COS %d%%   FREDDO %+.0f°C\nO2 %.0f   VELOCITA' %d%%" % [
+	suit_stats_label.text = "SOL %d%%   COS %d%%   COLD %+.0f°C\nO2 %.0f   SPEED %d%%" % [
 		roundi(float(definition.get("solar_protection", 0.0)) * 100.0),
 		roundi(float(definition.get("cosmic_protection", 0.0)) * 100.0),
 		float(definition.get("cold_tolerance_c", -68.0)),

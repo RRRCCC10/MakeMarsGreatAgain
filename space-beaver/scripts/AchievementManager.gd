@@ -1,425 +1,424 @@
 extends Node
 
-## Progressione della singola missione. Ogni nuovo avvio parte da zero: gli
-## obiettivi avanzano anche prima di essere disponibili, ma le ricompense si
-## riscattano rispettando il grafo dei prerequisiti.
+## Progression for one mission. Every new run starts from zero: objectives can
+## advance before becoming available, while rewards are claimed according to
+## the prerequisite graph.
 
 signal achievement_updated(achievement_id: String)
-## Emesso una sola volta quando il progresso raggiunge il bersaglio, anche
-## se la ricompensa e' ancora dietro a un prerequisito della rete.
+## Emitted only once when progress reaches the target, even if the reward still
+## sits behind a graph prerequisite.
 signal achievement_reached(achievement_id: String, claimable_now: bool)
 signal achievement_claimable(achievement_id: String)
 signal achievement_claimed(achievement_id: String, reward_label: String)
 
 const ACHIEVEMENTS := [
-	# Contratti scientifici eseguibili a piedi: danno capitale fin dal primo
-	# minuto, senza cupola, macchinari o rete elettrica.
+	# Scientific contracts that can be completed on foot. They provide capital from
+	# the first minute without a dome, machinery, or electrical grid.
 	{
-		"id": "first_field_sample", "title": "PRIMA PIETRA", "icon": "●", "color": Color("e9b57b"),
-		"description": "Raccogli a piedi il primo campione dalla superficie.", "target": 1,
+		"id": "first_field_sample", "title": "FIRST ROCK", "icon": "●", "color": Color("e9b57b"),
+		"description": "Collect your first surface sample on foot.", "target": 1,
 		"prerequisites": [],
-		"reward": {"funds": 120_000_000, "label": "+ $120 MLN · borsa di ricognizione"},
+		"reward": {"funds": 120_000_000, "label": "+ $120 MN · reconnaissance grant"},
 	},
 	{
-		"id": "field_notes", "title": "TACCUINO DI CAMPO", "icon": "≣", "color": Color("e7c489"),
-		"description": "Raccogli 3 campioni a piedi.", "target": 3,
+		"id": "field_notes", "title": "FIELD NOTES", "icon": "≣", "color": Color("e7c489"),
+		"description": "Collect 3 samples on foot.", "target": 3,
 		"prerequisites": ["first_field_sample"],
-		"reward": {"funds": 220_000_000, "label": "+ $220 MLN · note di terreno"},
+		"reward": {"funds": 220_000_000, "label": "+ $220 MN · terrain notes"},
 	},
 	{
-		"id": "sample_satchel", "title": "SACCA CAMPIONI", "icon": "▰", "color": Color("d7a96d"),
-		"description": "Raccogli 8 campioni a piedi.", "target": 8,
+		"id": "sample_satchel", "title": "SAMPLE SATCHEL", "icon": "▰", "color": Color("d7a96d"),
+		"description": "Collect 8 samples on foot.", "target": 8,
 		"prerequisites": ["field_notes"],
-		"reward": {"funds": 420_000_000, "item_id": "field_camera", "label": "+ $420 MLN · contratto di raccolta + telecamera"},
+		"reward": {"funds": 420_000_000, "item_id": "field_camera", "label": "+ $420 MN · collection contract + camera"},
 	},
 	{
-		"id": "surface_catalog", "title": "CATALOGO DI SUPERFICIE", "icon": "◫", "color": Color("f1cd91"),
-		"description": "Raccogli 3 tipi differenti di roccia a piedi.", "target": 3,
+		"id": "surface_catalog", "title": "SURFACE CATALOG", "icon": "◫", "color": Color("f1cd91"),
+		"description": "Collect 3 different rock types on foot.", "target": 3,
 		"prerequisites": ["field_notes"],
-		"reward": {"funds": 600_000_000, "label": "+ $600 MLN · catalogo minerale"},
+		"reward": {"funds": 600_000_000, "label": "+ $600 MN · mineral catalog"},
 	},
 	{
-		"id": "surface_anomaly", "title": "LUCE NELLA POLVERE", "icon": "✧", "color": Color("ffcf6e"),
-		"description": "Raccogli a piedi un campione raro in superficie.", "target": 1,
+		"id": "surface_anomaly", "title": "LIGHT IN THE DUST", "icon": "✧", "color": Color("ffcf6e"),
+		"description": "Collect a rare surface sample on foot.", "target": 1,
 		"prerequisites": ["field_notes"],
-		"reward": {"funds": 900_000_000, "label": "+ $900 MLN · premio anomalia"},
+		"reward": {"funds": 900_000_000, "label": "+ $900 MN · anomaly award"},
 	},
 	{
-		"id": "first_horizon", "title": "ORIZZONTE APERTO", "icon": "⌁", "color": Color("81d8ff"),
-		"description": "Esplora il primo bioma marziano.", "target": 1,
+		"id": "first_horizon", "title": "OPEN HORIZON", "icon": "⌁", "color": Color("81d8ff"),
+		"description": "Explore your first Martian biome.", "target": 1,
 		"prerequisites": [],
-		"reward": {"funds": 100_000_000, "label": "+ $100 MLN · telemetria iniziale"},
+		"reward": {"funds": 100_000_000, "label": "+ $100 MN · initial telemetry"},
 	},
 	{
-		"id": "biome_survey", "title": "TRE COLORI DI MARTE", "icon": "◌", "color": Color("8ecfff"),
-		"description": "Esplora 3 biomi distinti.", "target": 3,
+		"id": "biome_survey", "title": "THREE COLORS OF MARS", "icon": "◌", "color": Color("8ecfff"),
+		"description": "Explore 3 distinct biomes.", "target": 3,
 		"prerequisites": ["first_horizon"],
-		"reward": {"funds": 350_000_000, "label": "+ $350 MLN · rilievo regionale"},
+		"reward": {"funds": 350_000_000, "label": "+ $350 MN · regional survey"},
 	},
 	{
-		"id": "long_range_survey", "title": "LINEA DI ORIZZONTE", "icon": "⇢", "color": Color("87b8f8"),
-		"description": "Esplora 5 biomi distinti.", "target": 5,
+		"id": "long_range_survey", "title": "HORIZON LINE", "icon": "⇢", "color": Color("87b8f8"),
+		"description": "Explore 5 distinct biomes.", "target": 5,
 		"prerequisites": ["biome_survey"],
-		"reward": {"funds": 800_000_000, "label": "+ $800 MLN · rotta di esplorazione"},
+		"reward": {"funds": 800_000_000, "label": "+ $800 MN · exploration route"},
 	},
 	{
-		"id": "exploration_suit", "title": "EVA OLTRE L'ORIZZONTE", "icon": "◈", "color": Color("a9f0c0"),
-		"description": "Acquista una tuta EVA più potente della tuta standard: rinforzata, Explorer o Storm.", "target": 1,
+		"id": "exploration_suit", "title": "EVA BEYOND THE HORIZON", "icon": "◈", "color": Color("a9f0c0"),
+		"description": "Buy an EVA suit more capable than the standard suit: Reinforced, Explorer, or Storm.", "target": 1,
 		"prerequisites": ["long_range_survey"],
-		"reward": {"funds": 500_000_000, "label": "+ $500 MLN · protocollo esplorazione EVA"},
+		"reward": {"funds": 500_000_000, "label": "+ $500 MN · EVA exploration protocol"},
 	},
 	{
-		"id": "polar_expedition", "title": "SPEDIZIONE POLARE", "icon": "❄", "color": Color("a8f3ff"),
-		"description": "Raggiungi ed esplora il ghiaccio polare.", "target": 1,
+		"id": "polar_expedition", "title": "POLAR EXPEDITION", "icon": "❄", "color": Color("a8f3ff"),
+		"description": "Reach and explore the polar ice.", "target": 1,
 		"prerequisites": ["biome_survey"],
-		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · mandato criosfera"},
+		"reward": {"funds": 1_100_000_000, "label": "+ $1.1 BN · cryosphere mandate"},
 	},
-	# Archivio fotografico: sono contratti civili e scientifici eseguibili già
-	# con la telecamera di campo. Nessuno richiede una rete elettrica.
+	# Photo archive: civilian and scientific contracts that work with the field
+	# camera alone. None requires an electrical grid.
 	{
-		"id": "first_photo", "title": "PRIMO SCATTO", "icon": "▣", "color": Color("86e6f7"),
-		"description": "Trasmetti alla Terra la prima fotografia scientifica.", "target": 1,
+		"id": "first_photo", "title": "FIRST SHOT", "icon": "▣", "color": Color("86e6f7"),
+		"description": "Transmit your first scientific photograph to Earth.", "target": 1,
 		"prerequisites": ["sample_satchel"],
-		"reward": {"funds": 150_000_000, "label": "+ $150 MLN · primo segnale visivo"},
+		"reward": {"funds": 150_000_000, "label": "+ $150 MN · first visual signal"},
 	},
 	{
-		"id": "contact_sheet", "title": "PROVINO MARZIANO", "icon": "▤", "color": Color("9adcf0"),
-		"description": "Trasmetti 3 fotografie di campo.", "target": 3,
+		"id": "contact_sheet", "title": "MARTIAN CONTACT SHEET", "icon": "▤", "color": Color("9adcf0"),
+		"description": "Transmit 3 field photographs.", "target": 3,
 		"prerequisites": ["first_photo"],
-		"reward": {"funds": 260_000_000, "label": "+ $260 MLN · rivista esplorativa"},
+		"reward": {"funds": 260_000_000, "label": "+ $260 MN · exploration magazine"},
 	},
 	{
-		"id": "mars_postcard", "title": "CARTOLINE DA MARTE", "icon": "✉", "color": Color("b4f1ff"),
-		"description": "Trasmetti 8 fotografie al centro missione.", "target": 8,
+		"id": "mars_postcard", "title": "POSTCARDS FROM MARS", "icon": "✉", "color": Color("b4f1ff"),
+		"description": "Transmit 8 photographs to mission control.", "target": 8,
 		"prerequisites": ["contact_sheet"],
-		"reward": {"funds": 720_000_000, "label": "+ $720 MLN · licenza archivio immagini"},
+		"reward": {"funds": 720_000_000, "label": "+ $720 MN · image archive license"},
 	},
 	{
-		"id": "field_portrait", "title": "RITRATTO MINERALE", "icon": "◆", "color": Color("efc58e"),
-		"description": "Fotografa e trasmetti una roccia raccolta sul terreno.", "target": 1,
+		"id": "field_portrait", "title": "MINERAL PORTRAIT", "icon": "◆", "color": Color("efc58e"),
+		"description": "Photograph and transmit a rock collected on the ground.", "target": 1,
 		"prerequisites": ["first_photo"],
-		"reward": {"funds": 240_000_000, "label": "+ $240 MLN · catalogo di superficie"},
+		"reward": {"funds": 240_000_000, "label": "+ $240 MN · surface catalog"},
 	},
 	{
-		"id": "rare_lens", "title": "LENTE SULL'ANOMALIA", "icon": "✧", "color": Color("ffe379"),
-		"description": "Trasmetti il ritratto di un campione raro o ultra-raro.", "target": 1,
+		"id": "rare_lens", "title": "LENS ON THE ANOMALY", "icon": "✧", "color": Color("ffe379"),
+		"description": "Transmit a portrait of a rare or ultra-rare sample.", "target": 1,
 		"prerequisites": ["field_portrait"],
-		"reward": {"funds": 750_000_000, "label": "+ $750 MLN · premio immagine anomala"},
+		"reward": {"funds": 750_000_000, "label": "+ $750 MN · anomalous image award"},
 	},
 	{
-		"id": "biome_gallery", "title": "GALLERIA DI BIOMI", "icon": "◌", "color": Color("83d5ff"),
-		"description": "Invia fotografie da 3 biomi differenti.", "target": 3,
+		"id": "biome_gallery", "title": "BIOME GALLERY", "icon": "◌", "color": Color("83d5ff"),
+		"description": "Send photographs from 3 different biomes.", "target": 3,
 		"prerequisites": ["first_photo"],
-		"reward": {"funds": 360_000_000, "label": "+ $360 MLN · atlante fotografico"},
+		"reward": {"funds": 360_000_000, "label": "+ $360 MN · photo atlas"},
 	},
 	{
-		"id": "six_horizons", "title": "SEI ORIZZONTI", "icon": "⌁", "color": Color("77c9ff"),
-		"description": "Invia almeno una fotografia da tutti e 6 i biomi.", "target": 6,
+		"id": "six_horizons", "title": "SIX HORIZONS", "icon": "⌁", "color": Color("77c9ff"),
+		"description": "Send at least one photograph from each of the 6 biomes.", "target": 6,
 		"prerequisites": ["biome_gallery"],
-		"reward": {"funds": 1_200_000_000, "label": "+ $1,2 MLD · atlante visivo di Marte"},
+		"reward": {"funds": 1_200_000_000, "label": "+ $1.2 BN · visual atlas of Mars"},
 	},
 	{
-		"id": "dawn_ice", "title": "GHIACCIO ALL'ALBA", "icon": "☼", "color": Color("d3f7ff"),
-		"description": "Fotografa il bordo o il nucleo polare durante l'alba.", "target": 1,
+		"id": "dawn_ice", "title": "ICE AT DAWN", "icon": "☼", "color": Color("d3f7ff"),
+		"description": "Photograph the ice-cap edge or polar core at dawn.", "target": 1,
 		"prerequisites": ["biome_gallery"],
-		"reward": {"funds": 520_000_000, "label": "+ $520 MLN · osservazione criosferica"},
+		"reward": {"funds": 520_000_000, "label": "+ $520 MN · cryosphere observation"},
 	},
 	{
-		"id": "polar_light", "title": "LUCE POLARE", "icon": "❄", "color": Color("b5f5ff"),
-		"description": "Trasmetti una fotografia dal nucleo polare.", "target": 1,
+		"id": "polar_light", "title": "POLAR LIGHT", "icon": "❄", "color": Color("b5f5ff"),
+		"description": "Transmit a photograph from the polar core.", "target": 1,
 		"prerequisites": ["polar_expedition", "biome_gallery"],
-		"reward": {"funds": 1_050_000_000, "label": "+ $1,05 MLD · dossier calotta"},
+		"reward": {"funds": 1_050_000_000, "label": "+ $1.05 BN · ice-cap dossier"},
 	},
 	{
-		"id": "night_sky", "title": "CIELO NOTTURNO MARZIANO", "icon": "✦", "color": Color("c7b4ff"),
-		"description": "Trasmetti una fotografia notturna dalla superficie.", "target": 1,
+		"id": "night_sky", "title": "MARTIAN NIGHT SKY", "icon": "✦", "color": Color("c7b4ff"),
+		"description": "Transmit a nighttime photograph from the surface.", "target": 1,
 		"prerequisites": ["first_photo"],
-		"reward": {"funds": 430_000_000, "label": "+ $430 MLN · osservazione astronomica"},
+		"reward": {"funds": 430_000_000, "label": "+ $430 MN · astronomical observation"},
 	},
 	{
-		"id": "outpost_portrait", "title": "PRIMO AVAMPOSTO", "icon": "⌂", "color": Color("a5e4e9"),
-		"description": "Fotografa una cupola abitativa dall'esterno.", "target": 1,
+		"id": "outpost_portrait", "title": "FIRST OUTPOST", "icon": "⌂", "color": Color("a5e4e9"),
+		"description": "Photograph a habitat dome from outside.", "target": 1,
 		"prerequisites": ["first_base", "first_photo"],
-		"reward": {"funds": 610_000_000, "label": "+ $610 MLN · cronaca della colonia"},
+		"reward": {"funds": 610_000_000, "label": "+ $610 MN · colony chronicle"},
 	},
 	{
-		"id": "greenhouse_window", "title": "VETRO E CLOROFILLA", "icon": "♧", "color": Color("a4ec9d"),
-		"description": "Trasmetti una fotografia della serra operativa.", "target": 1,
+		"id": "greenhouse_window", "title": "GLASS AND CHLOROPHYLL", "icon": "♧", "color": Color("a4ec9d"),
+		"description": "Transmit a photograph of the operational greenhouse.", "target": 1,
 		"prerequisites": ["greenhouse", "first_photo"],
-		"reward": {"funds": 800_000_000, "label": "+ $800 MLN · programma agricoltura visiva"},
+		"reward": {"funds": 800_000_000, "label": "+ $800 MN · visual agriculture program"},
 	},
 	{
-		"id": "lab_in_frame", "title": "SCIENZA IN CAMPO", "icon": "⚗", "color": Color("c7cbff"),
-		"description": "Trasmetti la fotografia di un laboratorio installato.", "target": 1,
+		"id": "lab_in_frame", "title": "SCIENCE IN FRAME", "icon": "⚗", "color": Color("c7cbff"),
+		"description": "Transmit a photograph of an installed laboratory.", "target": 1,
 		"prerequisites": ["first_lab", "first_photo"],
-		"reward": {"funds": 950_000_000, "label": "+ $950 MLN · documentazione strumentale"},
+		"reward": {"funds": 950_000_000, "label": "+ $950 MN · instrumentation documentation"},
 	},
 	{
-		"id": "primordial_frost_photo", "title": "TEMPO NEL GHIACCIO", "icon": "◈", "color": Color("c5f4ff"),
-		"description": "Trasmetti una foto mentre custodisci il ghiaccio profondo primordiale.", "target": 1,
+		"id": "primordial_frost_photo", "title": "TIME IN THE ICE", "icon": "◈", "color": Color("c5f4ff"),
+		"description": "Transmit a photo while holding the primordial deep-ice sample.", "target": 1,
 		"prerequisites": ["primordial_ice", "first_photo"],
-		"reward": {"funds": 2_000_000_000, "label": "+ $2 MLD · archivio criogenico"},
+		"reward": {"funds": 2_000_000_000, "label": "+ $2 BN · cryogenic archive"},
 	},
 	{
-		"id": "life_witness_image", "title": "TESTIMONE DELLA VITA", "icon": "✺", "color": Color("84ffd2"),
-		"description": "Fotografa il laboratorio dopo aver rilevato un segnale compatibile con una possibile biosignatura.", "target": 1,
+		"id": "life_witness_image", "title": "WITNESS TO LIFE", "icon": "✺", "color": Color("84ffd2"),
+		"description": "Photograph the laboratory after detecting a signal compatible with a possible biosignature.", "target": 1,
 		"prerequisites": ["ancient_life", "lab_in_frame"],
-		"reward": {"funds": 4_000_000_000, "badge": "OCCHIO DI MARTE", "label": "+ $4 MLD · immagine storica"},
+		"reward": {"funds": 4_000_000_000, "badge": "EYE OF MARS", "label": "+ $4 BN · historic image"},
 	},
 	{
-		"id": "first_base", "title": "PRIMA BASE", "icon": "⌂", "color": Color("70c8ff"),
-		"description": "Posiziona la prima cupola abitativa.", "target": 1,
+		"id": "first_base", "title": "FIRST BASE", "icon": "⌂", "color": Color("70c8ff"),
+		"description": "Place the first habitat dome.", "target": 1,
 		"prerequisites": [],
-		"reward": {"funds": 150_000_000, "label": "+ $150 MLN"},
+		"reward": {"funds": 150_000_000, "label": "+ $150 MN"},
 	},
 	{
-		"id": "airlock_cycle", "title": "ACCESSO SICURO", "icon": "⇄", "color": Color("9cc8ff"),
-		"description": "Completa un ciclo della camera di decompressione.", "target": 1,
+		"id": "airlock_cycle", "title": "SAFE ACCESS", "icon": "⇄", "color": Color("9cc8ff"),
+		"description": "Complete one airlock cycle.", "target": 1,
 		"prerequisites": ["first_base"],
-		"reward": {"badge": "COLONO MARZIANO", "label": "Badge: Colono marziano"},
+		"reward": {"badge": "MARTIAN COLONIST", "label": "Badge: Martian Colonist"},
 	},
 	{
-		"id": "stable_grid", "title": "RETE ELETTRICA", "icon": "ϟ", "color": Color("ffe079"),
-		"description": "Rendi operativa la rete con pannelli, trasformatore e batteria.", "target": 1,
+		"id": "stable_grid", "title": "POWER GRID", "icon": "ϟ", "color": Color("ffe079"),
+		"description": "Make the grid operational with panels, a transformer, and a battery.", "target": 1,
 		"prerequisites": ["first_base"],
-		"reward": {"funds": 150_000_000, "label": "+ $150 MLN"},
+		"reward": {"funds": 150_000_000, "label": "+ $150 MN"},
 	},
 	{
-		"id": "ice_drill", "title": "PRIMA TRIVELLA", "icon": "⌄", "color": Color("6de8ff"),
-		"description": "Posiziona una trivella del ghiaccio.", "target": 1,
+		"id": "ice_drill", "title": "FIRST DRILL", "icon": "⌄", "color": Color("6de8ff"),
+		"description": "Place an ice drill.", "target": 1,
 		"prerequisites": ["airlock_cycle", "stable_grid"],
-		"reward": {"funds": 100_000_000, "label": "+ $100 MLN"},
+		"reward": {"funds": 100_000_000, "label": "+ $100 MN"},
 	},
 	{
-		"id": "refill_bottle", "title": "BORRACCIA RICARICATA", "icon": "◒", "color": Color("73dfff"),
-		"description": "Riempi una borraccia usando la riserva d'acqua della trivella.", "target": 1,
+		"id": "refill_bottle", "title": "BOTTLE REFILLED", "icon": "◒", "color": Color("73dfff"),
+		"description": "Refill a bottle from the drill's water reserve.", "target": 1,
 		"prerequisites": ["ice_drill"],
-		"reward": {"effect": "water_efficiency", "label": "Consumo acqua -10%"},
+		"reward": {"effect": "water_efficiency", "label": "Water use -10%"},
 	},
 	{
-		"id": "greenhouse", "title": "SERRA OPERATIVA", "icon": "♧", "color": Color("89e89a"),
-		"description": "Collega una serra a una sorgente d'acqua.", "target": 1,
+		"id": "greenhouse", "title": "OPERATIONAL GREENHOUSE", "icon": "♧", "color": Color("89e89a"),
+		"description": "Connect a greenhouse to a water source.", "target": 1,
 		"prerequisites": ["stable_grid"],
-		"reward": {"funds": 200_000_000, "label": "+ $200 MLN"},
+		"reward": {"funds": 200_000_000, "label": "+ $200 MN"},
 	},
 	{
-		"id": "first_planting", "title": "PRIMA PIANTAGIONE", "icon": "✦", "color": Color("9ce66f"),
-		"description": "Pianta il primo lotto di patate.", "target": 1,
+		"id": "first_planting", "title": "FIRST PLANTING", "icon": "✦", "color": Color("9ce66f"),
+		"description": "Plant the first batch of potatoes.", "target": 1,
 		"prerequisites": ["greenhouse"],
-		"reward": {"effect": "crop_efficiency", "label": "Crescita colture +5%"},
+		"reward": {"effect": "crop_efficiency", "label": "Crop growth +5%"},
 	},
 	{
-		"id": "first_harvest", "title": "PRIMO RACCOLTO", "icon": "▣", "color": Color("e8c45b"),
-		"description": "Raccogli il primo lotto di 4 o 5 razioni.", "target": 1,
+		"id": "first_harvest", "title": "FIRST HARVEST", "icon": "▣", "color": Color("e8c45b"),
+		"description": "Harvest the first batch of 4 or 5 rations.", "target": 1,
 		"prerequisites": ["first_planting"],
-		"reward": {"funds": 300_000_000, "label": "+ $300 MLN"},
+		"reward": {"funds": 300_000_000, "label": "+ $300 MN"},
 	},
 	{
-		"id": "genetic_modification", "title": "PATATE GM", "icon": "✿", "color": Color("b5ef87"),
-		"description": "Modifica geneticamente i semi di patate nello shop.", "target": 1,
+		"id": "genetic_modification", "title": "GM POTATOES", "icon": "✿", "color": Color("b5ef87"),
+		"description": "Genetically modify potato seeds in the store.", "target": 1,
 		"prerequisites": ["first_harvest", "perseverance_repair"],
-		"reward": {"funds": 300_000_000, "label": "+ $300 MLN · programma semi GM"},
+		"reward": {"funds": 300_000_000, "label": "+ $300 MN · GM seed program"},
 	},
 	{
-		"id": "genetic_replacement", "title": "RACCOLTO MIGLIORATO", "icon": "↻", "color": Color("9de47f"),
-		"description": "Sostituisci in serra un lotto con semi GM più potenti.", "target": 1,
+		"id": "genetic_replacement", "title": "IMPROVED CROP", "icon": "↻", "color": Color("9de47f"),
+		"description": "Replace a greenhouse batch with more capable GM seeds.", "target": 1,
 		"prerequisites": ["genetic_modification"],
-		"reward": {"funds": 450_000_000, "label": "+ $450 MLN · selezione del raccolto"},
+		"reward": {"funds": 450_000_000, "label": "+ $450 MN · crop selection"},
 	},
-	# La missione Perseverance è una sola catena narrativa: fotografare,
-	# documentare e riparare lo stesso rover completa tutti e tre i contratti.
-	# Nessun obiettivo richiede di aspettare il guasto di un secondo rover.
+	# The Perseverance mission is one narrative chain: photograph, document, and
+	# repair the same rover to complete all three contracts. No objective requires
+	# waiting for a second rover to fail.
 	{
-		"id": "perseverance_photo", "title": "SEGNALE DA PERSEVERANCE", "icon": "◉", "color": Color("f2ba72"),
-		"description": "Fotografa e trasmetti alla Terra il rover Perseverance danneggiato.", "target": 1,
+		"id": "perseverance_photo", "title": "SIGNAL FROM PERSEVERANCE", "icon": "◉", "color": Color("f2ba72"),
+		"description": "Photograph and transmit the damaged Perseverance rover to Earth.", "target": 1,
 		"prerequisites": ["first_photo"],
-		"reward": {"funds": 700_000_000, "label": "+ $700 MLN · telemetria rover"},
+		"reward": {"funds": 700_000_000, "label": "+ $700 MN · rover telemetry"},
 	},
 	{
-		"id": "perseverance_report", "title": "DIAGNOSI A DISTANZA", "icon": "≣", "color": Color("f0d29a"),
-		"description": "Studia e invia alla Terra il rapporto danni di Perseverance.", "target": 1,
+		"id": "perseverance_report", "title": "REMOTE DIAGNOSIS", "icon": "≣", "color": Color("f0d29a"),
+		"description": "Study and send Perseverance's damage report to Earth.", "target": 1,
 		"prerequisites": ["perseverance_photo"],
-		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · rapporto firmato"},
+		"reward": {"funds": 1_100_000_000, "label": "+ $1.1 BN · signed report"},
 	},
 	{
-		"id": "perseverance_repair", "title": "EREDITÀ OPERATIVA", "icon": "✦", "color": Color("8ae7d4"),
-		"description": "Completa la sequenza di manutenzione e ripara Perseverance.", "target": 1,
+		"id": "perseverance_repair", "title": "OPERATIONAL LEGACY", "icon": "✦", "color": Color("8ae7d4"),
+		"description": "Complete the maintenance sequence and repair Perseverance.", "target": 1,
 		"prerequisites": ["perseverance_report"],
-		"reward": {"funds": 1_750_000_000, "effect": "genetic_seed_access", "label": "+ $1,75 MLD · accesso bioingegneria"},
+		"reward": {"funds": 1_750_000_000, "effect": "genetic_seed_access", "label": "+ $1.75 BN · bioengineering access"},
 	},
-	# La ricerca non è un traguardo decorativo: è il principale programma di
-	# finanziamento della prima metà della missione. I rapporti pagano ogni volta;
-	# questi contratti una tantum premiano invece la qualità e la varietà dei dati.
+	# Research is not a decorative milestone: it is the main funding program for
+	# the first half of the mission. Reports always pay; these one-off contracts
+	# instead reward the quality and variety of the data.
 	{
-		"id": "first_lab", "title": "PRIMO LABORATORIO", "icon": "⚗", "color": Color("a4baff"),
-		"description": "Installa il primo strumento scientifico in una cupola abitativa.", "target": 1,
+		"id": "first_lab", "title": "FIRST LABORATORY", "icon": "⚗", "color": Color("a4baff"),
+		"description": "Install the first scientific instrument in a habitat dome.", "target": 1,
 		"prerequisites": ["stable_grid"],
-		"reward": {"funds": 250_000_000, "label": "+ $250 MLN · borsa di avvio"},
+		"reward": {"funds": 250_000_000, "label": "+ $250 MN · startup grant"},
 	},
 	{
-		"id": "first_extraction", "title": "CAMPIONAMENTO GEOLOGICO", "icon": "⧁", "color": Color("e8aa65"),
-		"description": "Metti in funzione la prima trivella per rocce.", "target": 1,
+		"id": "first_extraction", "title": "GEOLOGICAL SAMPLING", "icon": "⧁", "color": Color("e8aa65"),
+		"description": "Bring the first rock drill online.", "target": 1,
 		"prerequisites": ["ice_drill", "first_lab"],
-		"reward": {"funds": 350_000_000, "label": "+ $350 MLN · mandato geologico"},
+		"reward": {"funds": 350_000_000, "label": "+ $350 MN · geological mandate"},
 	},
 	{
-		"id": "polar_drill", "title": "CAMPIONAMENTO POLARE", "icon": "❄", "color": Color("a8f3ff"),
-		"description": "Posiziona una trivella mineraria nel bioma del ghiaccio polare.", "target": 1,
+		"id": "polar_drill", "title": "POLAR SAMPLING", "icon": "❄", "color": Color("a8f3ff"),
+		"description": "Place a mineral drill in the polar-ice biome.", "target": 1,
 		"prerequisites": ["polar_expedition", "first_extraction"],
-		"reward": {"funds": 1_800_000_000, "label": "+ $1,8 MLD · sovvenzione polare"},
+		"reward": {"funds": 1_800_000_000, "label": "+ $1.8 BN · polar grant"},
 	},
 	{
-		"id": "primordial_ice", "title": "CAMPIONE DI GHIACCIO PROFONDO", "icon": "◆", "color": Color("b7f4ff"),
-		"description": "Trova con la trivella un raro campione di ghiaccio profondo nel modello di gioco.", "target": 1,
+		"id": "primordial_ice", "title": "DEEP-ICE SAMPLE", "icon": "◆", "color": Color("b7f4ff"),
+		"description": "Find a rare deep-ice sample with the drill in the game model.", "target": 1,
 		"prerequisites": ["polar_drill"],
-		"reward": {"funds": 3_000_000_000, "label": "+ $3 MLD · custodia criogenica"},
+		"reward": {"funds": 3_000_000_000, "label": "+ $3 BN · cryogenic custody"},
 	},
 	{
-		"id": "deep_ice_study", "title": "STUDIO DEGLI STRATI PROFONDI", "icon": "◈", "color": Color("bde8ff"),
-		"description": "Avvia lo studio di un campione di ghiaccio profondo in un laboratorio.", "target": 1,
+		"id": "deep_ice_study", "title": "DEEP-LAYER STUDY", "icon": "◈", "color": Color("bde8ff"),
+		"description": "Start studying a deep-ice sample in a laboratory.", "target": 1,
 		"prerequisites": ["primordial_ice", "first_lab"],
-		"reward": {"funds": 4_500_000_000, "label": "+ $4,5 MLD · protocollo di bioscavo"},
+		"reward": {"funds": 4_500_000_000, "label": "+ $4.5 BN · biosampling protocol"},
 	},
 	{
-		"id": "ancient_life", "title": "SEGNALE COMPATIBILE", "icon": "✺", "color": Color("7fffd4"),
-		"description": "Rileva un segnale compatibile con una biosignatura nel ghiaccio profondo. Le percentuali sono una meccanica di gioco, non una probabilità scientifica validata.", "target": 1,
+		"id": "ancient_life", "title": "COMPATIBLE SIGNAL", "icon": "✺", "color": Color("7fffd4"),
+		"description": "Detect a signal compatible with a biosignature in deep ice. Percentages are a game mechanic, not a validated scientific probability.", "target": 1,
 		"prerequisites": ["deep_ice_study"],
-		"reward": {"funds": 15_000_000_000, "badge": "SCOPRITORE DI VITA", "label": "+ $15 MLD · scopritore di vita"},
+		"reward": {"funds": 15_000_000_000, "badge": "LIFE DISCOVERER", "label": "+ $15 BN · life discoverer"},
 	},
 	{
-		"id": "life_relay", "title": "MESSAGGIO DA VERIFICARE", "icon": "✦", "color": Color("f6ffad"),
-		"description": "Trasmetti alla Terra il primo segnale compatibile con una possibile biosignatura marziana; non è una prova definitiva di vita.", "target": 1,
+		"id": "life_relay", "title": "MESSAGE TO VERIFY", "icon": "✦", "color": Color("f6ffad"),
+		"description": "Transmit the first signal compatible with a possible Martian biosignature to Earth; it is not definitive evidence of life.", "target": 1,
 		"prerequisites": ["ancient_life"],
-		"reward": {"funds": 25_000_000_000, "effect": "life_patent", "badge": "MESSAGGERO DI MARTE", "label": "+ $25 MLD · messaggero di Marte"},
+		"reward": {"funds": 25_000_000_000, "effect": "life_patent", "badge": "MESSENGER OF MARS", "label": "+ $25 BN · messenger of Mars"},
 	},
-	# Ritorno campioni: questa è la conclusione della spedizione. I contratti
-	# registrano i passaggi, ma il manifesto e il lancio restano azioni fisiche
-	# eseguite dal giocatore accanto al razzo.
+	# Sample return is the expedition's conclusion. Contracts record the steps, but
+	# the manifest and launch remain physical actions carried out beside the rocket.
 	{
-		"id": "life_sample_secured", "title": "CAMPIONE BIOLOGICO", "icon": "✺", "color": Color("80ffcf"),
-		"description": "Metti in sicurezza il campione di vita aliena nel contenitore di vetro per il ritorno alla Terra.", "target": 1,
+		"id": "life_sample_secured", "title": "BIOLOGICAL SAMPLE", "icon": "✺", "color": Color("80ffcf"),
+		"description": "Secure the alien-life sample in its glass container for return to Earth.", "target": 1,
 		"prerequisites": ["ancient_life"],
-		"reward": {"funds": 5_000_000_000, "label": "+ $5 MLD · protocollo di contenimento"},
+		"reward": {"funds": 5_000_000_000, "label": "+ $5 BN · containment protocol"},
 	},
 	{
-		"id": "return_manifest", "title": "MANIFESTO GEOLOGICO", "icon": "▤", "color": Color("d8e9f2"),
-		"description": "Carica nel razzo un campione per ogni roccia disponibile nel gioco e il campione biologico. La tab Ritorno elenca bioma e rarità di tutti i campioni.", "target": 1,
+		"id": "return_manifest", "title": "GEOLOGICAL MANIFEST", "icon": "▤", "color": Color("d8e9f2"),
+		"description": "Load one sample of every rock available in the game and the biological sample into the rocket. The Return tab lists each sample's biome and rarity.", "target": 1,
 		"prerequisites": ["life_sample_secured"],
-		"reward": {"funds": 8_000_000_000, "label": "+ $8 MLD · catena di custodia interplanetaria"},
+		"reward": {"funds": 8_000_000_000, "label": "+ $8 BN · interplanetary chain of custody"},
 	},
 	{
-		"id": "sabatier_online", "title": "PROPELLENTE MARZIANO", "icon": "ϟ", "color": Color("ffb86d"),
-		"description": "Posiziona accanto al razzo e rendi produttivo il reattore Sabatier: corrente e tubo H₂ devono essere collegati.", "target": 1,
+		"id": "sabatier_online", "title": "MARTIAN PROPELLANT", "icon": "ϟ", "color": Color("ffb86d"),
+		"description": "Place the Sabatier reactor beside the rocket and make it productive: power and the H₂ pipe must be connected.", "target": 1,
 		"prerequisites": ["life_relay", "stable_grid", "first_extraction"],
-		"reward": {"funds": 4_000_000_000, "label": "+ $4 MLD · impianto di propellente"},
+		"reward": {"funds": 4_000_000_000, "label": "+ $4 BN · propellant plant"},
 	},
 	{
-		"id": "rocket_fueled", "title": "SERBATOIO PIENO", "icon": "▲", "color": Color("ffe079"),
-		"description": "Riempi il serbatoio del razzo con 400 kg di metano prodotti dal Sabatier.", "target": 1,
+		"id": "rocket_fueled", "title": "FULL TANK", "icon": "▲", "color": Color("ffe079"),
+		"description": "Fill the rocket tank with 400 kg of methane produced by the Sabatier reactor.", "target": 1,
 		"prerequisites": ["sabatier_online"],
-		"reward": {"funds": 6_000_000_000, "label": "+ $6 MLD · finestra di lancio"},
+		"reward": {"funds": 6_000_000_000, "label": "+ $6 BN · launch window"},
 	},
 	{
-		"id": "return_launch", "title": "RITORNO ALLA TERRA", "icon": "▲", "color": Color("fff0a2"),
-		"description": "Avvia il razzo con il manifesto completo e il serbatoio pieno: i campioni di Marte sono in viaggio verso la Terra.", "target": 1,
+		"id": "return_launch", "title": "RETURN TO EARTH", "icon": "▲", "color": Color("fff0a2"),
+		"description": "Launch the rocket with a complete manifest and full tank: Mars samples are on their way to Earth.", "target": 1,
 		"prerequisites": ["return_manifest", "rocket_fueled"],
-		"reward": {"funds": 20_000_000_000, "badge": "RITORNO DA MARTE", "label": "MISSIONE COMPLETATA · campioni in viaggio"},
+		"reward": {"funds": 20_000_000_000, "badge": "RETURN FROM MARS", "label": "MISSION COMPLETE · samples in transit"},
 	},
 	{
-		"id": "first_report", "title": "SEGNALE DA MARTE", "icon": "▤", "color": Color("79d9ff"),
-		"description": "Trasmetti alla Terra il primo rapporto scientifico.", "target": 1,
+		"id": "first_report", "title": "SIGNAL FROM MARS", "icon": "▤", "color": Color("79d9ff"),
+		"description": "Transmit the first scientific report to Earth.", "target": 1,
 		"prerequisites": ["first_lab"],
-		"reward": {"funds": 400_000_000, "effect": "research_bonus", "label": "+ $400 MLN · ricavi ricerca +10%"},
+		"reward": {"funds": 400_000_000, "effect": "research_bonus", "label": "+ $400 MN · research income +10%"},
 	},
 	{
-		"id": "chain_of_custody", "title": "CATENA DI CUSTODIA", "icon": "≡", "color": Color("7ebde9"),
-		"description": "Invia 3 rapporti verificati alla Terra.", "target": 3,
+		"id": "chain_of_custody", "title": "CHAIN OF CUSTODY", "icon": "≡", "color": Color("7ebde9"),
+		"description": "Send 3 verified reports to Earth.", "target": 3,
 		"prerequisites": ["first_report"],
-		"reward": {"funds": 550_000_000, "label": "+ $550 MLN · contratto di analisi"},
+		"reward": {"funds": 550_000_000, "label": "+ $550 MN · analysis contract"},
 	},
 	{
-		"id": "xrd_fieldwork", "title": "RETICOLI RIVELATI", "icon": "X", "color": Color("ffaf73"),
-		"description": "Completa 3 rapporti con il diffrattometro XRD.", "target": 3,
+		"id": "xrd_fieldwork", "title": "LATTICES REVEALED", "icon": "X", "color": Color("ffaf73"),
+		"description": "Complete 3 reports with the XRD diffractometer.", "target": 3,
 		"prerequisites": ["first_report"],
-		"reward": {"funds": 650_000_000, "effect": "xrd_precision", "label": "+ $650 MLN · valore XRD +15%"},
+		"reward": {"funds": 650_000_000, "effect": "xrd_precision", "label": "+ $650 MN · XRD value +15%"},
 	},
 	{
-		"id": "raman_fieldwork", "title": "IMPRONTE LUMINOSE", "icon": "R", "color": Color("d48cff"),
-		"description": "Completa 3 rapporti con lo spettrometro Raman.", "target": 3,
+		"id": "raman_fieldwork", "title": "LUMINOUS FINGERPRINTS", "icon": "R", "color": Color("d48cff"),
+		"description": "Complete 3 reports with the Raman spectrometer.", "target": 3,
 		"prerequisites": ["first_report"],
-		"reward": {"funds": 800_000_000, "effect": "raman_precision", "label": "+ $800 MLN · valore Raman +15%"},
+		"reward": {"funds": 800_000_000, "effect": "raman_precision", "label": "+ $800 MN · Raman value +15%"},
 	},
 	{
-		"id": "icp_fieldwork", "title": "TRACCE NEL PLASMA", "icon": "I", "color": Color("72efd3"),
-		"description": "Completa 3 rapporti con l'ICP-MS.", "target": 3,
+		"id": "icp_fieldwork", "title": "TRACES IN PLASMA", "icon": "I", "color": Color("72efd3"),
+		"description": "Complete 3 reports with the ICP-MS.", "target": 3,
 		"prerequisites": ["chain_of_custody"],
-		"reward": {"funds": 1_000_000_000, "effect": "icp_precision", "label": "+ $1 MLD · valore ICP-MS +15%"},
+		"reward": {"funds": 1_000_000_000, "effect": "icp_precision", "label": "+ $1 BN · ICP-MS value +15%"},
 	},
 	{
-		"id": "rare_signal", "title": "SEGNALE ANOMALO", "icon": "✦", "color": Color("ffe079"),
-		"description": "Analizza e trasmetti il primo campione raro.", "target": 1,
+		"id": "rare_signal", "title": "ANOMALOUS SIGNAL", "icon": "✦", "color": Color("ffe079"),
+		"description": "Analyze and transmit the first rare sample.", "target": 1,
 		"prerequisites": ["first_extraction", "first_report"],
-		"reward": {"funds": 1_100_000_000, "label": "+ $1,1 MLD · premio per anomalia"},
+		"reward": {"funds": 1_100_000_000, "label": "+ $1.1 BN · anomaly award"},
 	},
 	{
-		"id": "regional_atlas", "title": "ATLANTE DI ARES", "icon": "⊕", "color": Color("9ed6ff"),
-		"description": "Consegna dati da 3 biomi marziani distinti.", "target": 3,
+		"id": "regional_atlas", "title": "ARES ATLAS", "icon": "⊕", "color": Color("9ed6ff"),
+		"description": "Deliver data from 3 distinct Martian biomes.", "target": 3,
 		"prerequisites": ["first_extraction", "chain_of_custody"],
-		"reward": {"funds": 1_250_000_000, "effect": "diversity_bonus", "label": "+ $1,25 MLD · dati multi-bioma +10%"},
+		"reward": {"funds": 1_250_000_000, "effect": "diversity_bonus", "label": "+ $1.25 BN · multi-biome data +10%"},
 	},
 	{
-		"id": "data_convoy", "title": "CONVOGLIO DATI", "icon": "⇑", "color": Color("8be5ff"),
-		"description": "Trasmetti 8 rapporti scientifici in totale.", "target": 8,
+		"id": "data_convoy", "title": "DATA CONVOY", "icon": "⇑", "color": Color("8be5ff"),
+		"description": "Transmit 8 scientific reports in total.", "target": 8,
 		"prerequisites": ["chain_of_custody"],
-		"reward": {"funds": 1_400_000_000, "label": "+ $1,4 MLD · patrocinio Terra"},
+		"reward": {"funds": 1_400_000_000, "label": "+ $1.4 BN · Earth sponsorship"},
 	},
 	{
-		"id": "xrd_master", "title": "XRD DI PRECISIONE", "icon": "X+", "color": Color("ffaf73"),
-		"description": "Porta il diffrattometro XRD al livello 5.", "target": 1,
+		"id": "xrd_master", "title": "PRECISION XRD", "icon": "X+", "color": Color("ffaf73"),
+		"description": "Upgrade the XRD diffractometer to level 5.", "target": 1,
 		"prerequisites": ["xrd_fieldwork"],
-		"reward": {"funds": 1_000_000_000, "label": "+ $1 MLD · brevetto cristallografico"},
+		"reward": {"funds": 1_000_000_000, "label": "+ $1 BN · crystallography patent"},
 	},
 	{
-		"id": "raman_master", "title": "RAMAN DI PRECISIONE", "icon": "R+", "color": Color("d48cff"),
-		"description": "Porta lo spettrometro Raman al livello 5.", "target": 1,
+		"id": "raman_master", "title": "PRECISION RAMAN", "icon": "R+", "color": Color("d48cff"),
+		"description": "Upgrade the Raman spectrometer to level 5.", "target": 1,
 		"prerequisites": ["raman_fieldwork"],
-		"reward": {"funds": 1_250_000_000, "label": "+ $1,25 MLD · brevetto spettroscopico"},
+		"reward": {"funds": 1_250_000_000, "label": "+ $1.25 BN · spectroscopy patent"},
 	},
 	{
-		"id": "icp_master", "title": "ICP-MS DI PRECISIONE", "icon": "I+", "color": Color("72efd3"),
-		"description": "Porta l'ICP-MS al livello 5.", "target": 1,
+		"id": "icp_master", "title": "PRECISION ICP-MS", "icon": "I+", "color": Color("72efd3"),
+		"description": "Upgrade ICP-MS to level 5.", "target": 1,
 		"prerequisites": ["icp_fieldwork"],
-		"reward": {"funds": 1_600_000_000, "label": "+ $1,6 MLD · brevetto elementare"},
+		"reward": {"funds": 1_600_000_000, "label": "+ $1.6 BN · elemental patent"},
 	},
 	{
-		"id": "rare_constellation", "title": "COSTELLAZIONE RARA", "icon": "★", "color": Color("ffd86b"),
-		"description": "Trasmetti 3 campioni rari, anche da biomi diversi.", "target": 3,
+		"id": "rare_constellation", "title": "RARE CONSTELLATION", "icon": "★", "color": Color("ffd86b"),
+		"description": "Transmit 3 rare samples, including samples from different biomes.", "target": 3,
 		"prerequisites": ["rare_signal", "raman_fieldwork"],
-		"reward": {"funds": 1_900_000_000, "effect": "rare_premium", "label": "+ $1,9 MLD · campioni rari +25%"},
+		"reward": {"funds": 1_900_000_000, "effect": "rare_premium", "label": "+ $1.9 BN · rare samples +25%"},
 	},
 	{
-		"id": "earth_relay", "title": "PONTE TERRA", "icon": "⇈", "color": Color("76e7d0"),
-		"description": "Trasmetti 15 rapporti scientifici in totale.", "target": 15,
+		"id": "earth_relay", "title": "EARTH RELAY", "icon": "⇈", "color": Color("76e7d0"),
+		"description": "Transmit 15 scientific reports in total.", "target": 15,
 		"prerequisites": ["data_convoy", "icp_fieldwork"],
-		"reward": {"funds": 2_500_000_000, "effect": "transmission_priority", "label": "+ $2,5 MLD · valore rapporti +15%"},
+		"reward": {"funds": 2_500_000_000, "effect": "transmission_priority", "label": "+ $2.5 BN · report value +15%"},
 	},
 	{
-		"id": "planetary_archive", "title": "ARCHIVIO PLANETARIO", "icon": "◉", "color": Color("b5a0ff"),
-		"description": "Completa l'atlante con dati da tutti e 6 i biomi.", "target": 6,
+		"id": "planetary_archive", "title": "PLANETARY ARCHIVE", "icon": "◉", "color": Color("b5a0ff"),
+		"description": "Complete the atlas with data from all 6 biomes.", "target": 6,
 		"prerequisites": ["regional_atlas", "rare_signal"],
-		"reward": {"funds": 3_000_000_000, "label": "+ $3 MLD · mandato di cartografia"},
+		"reward": {"funds": 3_000_000_000, "label": "+ $3 BN · cartography mandate"},
 	},
 	{
-		"id": "science_center", "title": "DIRETTORATO SCIENTIFICO", "icon": "★", "color": Color("ffe36e"),
-		"description": "Unisci tre laboratori calibrati, il ponte Terra e l'archivio planetario.", "target": 1,
+		"id": "science_center", "title": "SCIENTIFIC DIRECTORATE", "icon": "★", "color": Color("ffe36e"),
+		"description": "Unite three calibrated laboratories, the Earth relay, and the planetary archive.", "target": 1,
 		"prerequisites": ["xrd_master", "raman_master", "icp_master", "earth_relay", "planetary_archive"],
-		"reward": {"funds": 4_000_000_000, "effect": "scientific_director", "badge": "DIRETTORE SCIENTIFICO", "label": "+ $4 MLD · direttore scientifico"},
+		"reward": {"funds": 4_000_000_000, "effect": "scientific_director", "badge": "SCIENTIFIC DIRECTOR", "label": "+ $4 BN · scientific director"},
 	},
 	{
-		"id": "martian_dividend", "title": "DIVIDENDO MARZIANO", "icon": "✦", "color": Color("fff0a2"),
-		"description": "Consegna 24 rapporti: la ricerca finanzia la nuova economia della colonia.", "target": 24,
+		"id": "martian_dividend", "title": "MARTIAN DIVIDEND", "icon": "✦", "color": Color("fff0a2"),
+		"description": "Deliver 24 reports: research funds the colony's new economy.", "target": 24,
 		"prerequisites": ["science_center", "rare_constellation"],
-		"reward": {"funds": 6_000_000_000, "badge": "PIONIERE DEL VALORE", "label": "+ $6 MLD · pioniere del valore"},
+		"reward": {"funds": 6_000_000_000, "badge": "VALUE PIONEER", "label": "+ $6 BN · value pioneer"},
 	},
 ]
 
@@ -558,14 +557,14 @@ func claim(achievement_id: String) -> bool:
 		var inventory := get_node_or_null("/root/Inventory")
 		if inventory != null and inventory.has_method("grant_field_camera"):
 			if not bool(inventory.call("grant_field_camera")):
-				push_warning("Ricompensa telecamera in attesa: libera uno slot dello zaino.")
+				push_warning("Camera reward pending: free one backpack slot.")
 	_save_progress()
 	achievement_updated.emit(achievement_id)
 	for child_id in get_dependent_ids(achievement_id):
 		achievement_updated.emit(child_id)
 		if is_claimable(child_id):
 			achievement_claimable.emit(child_id)
-	achievement_claimed.emit(achievement_id, str(reward.get("label", "Ricompensa riscattata")))
+	achievement_claimed.emit(achievement_id, str(reward.get("label", "Reward claimed")))
 	return true
 
 
@@ -605,8 +604,8 @@ func get_research_reward_multiplier(machine_id: String = "", rarity: String = ""
 
 
 func record_research_report(machine_id: String, _sample_id: String, biome: String, rarity: String) -> void:
-	# Ogni rapporto alimenta più contratti in parallelo. Anche quando un contratto
-	# è ancora bloccato il suo avanzamento resta visibile nel grafo.
+	# Every report advances multiple contracts in parallel. Even when a contract is
+	# still locked, its progress remains visible in the graph.
 	record("first_report")
 	record("chain_of_custody")
 	record("data_convoy")
@@ -630,8 +629,8 @@ func record_research_report(machine_id: String, _sample_id: String, biome: Strin
 
 
 func record_field_sample(rock_variant: String, rarity: String = "common") -> void:
-	# Questi sono contratti senza infrastruttura: una roccia raccolta a piedi vale
-	# già dati per Terra e permette di finanziare il primo vero impianto.
+	# These contracts need no infrastructure: a rock collected on foot already
+	# provides data for Earth and helps fund the first real installation.
 	record("first_field_sample")
 	record("field_notes")
 	record("sample_satchel")
@@ -655,9 +654,9 @@ func record_exploration_source(source_id: int) -> void:
 
 
 func record_photo_transmission(photo: Dictionary) -> void:
-	## I contratti fotografici avanzano soltanto quando lo scatto parte davvero
-	## verso la Terra. Scattare senza inviare riempie il rullino, ma non genera
-	## denaro né progresso fittizio.
+	## Photo contracts advance only when the shot genuinely goes to Earth. Taking
+	## photos without sending them fills the camera roll but grants neither money
+	## nor artificial progress.
 	if photo.is_empty():
 		return
 	record("first_photo")
@@ -704,9 +703,9 @@ func record_deep_ice_study() -> void:
 
 
 func record_ancient_life_discovery() -> void:
-	# La prova viene scoperta e trasmessa dal medesimo rapporto. La seconda
-	# ricompensa resta incatenata: appare pronta, ma richiede prima il claim
-	# della scoperta scientifica.
+	# The evidence is discovered and transmitted by the same report. The second
+	# reward remains chained: it appears ready but first requires claiming the
+	# scientific discovery.
 	record("ancient_life")
 	record("life_relay")
 	var inventory := get_node_or_null("/root/Inventory")
@@ -715,8 +714,8 @@ func record_ancient_life_discovery() -> void:
 
 
 func get_research_contract_summary(machine_id: String) -> String:
-	# Sintesi breve per il pannello vicino al laboratorio: mostra al giocatore
-	# quale contratto economico sta finanziando prima di consegnare un campione.
+	# Brief summary for the panel near the laboratory. It shows players which
+	# economic contract they are funding before they deliver a sample.
 	var contract_ids: Array[String] = ["chain_of_custody", "data_convoy", "earth_relay"]
 	match machine_id:
 		"xrd_diffractometer":
@@ -742,10 +741,10 @@ func has_badge(badge_id: String) -> bool:
 
 
 func set_persistence_enabled_for_test(enabled: bool) -> void:
-	# Gli achievement non sono persistenti per scelta di design. Manteniamo
-	# questa API soltanto per compatibilità con i test esistenti.
+	# Achievements are intentionally non-persistent. Keep this API only for
+	# compatibility with existing tests.
 	if enabled:
-		push_warning("La persistenza degli achievement è disabilitata: ogni avvio è una nuova missione.")
+		push_warning("Achievement persistence is disabled: every run is a new mission.")
 
 
 func reset_runtime_for_test() -> void:
@@ -780,5 +779,5 @@ func _refresh_composite_achievements() -> void:
 
 
 func _save_progress() -> void:
-	# Nessun salvataggio su disco: F5 / nuovo avvio deve sempre ripartire da zero.
+	# No disk saving: F5 or a new run must always restart from zero.
 	pass

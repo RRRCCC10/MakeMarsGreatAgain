@@ -18,16 +18,16 @@ func _run() -> void:
 	var grid := root.get_node_or_null("PowerGrid")
 	var ui_state := root.get_node_or_null("UIState")
 	var inventory := root.get_node_or_null("Inventory")
-	_expect(page != null and grid != null and ui_state != null and inventory != null, "mancano la pagina o i servizi della rete")
+	_expect(page != null and grid != null and ui_state != null and inventory != null, "Test assertion failed")
 	if page == null or grid == null or ui_state == null or inventory == null:
 		_finish()
 		return
 	var page_root := page.get_node_or_null("PowerNetworkRoot") as Control
-	_expect(page_root != null and not page_root.visible, "il sistema elettrico non deve lasciare un HUD sempre visibile")
+	_expect(page_root != null and not page_root.visible, "Test assertion failed")
 
 	var power_device_script := load("res://scripts/PowerDevice.gd") as Script
 	var base_dome_script := load("res://scripts/BaseDome.gd") as Script
-	_expect(power_device_script != null and base_dome_script != null, "impossibile caricare gli elementi elettrici di test")
+	_expect(power_device_script != null and base_dome_script != null, "Test assertion failed")
 	if power_device_script == null or base_dome_script == null:
 		_finish()
 		return
@@ -43,35 +43,35 @@ func _run() -> void:
 	grid.call("register_consumer", dome, dome.call("get_power_connection_cell"), dome.call("get_power_demand_kw"), dome.call("get_power_attach_direction"))
 	grid.call("rebuild_network")
 
-	_expect(bool(page.call("open")), "L deve poter aprire il centro di distribuzione")
+	_expect(bool(page.call("open")), "Test assertion failed")
 	await process_frame
-	_expect(page_root.visible, "la pagina elettrica deve essere visibile dopo l'apertura")
-	_expect(str(ui_state.get("active_modal")) == "power_network", "la pagina deve bloccare il mondo come GUI modale")
-	_expect(not bool(inventory.call("open")), "l'inventario non deve aprirsi sopra la pagina elettrica")
+	_expect(page_root.visible, "Test assertion failed")
+	_expect(str(ui_state.get("active_modal")) == "power_network", "Test assertion failed")
+	_expect(not bool(inventory.call("open")), "Test assertion failed")
 	var devices: Array = grid.call("get_network_devices")
-	_expect(_has_device(devices, panel) and _has_device(devices, dome), "pannelli e cupole devono comparire singolarmente nella pagina")
-	_expect(bool(grid.call("set_device_network_enabled", panel, true)), "un pannello deve poter essere collegato dalla pagina")
-	_expect(bool(panel.call("is_network_enabled")), "il pannello deve risultare collegato dopo il comando")
+	_expect(_has_device(devices, panel) and _has_device(devices, dome), "Test assertion failed")
+	_expect(bool(grid.call("set_device_network_enabled", panel, true)), "Test assertion failed")
+	_expect(bool(panel.call("is_network_enabled")), "Test assertion failed")
 	var row_map: Dictionary = page.get("_device_row_by_id")
 	var panel_row := row_map.get(str(panel.get_instance_id())) as Control
 	var panel_button := panel_row.get_meta("toggle_button") as Button if panel_row != null else null
-	_expect(panel_button != null and not panel_button.disabled, "Il pannello deve avere un pulsante cliccabile")
+	_expect(panel_button != null and not panel_button.disabled, "Test assertion failed")
 	if panel_button != null:
 		panel_button.emit_signal("pressed")
-		_expect(not bool(panel.call("is_network_enabled")), "Il click deve scollegare il pannello")
+		_expect(not bool(panel.call("is_network_enabled")), "Test assertion failed")
 		var row_before_refresh := panel_row
 		page.call("_refresh")
 		page.call("_refresh")
 		var row_after_refresh := page.get("_device_row_by_id").get(str(panel.get_instance_id())) as Control
-		_expect(row_after_refresh == row_before_refresh, "Il refresh non deve ricreare il pulsante sotto il mouse")
+		_expect(row_after_refresh == row_before_refresh, "Test assertion failed")
 		panel_button.emit_signal("pressed")
-		_expect(bool(panel.call("is_network_enabled")), "Il secondo click deve ricollegare il pannello")
+		_expect(bool(panel.call("is_network_enabled")), "Test assertion failed")
 	page.call("_toggle_device", dome, false)
-	_expect(not bool(dome.call("is_network_enabled")), "la pagina deve poter scollegare una singola cupola")
+	_expect(not bool(dome.call("is_network_enabled")), "Test assertion failed")
 	page.call("_toggle_device", dome, true)
-	_expect(bool(dome.call("is_network_enabled")), "la pagina deve poter ricollegare una singola cupola")
+	_expect(bool(dome.call("is_network_enabled")), "Test assertion failed")
 	page.call("_unhandled_input", _key(KEY_ESCAPE))
-	_expect(not page_root.visible and not bool(ui_state.call("has_open_modal")), "Esc deve chiudere la pagina e liberare il mondo")
+	_expect(not page_root.visible and not bool(ui_state.call("has_open_modal")), "Test assertion failed")
 	var anonymous_consumer := Node2D.new()
 	anonymous_consumer.name = "@Node2D@1345"
 	current_scene.add_child(anonymous_consumer)
@@ -81,10 +81,10 @@ func _run() -> void:
 		var entry: Dictionary = entry_variant
 		if entry.get("node") == anonymous_consumer:
 			anonymous_entry = entry
-	_expect(not anonymous_entry.is_empty(), "Ogni consumatore registrato deve comparire nel pannello elettrico")
-	_expect(str(grid.call("_network_device_display_name", anonymous_consumer, "CONSUMO")) == "DISPOSITIVO DI CONSUMO", "Un nome tecnico del nodo deve diventare una descrizione leggibile")
+	_expect(not anonymous_entry.is_empty(), "Test assertion failed")
+	_expect(str(grid.call("_network_device_display_name", anonymous_consumer, "CONSUMPTION")) == "POWER CONSUMER", "Test assertion failed")
 	if not anonymous_entry.is_empty():
-		_expect(str(anonymous_entry.get("name", "")).contains("@") == false and str(anonymous_entry.get("name", "")) == "DISPOSITIVO DI CONSUMO", "Il pannello elettrico non deve mai mostrare nomi tecnici come @Node2D@1345")
+		_expect(str(anonymous_entry.get("name", "")).contains("@") == false and str(anonymous_entry.get("name", "")) == "POWER CONSUMER", "Test assertion failed")
 	grid.call("unregister_consumer", anonymous_consumer)
 	anonymous_consumer.queue_free()
 	_finish()

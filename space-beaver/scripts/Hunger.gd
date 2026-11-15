@@ -1,6 +1,6 @@
 extends Node
 
-## La fame rappresenta la sazieta' del protagonista: 100 significa completamente sazio.
+## Hunger represents the character's satiety: 100 means completely full.
 signal changed(current: float, maximum: float)
 
 const MAX_HUNGER := 100.0

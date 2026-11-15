@@ -28,10 +28,10 @@ func reset_for_new_mission() -> void:
 		hotbar.append({})
 	for i in BACKPACK_SIZE:
 		backpack.append({})
-	# Slot 1: strumento tubi. Gli ultimi due slot sono le scorte personali.
-	hotbar[0] = {"id": "pipe_hammer", "name": "Tubi", "placeable": false, "tool": true}
-	hotbar[3] = {"id": "water_bottle", "name": "Acqua", "liters": 2.0, "capacity_liters": 2.0, "placeable": false}
-	hotbar[4] = {"id": "food_ration", "name": "Razioni", "count": 5, "placeable": false}
+	# Slot 1 is the pipe tool; the final two slots hold personal supplies.
+	hotbar[0] = {"id": "pipe_hammer", "name": "Pipes", "placeable": false, "tool": true}
+	hotbar[3] = {"id": "water_bottle", "name": "Water", "liters": 2.0, "capacity_liters": 2.0, "placeable": false}
+	hotbar[4] = {"id": "food_ration", "name": "Rations", "count": 5, "placeable": false}
 	selected_hotbar_index = 0
 	selected_backpack_index = -1
 	is_open = false
@@ -43,7 +43,7 @@ func add_rock(rock_variant: String = "roccia_rossa") -> bool:
 	var definition: Dictionary = RockResource.definition_for(rock_variant)
 	return add_item(
 		str(definition.get("item_id", "rock_roccia_rossa")),
-		str(definition.get("name", "Pietra")),
+		str(definition.get("name", "Rock")),
 		1,
 		false,
 	)
@@ -52,7 +52,7 @@ func add_rock(rock_variant: String = "roccia_rossa") -> bool:
 func add_alien_life_sample() -> bool:
 	if count_item(ALIEN_LIFE_SAMPLE_ITEM_ID) > 0:
 		return true
-	return add_item(ALIEN_LIFE_SAMPLE_ITEM_ID, "Campione di vita aliena", 1, false)
+	return add_item(ALIEN_LIFE_SAMPLE_ITEM_ID, "Alien Life Sample", 1, false)
 
 
 func is_rock_item(item_id: String) -> bool:
@@ -68,7 +68,7 @@ func get_first_rock_sample() -> Dictionary:
 
 
 func get_rock_sample_choices() -> Array[Dictionary]:
-	"""Restituisce tutte le pile di pietre selezionabili nei laboratori."""
+	"""Returns every rock stack selectable by laboratories."""
 	var choices: Array[Dictionary] = []
 	for collection_name in ["hotbar", "backpack"]:
 		var collection: Array[Dictionary] = hotbar if collection_name == "hotbar" else backpack
@@ -79,7 +79,7 @@ func get_rock_sample_choices() -> Array[Dictionary]:
 				continue
 			choices.append({
 				"id": item_id,
-				"name": str(item.get("name", "Pietra")),
+				"name": str(item.get("name", "Rock")),
 				"count": int(item.get("count", 0)),
 				"slot": index,
 				"collection": collection_name,
@@ -88,7 +88,7 @@ func get_rock_sample_choices() -> Array[Dictionary]:
 
 
 func take_rock_sample(item_id: String = "") -> Dictionary:
-	"""Estrae una singola pietra dalla pila indicata, o dalla prima disponibile."""
+	"""Extracts one rock from the specified stack, or the first available stack."""
 	for collection in [hotbar, backpack]:
 		for index in collection.size():
 			var item: Dictionary = collection[index]
@@ -97,7 +97,7 @@ func take_rock_sample(item_id: String = "") -> Dictionary:
 				continue
 			if not item_id.is_empty() and current_id != item_id:
 				continue
-			var sample := {"id": current_id, "name": str(item.get("name", "Pietra"))}
+			var sample := {"id": current_id, "name": str(item.get("name", "Rock"))}
 			item["count"] = int(item.get("count", 0)) - 1
 			if int(item["count"]) <= 0:
 				collection[index] = {}
@@ -153,34 +153,34 @@ func add_item(item_id: String, item_name: String, amount: int = 1, placeable: bo
 
 
 func add_rover(battery_energy_kwh: float) -> bool:
-	"""Aggiunge un rover mantenendo la carica effettiva del suo pacco batteria."""
-	return _add_rover_units(1, battery_energy_kwh, "Rover esplorativo", true)
+	"""Adds a rover while retaining its actual battery-pack charge."""
+	return _add_rover_units(1, battery_energy_kwh, "Exploration Rover", true)
 
 
 func grant_field_camera() -> bool:
-	## Ricompensa fisica della Sacca campioni. La telecamera viene consegnata
-	## nello zaino, non comprata nello shop; il giocatore la puo' poi equipaggiare
-	## in uno dei due slot rapidi centrali come qualunque altro strumento.
+	## Physical reward from the Sample Bag. The camera is delivered to the backpack,
+	## not bought in the store; the player can equip it in either central quick slot
+	## just like any other tool.
 	if count_item(FIELD_CAMERA_ITEM_ID) > 0:
 		return true
 	for index in BACKPACK_SIZE:
 		if backpack[index].is_empty():
 			backpack[index] = {
 				"id": FIELD_CAMERA_ITEM_ID,
-				"name": "Telecamera scientifica",
+				"name": "Scientific Camera",
 				"count": 1,
 				"placeable": false,
 				"tool": true,
 			}
 			changed.emit()
 			return true
-	# Otto campioni non possono realisticamente saturare i venti slot iniziali,
-	# ma in caso di partita modificata proviamo anche gli slot rapidi liberi.
+	# Eight samples should not realistically fill the initial twenty slots, but a
+	# modified playthrough may do so, so also try empty quick slots.
 	for index in [1, 2]:
 		if hotbar[index].is_empty():
 			hotbar[index] = {
 				"id": FIELD_CAMERA_ITEM_ID,
-				"name": "Telecamera scientifica",
+				"name": "Scientific Camera",
 				"count": 1,
 				"placeable": false,
 				"tool": true,
@@ -256,7 +256,7 @@ func count_item(item_id: String) -> int:
 
 
 func consume_item(item_id: String, amount: int = 1) -> bool:
-	"""Consuma un oggetto ovunque si trovi, senza obbligare il giocatore a selezionarlo."""
+	"""Consumes an item wherever it is without forcing the player to select it."""
 	if amount <= 0 or count_item(item_id) < amount:
 		return false
 	var remaining := amount
@@ -278,8 +278,8 @@ func consume_item(item_id: String, amount: int = 1) -> bool:
 
 
 func take_item(item_id: String) -> Dictionary:
-	## Rimuove una singola unità e ne conserva i metadati. Le colture usano
-	## questa API per fissare i geni del lotto al momento della semina.
+	## Removes one unit and retains its metadata. Crops use this API to lock a
+	## batch's genes at planting time.
 	for collection in [hotbar, backpack]:
 		for index in collection.size():
 			var item: Dictionary = collection[index]
@@ -296,8 +296,8 @@ func take_item(item_id: String) -> Dictionary:
 
 
 func take_best_potato_seed_lot(minimum_yield_level: int = -1, minimum_speed_level: int = -1) -> Dictionary:
-	## Preferisce il lotto più avanzato. Se sono indicati minimi, restituisce
-	## solo un miglioramento reale rispetto alla coltura già presente.
+	## Prefers the most advanced batch. If minimums are specified, it returns only
+	## a real improvement over the crop already planted.
 	var best_collection: Array
 	var best_index := -1
 	var best_score := -1
@@ -329,8 +329,8 @@ func take_best_potato_seed_lot(minimum_yield_level: int = -1, minimum_speed_leve
 
 
 func get_best_potato_seed_lot(minimum_yield_level: int = -1, minimum_speed_level: int = -1) -> Dictionary:
-	## Variante senza effetti per i prompt della serra: non deve consumare né
-	## spostare un lotto mentre il giocatore si limita ad avvicinarsi.
+	## Side-effect-free version for greenhouse prompts. It must not consume or move
+	## a batch while the player merely approaches.
 	var best: Dictionary = {}
 	var best_score := -1
 	for collection in [hotbar, backpack]:
@@ -355,8 +355,8 @@ func get_selected_item() -> Dictionary:
 
 
 func refill_selected_water_bottle(available_liters: float) -> float:
-	## Riempie esclusivamente la borraccia che il giocatore ha effettivamente in mano.
-	## Restituisce i litri prelevati, così la trivella può sottrarli dalla propria riserva.
+	## Refills only the water bottle actually held by the player. Returns the liters
+	## withdrawn so the drill can subtract them from its own reserve.
 	var bottle := get_selected_item()
 	if str(bottle.get("id", "")) != "water_bottle" or available_liters <= 0.0:
 		return 0.0
@@ -386,9 +386,8 @@ func move_selected_to_hotbar(index: int) -> bool:
 	if selected_backpack_index < 0 or index < 0 or index >= HOTBAR_SIZE:
 		return false
 	var item := backpack[selected_backpack_index]
-	# Ogni oggetto dell'inventario può essere equipaggiato: non limitiamo più il
-	# trasferimento ai soli costruibili, perché anche camera, semi e scorte sono
-	# oggetti utilizzabili dalla hotbar.
+	# Every inventory item can be equipped. Do not limit transfer to placeables,
+	# because the camera, seeds, and supplies are also usable from the hotbar.
 	if item.is_empty():
 		return false
 	var previous := hotbar[index]
@@ -413,9 +412,8 @@ func can_move_hotbar_to_backpack(index: int) -> bool:
 
 
 func move_hotbar_to_backpack(index: int) -> bool:
-	## Con l'inventario aperto un click su un oggetto nella hotbar lo ripone
-	## nello zaino. Tutti gli slot sono trasferibili, così la hotbar resta
-	## completamente personalizzabile.
+	## With the inventory open, clicking an item in the hotbar returns it to the
+	## backpack. Every slot is transferable, keeping the hotbar fully customizable.
 	if not can_move_hotbar_to_backpack(index):
 		return false
 	for backpack_index in BACKPACK_SIZE:
@@ -441,7 +439,7 @@ func consume_selected_item() -> bool:
 			batteries.pop_front()
 	item["count"] -= 1
 	if item["count"] <= 0:
-		# Le razioni devono restare visibili a zero, per rendere chiaro che sono finite.
+		# Rations must remain visible at zero so players can see they are depleted.
 		if item.get("id", "") == "food_ration":
 			item["count"] = 0
 		else:

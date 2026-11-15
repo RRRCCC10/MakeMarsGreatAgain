@@ -1,7 +1,5 @@
 extends SceneTree
 
-## F e' riservato al rover solo quando il player e' vicino. Questo test
-## assicura che un rover remoto non rubi F alla sequenza della camera d'aria.
 
 const DOME_SCRIPT := preload("res://scripts/BaseDome.gd")
 const ROVER_SCRIPT := preload("res://scripts/Rover.gd")
@@ -26,21 +24,18 @@ func _run() -> void:
 	_send_physical_key(KEY_F)
 	await process_frame
 	if rover.panel_state != Rover.PanelState.CLOSED:
-		_fail("un rover lontano ha aperto i pannelli con F")
+		_fail("A distant rover opened its panels with F")
 		return
 
-	# Il comando deve invece restare disponibile accanto al rover.
 	player.global_position = rover.global_position + Vector2(-36.0, 0.0)
 	_send_physical_key(KEY_F)
 	await process_frame
 	if rover.panel_state == Rover.PanelState.CLOSED:
-		_fail("F vicino al rover non ha aperto i pannelli")
+		_fail("F near the rover did not open its panels")
 		return
 	rover.panel_state = Rover.PanelState.CLOSED
 	rover.animation_elapsed = 0.0
 
-	# Camera d'aria: mette il player nel corridoio dopo la prima porta, con un
-	# rover molto lontano. F deve iniziare la pressurizzazione, non i pannelli.
 	var dome := DOME_SCRIPT.new() as BaseDome
 	dome.setup("dome_medium", 1, false, {})
 	current_scene.add_child(dome)

@@ -46,16 +46,16 @@ func _refresh() -> void:
 	var status := DeliveryManager.get_delivery_status()
 	if bool(status["pending"]):
 		panel.visible = true
-		title_label.text = "ORDINE IN PREPARAZIONE  ·  %.1f s" % float(status["seconds"])
+		title_label.text = "ORDER IN PREPARATION  ·  %.1f s" % float(status["seconds"])
 		detail_label.text = str(status["pending_summary"])
 	elif int(status["descending"]) > 0:
 		panel.visible = true
-		title_label.text = "CAPSULA DI RIFORNIMENTO IN DISCESA"
-		detail_label.text = "Allontanati dalla zona di atterraggio"
+		title_label.text = "SUPPLY CAPSULE DESCENDING"
+		detail_label.text = "Move away from the landing zone"
 	elif int(status["landed"]) > 0:
 		panel.visible = true
-		title_label.text = "RIFORNIMENTO ATTERRATO"
-		detail_label.text = "Avvicinati alla capsula e premi E"
+		title_label.text = "SUPPLY LANDED"
+		detail_label.text = "Approach the capsule and press E"
 	else:
 		panel.visible = false
 

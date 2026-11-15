@@ -1,7 +1,7 @@
 extends SceneTree
 
-## Utility monouso: spezza la vecchia TileMap autoriale in 64 scene statiche.
-## Non viene caricata dal gioco; si esegue solo quando la mappa viene ridipinta.
+## One-off utility: splits the old authored TileMap into 64 static scenes.
+## It is not loaded by the game; run it only when the map is repainted.
 
 const TILE_SIZE := 16
 const CHUNK_SIZE := 256
@@ -16,25 +16,25 @@ func _init() -> void:
 func _split() -> void:
 	var source_scene := load("res://Scenes/map.tscn") as PackedScene
 	if source_scene == null:
-		push_error("Impossibile caricare la TileMap autoriale")
+		push_error("Unable to load the authored TileMap")
 		quit(1)
 		return
 	var source_map := source_scene.instantiate()
 	var source_terrain := source_map.get_node_or_null("Terrain") as TileMapLayer
 	if source_terrain == null or source_terrain.tile_set == null:
-		push_error("Terrain o TileSet non trovato nella mappa autoriale")
+		push_error("Terrain or TileSet not found in the authored map")
 		quit(1)
 		return
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("res://Scenes/map_chunks"))
 	DirAccess.make_dir_absolute(ProjectSettings.globalize_path("res://resources"))
 	var tile_set_result := ResourceSaver.save(source_terrain.tile_set, "res://resources/terrain_tileset.tres")
 	if tile_set_result != OK:
-		push_error("Salvataggio TileSet fallito: %d" % tile_set_result)
+		push_error("TileSet save failed: %d" % tile_set_result)
 		quit(1)
 		return
 	var shared_tile_set := load("res://resources/terrain_tileset.tres") as TileSet
 	if shared_tile_set == null:
-		push_error("Impossibile ricaricare il TileSet condiviso")
+		push_error("Unable to reload the shared TileSet")
 		quit(1)
 		return
 	for y in range(CHUNK_COUNT.y):

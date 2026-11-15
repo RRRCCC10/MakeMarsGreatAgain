@@ -123,7 +123,7 @@ func _process_landed(delta: float) -> void:
 	var nearby := player != null and player.global_position.distance_to(global_position) <= INTERACTION_DISTANCE
 	prompt.visible = nearby
 	if nearby:
-		prompt.text = "E  ·  RITIRA ORDINE\n%s" % get_contents_summary()
+		prompt.text = "E  ·  COLLECT ORDER\n%s" % get_contents_summary()
 
 
 func collect_all() -> bool:
@@ -135,7 +135,7 @@ func collect_all() -> bool:
 		var remaining := int(item.get("count", 0))
 		var inventory := get_node_or_null("/root/Inventory")
 		while remaining > 0:
-			if inventory == null or not bool(inventory.call("add_item", str(item.get("id", "")), str(item.get("name", "Oggetto")), 1, bool(item.get("placeable", true)), item.get("configuration", {}))):
+			if inventory == null or not bool(inventory.call("add_item", str(item.get("id", "")), str(item.get("name", "Item")), 1, bool(item.get("placeable", true)), item.get("configuration", {}))):
 				break
 			remaining -= 1
 			collected_any = true
@@ -148,7 +148,7 @@ func collect_all() -> bool:
 			manager.call("notify_capsule_emptied", self)
 		queue_free()
 	else:
-		prompt.text = "INVENTARIO PIENO\n%s" % get_contents_summary()
+		prompt.text = "INVENTORY FULL\n%s" % get_contents_summary()
 	return collected_any
 
 
@@ -157,8 +157,8 @@ func is_landed() -> bool:
 
 
 func get_map_marker_world_position() -> Vector2:
-	# Durante la discesa la carta mostra il punto previsto di atterraggio,
-	# non la posizione temporanea del paracadute fuori dallo schermo.
+	# During descent, the map shows the expected landing point rather than the
+	# parachute's temporary off-screen position.
 	return target_position if state == State.DESCENDING else global_position
 
 
@@ -172,7 +172,7 @@ func get_total_item_count() -> int:
 func get_contents_summary() -> String:
 	var parts := PackedStringArray()
 	for item in contents:
-		parts.append("%s x%d" % [str(item.get("name", "Oggetto")), int(item.get("count", 0))])
+		parts.append("%s x%d" % [str(item.get("name", "Item")), int(item.get("count", 0))])
 	return "  ·  ".join(parts)
 
 

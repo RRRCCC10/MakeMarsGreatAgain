@@ -26,7 +26,7 @@ func can_place_pipe(cell: Vector2i, shape_type: int, is_vertical: bool) -> bool:
 		return false
 	var orientation := _orientation_for_port(cell, shape_type, is_vertical)
 	var categories := _neighbor_categories(cell, shape_type, orientation)
-	# Non si possono unire accidentalmente due reti con fluidi incompatibili.
+	# Networks carrying incompatible fluids must never merge accidentally.
 	return categories.size() <= 1
 
 
@@ -40,7 +40,7 @@ func place_pipe(parent: Node, cell: Vector2i, shape_type: int, is_vertical: bool
 	parent.add_child(pipe)
 	pipe.global_position = _cell_center(cell)
 	pipes[cell] = pipe
-	BuildableRegistry.register_buildable(pipe, "TUBO", "pipe", remove_pipe.bind(cell))
+	BuildableRegistry.register_buildable(pipe, "PIPE", "pipe", remove_pipe.bind(cell))
 	_recalculate_component(cell)
 	network_changed.emit()
 	return pipe
@@ -53,8 +53,8 @@ func remove_pipe(cell: Vector2i) -> bool:
 	BuildableRegistry.unregister_buildable(pipe)
 	pipes.erase(cell)
 	pipe.queue_free()
-	# Demolire un tubo restituisce l'intero costo di posa: il giocatore può
-	# correggere reti idrauliche senza perdere $100 MLN a ogni prova.
+	# Dismantling a pipe returns its full placement cost, allowing players to
+	# correct fluid networks without losing $100 MN for every attempt.
 	Economy.add_funds(PIPE_COST)
 	for direction in DIRECTIONS:
 		if pipes.has(cell + direction):
@@ -64,8 +64,8 @@ func remove_pipe(cell: Vector2i) -> bool:
 
 
 func register_fluid_source(source: Node2D, output_cell: Vector2i, category: int, required_opening: Vector2i = Vector2i.LEFT) -> void:
-	# Una macchina puo' esporre piu' uscite (per esempio H₂ e O₂): sostituiamo
-	# soltanto l'eventuale porta gia' registrata nella stessa cella.
+	# One machine can expose multiple outputs (for example H₂ and O₂). Replace only
+	# an existing port registered in the same cell.
 	for index in range(fluid_sources.size() - 1, -1, -1):
 		var registered: Node = fluid_sources[index].get("node")
 		var registered_cell := Vector2i(fluid_sources[index].get("cell", Vector2i.ZERO))
@@ -92,8 +92,8 @@ func register_fluid_input(sink: Node2D, input_cell: Vector2i, category: int, req
 	fluid_inputs.append({"node": sink, "cell": input_cell, "category": category, "required_opening": required_opening})
 	var terminal_pipe := get_pipe(input_cell)
 	if terminal_pipe != null:
-		# Le porte d'ingresso sono laterali: corregge i raccordi a croce creati
-		# dalla vecchia regola che trasformava automaticamente ogni tubo in croce.
+		# Input ports are lateral. Correct cross junctions created by the old rule
+		# that automatically turned every pipe into a cross.
 		var vertical := required_opening == Vector2i.UP or required_opening == Vector2i.DOWN
 		terminal_pipe.setup(input_cell, PipeSegment.ShapeType.STRAIGHT, vertical, terminal_pipe.category)
 	var pipe := _get_port_pipe(input_cell, required_opening)
@@ -134,15 +134,15 @@ func is_source_connected(source: Node, category: int = -1) -> bool:
 		var source_category := int(definition.get("category", PipeSegment.Category.GENERIC))
 		var pipe := _get_port_pipe(cell, required_opening)
 		if pipe != null:
-			# Una partita caricata o una registrazione tardiva può lasciare per un
-			# frame la rete grigia: la riclassifichiamo prima di dichiararla persa.
+			# A loaded save or late registration can leave the network gray for one
+			# frame. Reclassify it before declaring it lost.
 			_recalculate_component(pipe.cell)
 		return pipe != null and pipe.has_opening(required_opening) and pipe.category == source_category
 	return false
 
 
 func consume_connected_resource(input_cell: Vector2i, opening_toward_machine: Vector2i, category: int, amount: float) -> float:
-	"""Preleva fluido da una sorgente raggiunta dalla rete del tubo in ingresso."""
+	"""Withdraws fluid from a source reached by the input pipe network."""
 	if amount <= 0.0:
 		return 0.0
 	var input_pipe := _get_port_pipe(input_cell, opening_toward_machine)
@@ -201,11 +201,10 @@ func get_pipe(cell: Vector2i) -> PipeSegment:
 
 
 func _get_port_pipe(port_cell: Vector2i, required_opening: Vector2i) -> PipeSegment:
-	## Il raccordo della macchina/cupola e' mostrato come un terminale, non come
-	## una tile acquistabile. Perciò accettiamo sia il tubo posato sul terminale
-	## sia quello immediatamente esterno che lo raggiunge. Il secondo caso evita
-	## una disconnessione invisibile quando il giocatore collega il tubo al bordo
-	## visibile del raccordo.
+	## The machine or dome connector displays as a terminal rather than a purchasable
+	## tile. Accept both a pipe placed on the terminal and one immediately outside
+	## that reaches it. The latter avoids an invisible disconnect when players join
+	## a pipe to the connector's visible edge.
 	var terminal_pipe := get_pipe(port_cell)
 	if terminal_pipe != null and terminal_pipe.has_opening(required_opening):
 		return terminal_pipe
@@ -385,9 +384,9 @@ func _cell_is_inside_buildable(cell: Vector2i) -> bool:
 		var node: Node = entry.get("node")
 		if not is_instance_valid(node) or not node.has_method("get_occupied_power_cells"):
 			continue
-		# Una cupola abitativa è un ambiente interno: permette macchinari e
-		# tubazioni al suo interno. Restano invece bloccate serre, macchinari,
-		# rocce e tutte le altre strutture reali.
+		# A habitat dome is an interior environment: it allows machines and pipes
+		# inside it. Greenhouses, machines, rocks, and all other real structures
+		# remain blocked.
 		if node.is_in_group("base_domes") and not node.is_in_group("greenhouses"):
 			continue
 		if cell in node.get_occupied_power_cells():

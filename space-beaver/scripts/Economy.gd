@@ -1,8 +1,8 @@
 extends Node
 
-## Budget della missione NASA. Tutti i valori sono espressi in dollari.
+## NASA mission budget. All values are expressed in dollars.
 signal balance_changed(current: int)
-## Positivo per le entrate, negativo per le spese.
+## Positive values are income; negative values are expenses.
 signal transaction_changed(current: int, delta: int)
 
 const STARTING_BALANCE := 10_000_000_000

@@ -1,8 +1,8 @@
 extends Node2D
 
-## Le posizioni sono deterministiche e dipendono dalle tile già dipinte nella
-## mappa. Carichiamo solo i campioni nei chunk vicini: il mondo resta denso
-## senza mantenere migliaia di collisioni e label fuori dallo schermo.
+## Positions are deterministic and depend on tiles already painted in the map.
+## Only samples in nearby chunks are loaded, keeping the world dense without
+## maintaining thousands of collisions and labels outside the screen.
 
 const ROCK_SCENE := preload("res://Scenes/rock.tscn")
 const TILE_SIZE := 16
@@ -26,7 +26,7 @@ func _setup() -> void:
 	map_provider = get_parent().get_node_or_null("Map")
 	player = get_tree().get_first_node_in_group("player") as Node2D
 	if map_provider == null or not map_provider.has_method("get_source_id") or player == null:
-		push_error("RockScatter: provider della mappa o player non trovato")
+		push_error("RockScatter: map provider or player not found")
 		return
 	_update_active_chunks(true)
 
@@ -80,8 +80,8 @@ func _ensure_chunk(chunk: Vector2i) -> void:
 
 func _should_spawn(cell: Vector2i, source_id: int) -> bool:
 	var roll := _hash(cell, 11)
-	# Anche la sabbia iniziale ha molti campioni della roccia originale.
-	# Gli altri biomi sono leggermente più ricchi per premiare l'esplorazione.
+	# The starting sand also contains many samples of its original rock.
+	# Other biomes are slightly richer to reward exploration.
 	return roll % (3 if source_id == 0 else 2) == 0
 
 
@@ -113,8 +113,8 @@ func _cell_to_position(cell: Vector2i, jitter_x: int, jitter_y: int) -> Vector2:
 
 
 func _hash(cell: Vector2i, salt: int) -> int:
-	# La griglia di campionamento avanza di 8 tile: il mixing finale evita
-	# ripetizioni regolari (per esempio tutti i candidati con lo stesso mod 4).
+	# The sampling grid advances by 8 tiles; final mixing avoids regular
+	# repetitions (for example, every candidate with the same mod 4 value).
 	var value := cell.x * 374761393 + cell.y * 668265263 + salt * 700001
 	value = (value ^ (value >> 13)) * 1274126177
 	return (value ^ (value >> 16)) & 0x7fffffff

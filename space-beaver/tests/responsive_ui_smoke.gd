@@ -14,16 +14,16 @@ func _run() -> void:
 		return
 	await process_frame
 	await process_frame
-	_expect(bool(ProjectSettings.get_setting("display/window/size/resizable", false)), "La finestra deve essere ridimensionabile")
-	_expect(str(ProjectSettings.get_setting("display/window/stretch/aspect", "")) == "expand", "Il canvas deve espandersi invece di fissare un rapporto")
+	_expect(bool(ProjectSettings.get_setting("display/window/size/resizable", false)), "Test assertion failed")
+	_expect(str(ProjectSettings.get_setting("display/window/stretch/aspect", "")) == "expand", "Test assertion failed")
 	var inventory_panel := _find_named(current_scene, "ResponsiveInventoryPanel") as Control
 	var shop_panel := _find_named(current_scene, "ResponsiveShopPanel") as Control
 	var map_panel := _find_named(current_scene, "ResponsiveMapPanel") as Control
 	var camera_panel := _find_named(root.get_node_or_null("FieldCamera"), "ResponsiveCameraArchive") as Control
-	_expect(_uses_percentage_layout(inventory_panel, 0.06, 0.94), "L'inventario deve usare ancoraggi adattivi")
-	_expect(_uses_percentage_layout(shop_panel, 0.04, 0.96), "Lo shop deve usare ancoraggi adattivi")
-	_expect(_uses_percentage_layout(map_panel, 0.05, 0.95), "La mappa deve usare ancoraggi adattivi")
-	_expect(_uses_percentage_layout(camera_panel, 0.08, 0.92), "L'archivio fotografico deve adattarsi alla finestra")
+	_expect(_uses_percentage_layout(inventory_panel, 0.06, 0.94), "Test assertion failed")
+	_expect(_uses_percentage_layout(shop_panel, 0.04, 0.96), "Test assertion failed")
+	_expect(_uses_percentage_layout(map_panel, 0.05, 0.95), "Test assertion failed")
+	_expect(_uses_percentage_layout(camera_panel, 0.08, 0.92), "Test assertion failed")
 	_finish()
 
 

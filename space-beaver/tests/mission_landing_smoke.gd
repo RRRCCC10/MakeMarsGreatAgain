@@ -17,21 +17,21 @@ func _run() -> void:
 	await process_frame
 	var landing = current_scene.get_node_or_null("LandingSequence")
 	var player := current_scene.get_node_or_null("player") as CharacterBody2D
-	_expect(landing != null, "La scena deve contenere la sequenza di atterraggio")
-	_expect(player != null and player.visible, "In headless l'astronauta deve apparire nello stato finale")
+	_expect(landing != null, "Test assertion failed")
+	_expect(player != null and player.visible, "Test assertion failed")
 	if landing != null:
-		_expect(landing.landing_complete, "La sequenza headless deve completarsi immediatamente")
-		_expect(landing.pad_sprite != null and landing.pad_sprite.visible, "La piattaforma deve restare sulla mappa")
-		_expect(landing.landed_rocket != null and landing.landed_rocket.visible, "Il razzo atterrato deve restare sulla piattaforma")
-		_expect(landing.landed_rocket.texture == landing.rocket_frames[0], "Il razzo atterrato deve usare il primo frame fermo")
-		_expect(landing.rocket_frames.size() == 30, "Lo spritesheet del razzo deve essere diviso nei 30 frame 32x64")
-		_expect(not landing.get_occupied_power_cells().is_empty(), "Il sito di atterraggio deve bloccare tubi e cavi")
+		_expect(landing.landing_complete, "Test assertion failed")
+		_expect(landing.pad_sprite != null and landing.pad_sprite.visible, "Test assertion failed")
+		_expect(landing.landed_rocket != null and landing.landed_rocket.visible, "Test assertion failed")
+		_expect(landing.landed_rocket.texture == landing.rocket_frames[0], "Test assertion failed")
+		_expect(landing.rocket_frames.size() == 30, "Test assertion failed")
+		_expect(not landing.get_occupied_power_cells().is_empty(), "Test assertion failed")
 	var mission_site_registered := false
 	for entry in root.get_node("BuildableRegistry").get_entries():
 		if entry.get("kind", "") == "mission_structure":
 			mission_site_registered = true
 			break
-	_expect(mission_site_registered, "Il sito di atterraggio deve essere registrato come struttura permanente")
+	_expect(mission_site_registered, "Test assertion failed")
 
 	if failures.is_empty():
 		print("MISSION_LANDING_SMOKE_OK")

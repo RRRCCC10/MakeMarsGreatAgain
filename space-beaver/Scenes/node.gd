@@ -207,9 +207,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			_toggle_nearby_network()
 			get_viewport().set_input_as_handled()
 			return
-		# La trivella mineraria usa E per aprire il proprio deposito a due colonne:
-		# non deve essere trattata come uno stock generico da ritirare un pezzo alla
-		# volta, altrimenti il giocatore non può scegliere le pile da trasferire.
+		# The mining drill uses E to open its two-column storage. It must not be
+		# treated as generic stock withdrawn one unit at a time, or the player
+		# cannot choose the stack to transfer.
 		if event.keycode == KEY_E and _nearby_has_stock() and not nearby_machine.is_in_group("rock_drills"):
 			nearby_machine.call("take_stock_item", 0)
 			_update_nearby_machine_ui()
@@ -306,29 +306,29 @@ func _unhandled_input(event: InputEvent) -> void:
 func get_build_help_text() -> String:
 	var selected_id := str(Inventory.get_selected_item().get("id", ""))
 	if selected_id == "solar_panel":
-		return "PANNELLO: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
+		return "PANEL: Click place  ·  R rotate (%s)  ·  RMB recover" % _machine_rotation_label()
 	if selected_id == "transformer":
-		return "TRASFORMATORE: Click posiziona  ·  R ruota (%s)  ·  Dx riprende" % _machine_rotation_label()
+		return "TRANSFORMER: Click place  ·  R rotate (%s)  ·  RMB recover" % _machine_rotation_label()
 	if selected_id == "battery":
-		return "BATTERIA: Click posiziona  ·  R ruota (%s)  ·  500 kWh  ·  Dx riprende" % _machine_rotation_label()
+		return "BATTERY: Click place  ·  R rotate (%s)  ·  500 kWh  ·  RMB recover" % _machine_rotation_label()
 	if selected_id == "ice_drill":
-		return "TRIVELLA: Click posiziona  ·  R ruota (%s)  ·  60 kW  ·  Dx rimuove" % _machine_rotation_label()
+		return "ICE DRILL: Click place  ·  R rotate (%s)  ·  60 kW  ·  RMB remove" % _machine_rotation_label()
 	if selected_id == "rock_drill":
-		return "TRIVELLA ROCCE: Click posiziona  ·  R ruota (%s)  ·  85 kW  ·  E apre riserva  ·  Dx rimuove" % _machine_rotation_label()
+		return "ROCK DRILL: Click place  ·  R rotate (%s)  ·  85 kW  ·  E opens storage  ·  RMB remove" % _machine_rotation_label()
 	if selected_id == "electrolyzer":
-		return "ELETTROLIZZATORE: Click posiziona  ·  R ruota (%s)  ·  65 kW + acqua e uscite H₂/O₂  ·  Dx rimuove" % _machine_rotation_label()
+		return "ELECTROLYZER: Click place  ·  R rotate (%s)  ·  65 kW + water and H₂/O₂ outputs  ·  RMB remove" % _machine_rotation_label()
 	if selected_id == "sabatier":
-		return "SABATIER: a sinistra del razzo  ·  R ruota (%s)  ·  50 kW + tubo H₂  ·  CH₄ diretto" % _machine_rotation_label()
+		return "SABATIER: left of rocket  ·  R rotate (%s)  ·  50 kW + H₂ pipe  ·  direct CH₄" % _machine_rotation_label()
 	if selected_id == "rover":
-		return "ROVER: Click posiziona  ·  E sali/scendi  ·  F apre i pannelli solari  ·  Dx riprende"
+		return "ROVER: Click place  ·  E board/exit  ·  F opens solar panels  ·  RMB recover"
 	if selected_id in ["dome_small", "dome_medium", "dome_large"]:
-		return "CUPOLE: Click posiziona  ·  R ruota ingresso/camera  ·  E usa la camera di decompressione  ·  Dx demolisce"
+		return "DOMES: Click place  ·  R rotate entry/airlock  ·  E use airlock  ·  RMB demolish"
 	if selected_id == "greenhouse":
-		return "SERRA: Click posiziona  ·  R ruota ingresso/camera  ·  acqua a sinistra  ·  E semina dentro  ·  Dx demolisce"
+		return "GREENHOUSE: Click place  ·  R rotate entry/airlock  ·  water left  ·  E plant inside  ·  RMB demolish"
 	if selected_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
-		return "RICERCA: Click in una cupola abitativa  ·  R ruota (%s)  ·  E pietra/rapporto  ·  U upgrade  ·  Dx riprende" % _machine_rotation_label()
-	var shape_name := "CROCE" if pipe_shape == PipeSegment.ShapeType.CROSS else ("DRITTO VERTICALE" if pipe_vertical else "DRITTO ORIZZONTALE")
-	return "TUBI: " + shape_name + "  ·  T tipo  ·  R ruota  ·  Dx demolisce"
+		return "RESEARCH: Click inside a habitat dome  ·  R rotate (%s)  ·  E sample/report  ·  U upgrade  ·  RMB recover" % _machine_rotation_label()
+	var shape_name := "CROSS" if pipe_shape == PipeSegment.ShapeType.CROSS else ("STRAIGHT VERTICAL" if pipe_vertical else "STRAIGHT HORIZONTAL")
+	return "PIPES: " + shape_name + "  ·  T type  ·  R rotate  ·  RMB demolish"
 
 
 func get_pipe_help_text() -> String:
@@ -336,7 +336,7 @@ func get_pipe_help_text() -> String:
 
 
 func _machine_rotation_label() -> String:
-	return ["EST", "SUD", "OVEST", "NORD"][posmod(machine_placement_rotation, 4)]
+	return ["EAST", "SOUTH", "WEST", "NORTH"][posmod(machine_placement_rotation, 4)]
 
 
 func _try_demolish_at_mouse(item: Dictionary) -> void:
@@ -387,7 +387,7 @@ func _create_demolition_ui() -> void:
 	content.add_theme_constant_override("separation", 12)
 	panel.add_child(content)
 	var title := Label.new()
-	title.text = "!!  CONFERMA DEMOLIZIONE  !!"
+	title.text = "!!  CONFIRM DEMOLITION  !!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 17)
 	title.add_theme_color_override("font_color", Color("ffca67"))
@@ -401,7 +401,7 @@ func _create_demolition_ui() -> void:
 	content.add_child(demolition_question)
 
 	var warning := Label.new()
-	warning.text = "TUBI: RIMBORSO COMPLETO DI $100 MLN · ALTRO: NESSUN RIMBORSO"
+	warning.text = "PIPES: FULL $100 MN REFUND · OTHER ITEMS: NO REFUND"
 	warning.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	warning.add_theme_font_size_override("font_size", 12)
 	warning.add_theme_color_override("font_color", Color("ff7d6b"))
@@ -411,10 +411,10 @@ func _create_demolition_ui() -> void:
 	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
 	buttons.add_theme_constant_override("separation", 18)
 	content.add_child(buttons)
-	var confirm_button := _make_demolition_button("[ DEMOLISCI ]", Color("a53a32"))
+	var confirm_button := _make_demolition_button("[ DEMOLISH ]", Color("a53a32"))
 	confirm_button.pressed.connect(_confirm_demolition)
 	buttons.add_child(confirm_button)
-	var cancel_button := _make_demolition_button("[ ANNULLA ]", Color("304c58"))
+	var cancel_button := _make_demolition_button("[ CANCEL ]", Color("304c58"))
 	cancel_button.pressed.connect(_close_demolition_ui)
 	buttons.add_child(cancel_button)
 
@@ -423,7 +423,7 @@ func _show_demolition_ui(entry: Dictionary) -> void:
 	if not BuildableRegistry.open_modal():
 		return
 	pending_demolition = entry
-	demolition_question.text = "Vuoi rimuovere:  %s ?" % entry.get("display_name", "OGGETTO")
+	demolition_question.text = "Remove:  %s ?" % entry.get("display_name", "OBJECT")
 	demolition_root.visible = true
 
 
@@ -506,42 +506,42 @@ func _update_nearby_machine_ui() -> void:
 	if not is_instance_valid(nearby_machine):
 		nearby_machine_root.visible = false
 		return
-	# La borraccia selezionata ha un'unica azione utile vicino alla trivella
-	# dell'acqua. Il prompt dedicato dell'inventario sostituisce quindi tutto il
-	# pannello macchina, evitando due testi che si contendono lo stesso input.
+	# A selected bottle has one useful action near the water drill. Its dedicated
+	# inventory prompt therefore replaces the whole machine panel, avoiding two
+	# texts competing for the same input.
 	var bottle_prompt := str(nearby_machine.call("get_bottle_refill_prompt")) if nearby_machine.has_method("get_bottle_refill_prompt") else ""
 	if not bottle_prompt.is_empty():
 		nearby_machine_root.visible = false
 		return
 	nearby_machine_root.visible = true
-	nearby_machine_name.text = str(closest_entry.get("display_name", "MACCHINARIO"))
+	nearby_machine_name.text = str(closest_entry.get("display_name", "MACHINE"))
 	nearby_machine_summary.text = str(nearby_machine.call("get_interaction_summary"))
 	var connection_label := str(nearby_machine.call("get_connection_label"))
 	nearby_machine_connection.text = connection_label
 	var enabled := bool(nearby_machine.call("is_network_enabled"))
-	var connection_color := Color("72eda0") if connection_label == "COLLEGATO ALLA RETE" else (Color("ffb45d") if enabled else Color("ff776d"))
+	var connection_color := Color("72eda0") if connection_label == "CONNECTED TO GRID" else (Color("ffb45d") if enabled else Color("ff776d"))
 	nearby_machine_connection.add_theme_color_override("font_color", connection_color)
-	# Non tutti i macchinari hanno uno stock ritirabile a mano: i serbatoi
-	# dell'elettrolizzatore escono tramite tubi, e il Sabatier carica il razzo.
+	# Not every machine has manually withdrawable stock: electrolyzer tanks exit
+	# through pipes, and the Sabatier loads the rocket.
 	var stock: Array = []
 	if nearby_machine.has_method("get_stock_items"):
 		stock = Array(nearby_machine.call("get_stock_items"))
 	if stock.is_empty():
-		nearby_machine_stock.text = str(nearby_machine.call("get_inventory_output_label")) if nearby_machine.has_method("get_inventory_output_label") else "STOCK  ·  nessun output disponibile"
+		nearby_machine_stock.text = str(nearby_machine.call("get_inventory_output_label")) if nearby_machine.has_method("get_inventory_output_label") else "STOCK  ·  no output available"
 	else:
 		var first: Dictionary = stock[0]
 		if nearby_machine.is_in_group("rock_drills"):
 			var sample_count := int(nearby_machine.call("get_stock_count")) if nearby_machine.has_method("get_stock_count") else stock.size()
-			nearby_machine_stock.text = "RISERVA  ·  %d campioni  ·  E apri deposito" % sample_count
+			nearby_machine_stock.text = "STORAGE  ·  %d samples  ·  E open storage" % sample_count
 		else:
-			nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E ritira" % [str(first.get("name", "Output")), int(first.get("count", 0))]
+			nearby_machine_stock.text = "STOCK  ·  %s x%d  ·  E withdraw" % [str(first.get("name", "Output")), int(first.get("count", 0))]
 	var sandstorms := get_node_or_null("/root/SandstormManager")
 	var sand_prompt := str(sandstorms.call("get_nearby_sand_prompt", get_parent())) if sandstorms != null else ""
 	if not sand_prompt.is_empty():
 		nearby_machine_prompt.text = sand_prompt
 		nearby_machine_prompt.add_theme_color_override("font_color", Color("ffd27a"))
 	else:
-		nearby_machine_prompt.text = "V  ·  DISCONNETTI DALLA RETE" if enabled else "V  ·  CONNETTI ALLA RETE"
+		nearby_machine_prompt.text = "V  ·  DISCONNECT FROM GRID" if enabled else "V  ·  CONNECT TO GRID"
 		nearby_machine_prompt.add_theme_color_override("font_color", Color("7ed7ff"))
 
 
@@ -555,8 +555,8 @@ func _find_nearest_electrical_device() -> Dictionary:
 		var node := entry.get("node") as Node2D
 		if node == null or not node.has_method("is_network_enabled"):
 			continue
-		# La serra è un edificio, ma deve poter essere volontariamente connessa
-		# o disconnessa dalla rete con V, come gli altri consumatori elettrici.
+		# The greenhouse is a building, but must be voluntarily connectable and
+		# disconnectable with V like the other electrical consumers.
 		var supports_greenhouse_power := node.has_method("get_interaction_summary") and node.has_method("get_connection_label")
 		if entry.get("kind", "") not in ["power_device", "machine"] and not supports_greenhouse_power:
 			continue
@@ -624,7 +624,7 @@ func _create_machine_info_ui() -> void:
 	content.add_theme_constant_override("separation", 9)
 	panel.add_child(content)
 	var header := Label.new()
-	header.text = "// SCHEDA SCIENTIFICA E TECNICA //"
+	header.text = "// SCIENTIFIC AND TECHNICAL CARD //"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	header.add_theme_font_size_override("font_size", 14)
 	header.add_theme_color_override("font_color", Color("7ed7ff"))
@@ -647,7 +647,7 @@ func _create_machine_info_ui() -> void:
 	var divider := HSeparator.new()
 	content.add_child(divider)
 	var technical_title := Label.new()
-	technical_title.text = "DATI OPERATIVI"
+	technical_title.text = "OPERATING DATA"
 	technical_title.add_theme_font_size_override("font_size", 13)
 	technical_title.add_theme_color_override("font_color", Color("72eda0"))
 	content.add_child(technical_title)
@@ -657,7 +657,7 @@ func _create_machine_info_ui() -> void:
 	machine_specs.add_theme_color_override("font_color", Color("dce8e8"))
 	content.add_child(machine_specs)
 	var science_title := Label.new()
-	science_title.text = "PRINCIPIO SCIENTIFICO"
+	science_title.text = "SCIENTIFIC PRINCIPLE"
 	science_title.add_theme_font_size_override("font_size", 13)
 	science_title.add_theme_color_override("font_color", Color("7ed7ff"))
 	content.add_child(science_title)
@@ -667,12 +667,12 @@ func _create_machine_info_ui() -> void:
 	machine_principle.add_theme_font_size_override("font_size", 12)
 	machine_principle.add_theme_color_override("font_color", Color("c5d2d4"))
 	content.add_child(machine_principle)
-	machine_power_button = _make_demolition_button("[ CONNETTI ALLA RETE ]", Color("315d4c"))
+	machine_power_button = _make_demolition_button("[ CONNECT TO GRID ]", Color("315d4c"))
 	machine_power_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	machine_power_button.visible = false
 	machine_power_button.pressed.connect(_toggle_inspected_network)
 	content.add_child(machine_power_button)
-	var close_button := _make_demolition_button("[ CHIUDI · ESC ]", Color("304c58"))
+	var close_button := _make_demolition_button("[ CLOSE · ESC ]", Color("304c58"))
 	close_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	close_button.pressed.connect(_close_machine_info)
 	content.add_child(close_button)
@@ -694,8 +694,8 @@ func _refresh_machine_info() -> void:
 		_close_machine_info()
 		return
 	var data: Dictionary = inspected_machine.call("get_machine_specs")
-	machine_title.text = str(data.get("title", "MACCHINARIO"))
-	machine_category.text = str(data.get("category", "SISTEMA"))
+	machine_title.text = str(data.get("title", "MACHINE"))
+	machine_category.text = str(data.get("category", "SYSTEM"))
 	machine_status.text = str(data.get("status", ""))
 	machine_status.add_theme_color_override("font_color", data.get("status_color", Color.WHITE))
 	var rendered_specs := PackedStringArray()
@@ -707,7 +707,7 @@ func _refresh_machine_info() -> void:
 	machine_power_button.visible = can_toggle_network
 	if can_toggle_network:
 		var enabled := bool(inspected_machine.call("is_network_enabled"))
-		machine_power_button.text = "[ DISCONNETTI ELETTRICITÀ ]" if enabled else "[ CONNETTI ELETTRICITÀ ]"
+		machine_power_button.text = "[ DISCONNECT POWER ]" if enabled else "[ CONNECT POWER ]"
 
 
 func _toggle_inspected_network() -> void:

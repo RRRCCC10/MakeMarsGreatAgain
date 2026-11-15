@@ -64,7 +64,7 @@ func _build_directional_overlay() -> void:
 	overlay_material.shader = OVERLAY_SHADER
 	overlay.material = overlay_material
 	overlay_layer.add_child(overlay)
-	# Il preset va riapplicato dopo l'inserimento nel CanvasLayer, quando il viewport e' noto.
+	# Reapply the preset after insertion into the CanvasLayer, when the viewport is known.
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 

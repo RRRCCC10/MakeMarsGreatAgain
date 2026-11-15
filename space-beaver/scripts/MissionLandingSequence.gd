@@ -57,6 +57,7 @@ var manifest_layer: CanvasLayer
 var manifest_root: Control
 var manifest_status: Label
 var manifest_list: RichTextLabel
+var manifest_scroll: ScrollContainer
 var manifest_message: Label
 var manifest_load_button: Button
 var manifest_launch_button: Button
@@ -73,20 +74,20 @@ func _ready() -> void:
 	_build_rocket_frames()
 	player = get_parent().get_node_or_null("player") as CharacterBody2D
 	if player == null:
-		push_error("MissionLandingSequence: nodo player non trovato")
+		push_error("MissionLandingSequence: player node not found")
 		set_process(false)
 		return
 	global_position = player.global_position + LANDING_SITE_OFFSET
 	_create_landed_site()
 	_create_return_manifest_ui()
 	_create_world_manifest_prompt()
-	BuildableRegistry.register_buildable(self, "MODULO DI ATTERRAGGIO", "mission_structure", _deny_removal)
+	BuildableRegistry.register_buildable(self, "LANDING MODULE", "mission_structure", _deny_removal)
 	var sandstorms := get_node_or_null("/root/SandstormManager")
 	if sandstorms != null:
-		sandstorms.call("register_target", self, "BASE DI ATTERRAGGIO")
+		sandstorms.call("register_target", self, "LANDING SITE")
 
-	# I test headless non devono attendere la cinematica, ma verificano lo
-	# stesso stato finale che il giocatore ottiene dopo l'atterraggio.
+	# Headless tests skip the cinematic but validate the same final state a
+	# player reaches after touchdown.
 	if DisplayServer.get_name() == "headless":
 		_complete_immediately()
 		return
@@ -132,7 +133,7 @@ func _update_space_flight(viewport_size: Vector2) -> void:
 	rocket_cinematic.position.x += sin(phase_time * 2.5) * 3.0
 	_set_flight_frame()
 	if progress >= 1.0:
-		_set_phase(Phase.REVEAL_MARS, "INGRESSO ATMOSFERICO // ASSETTO NOMINALE")
+		_set_phase(Phase.REVEAL_MARS, "ATMOSPHERIC ENTRY // NOMINAL ATTITUDE")
 
 
 func _update_mars_reveal(viewport_size: Vector2) -> void:
@@ -144,7 +145,7 @@ func _update_mars_reveal(viewport_size: Vector2) -> void:
 	_set_flight_frame()
 	if progress >= 1.0:
 		space_group.visible = false
-		_set_phase(Phase.DESCENT, "DISCESA PROPULSA // VELOCITA' CONTROLLATA")
+		_set_phase(Phase.DESCENT, "POWERED DESCENT // CONTROLLED SPEED")
 
 
 func _update_descent(viewport_size: Vector2) -> void:
@@ -167,7 +168,7 @@ func _begin_touchdown() -> void:
 	pad_sprite.visible = true
 	landed_rocket.visible = true
 	rocket_cinematic.visible = false
-	_set_phase(Phase.TOUCHDOWN, "CONTATTO CONFERMATO // MISSIONE MARTE ATTIVA")
+	_set_phase(Phase.TOUCHDOWN, "TOUCHDOWN CONFIRMED // MARS MISSION ACTIVE")
 
 
 func _finish_sequence() -> void:
@@ -210,8 +211,8 @@ func _create_landed_site() -> void:
 	landed_rocket.visible = false
 	add_child(landed_rocket)
 
-	# La collisione occupa solo la base: il giocatore puo' passare dietro
-	# alla parte alta del razzo, come per gli altri macchinari verticali.
+	# Collision occupies only the base, allowing the player to pass behind the
+	# upper rocket section like other tall machines.
 	var body := StaticBody2D.new()
 	body.name = "LandingSiteCollision"
 	var collision := CollisionShape2D.new()
@@ -265,7 +266,7 @@ func _create_intro_overlay() -> void:
 	caption.anchor_bottom = 1.0
 	caption.offset_top = -62.0
 	caption.offset_bottom = -26.0
-	caption.text = "TRANSITO MARTE // PROPULSIONE ATTIVA"
+	caption.text = "MARS TRANSIT // PROPULSION ACTIVE"
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	caption.add_theme_font_override("font", UI_FONT)
@@ -379,8 +380,8 @@ func load_methane_kg(amount: float) -> float:
 	var loaded := minf(amount, maxf(0.0, METHANE_CAPACITY_KG - methane_kg))
 	methane_kg += loaded
 	_record_fuel_ready_if_needed()
-	# Il Sabatier ricarica mentre il giocatore può anche lasciare aperto il
-	# manifesto: il contatore del propellente deve rimanere live.
+	# The Sabatier can refuel while the player keeps the manifest open, so the
+	# propellant counter must remain live.
 	_refresh_return_manifest()
 	return loaded
 
@@ -388,8 +389,8 @@ func load_methane_kg(amount: float) -> float:
 func register_sabatier_operation(machine: Node) -> void:
 	if sabatier_qualified or machine == null or not is_instance_valid(machine):
 		return
-	# Questa chiamata arriva solo dopo che il Sabatier ha consumato H₂ e ha
-	# trasferito CH₄ nel razzo: certifica posa corretta, cavo e tubazione.
+	# This call happens only after the Sabatier consumed H₂ and transferred CH₄
+	# to the rocket, certifying correct placement, cable, and pipe connection.
 	sabatier_qualified = true
 	AchievementManager.record("sabatier_online")
 	_record_fuel_ready_if_needed()
@@ -458,11 +459,11 @@ func _load_available_return_samples() -> void:
 		loaded_now += 1
 	if _has_full_return_manifest():
 		AchievementManager.record("return_manifest")
-		manifest_message.text = "MANIFESTO COMPLETO · tutti i campioni sono sigillati a bordo."
+		manifest_message.text = "MANIFEST COMPLETE · every sample is sealed aboard."
 	elif loaded_now > 0:
-		manifest_message.text = "%d campioni sigillati. Il manifesto evidenzia ciò che manca." % loaded_now
+		manifest_message.text = "%d samples sealed. The manifest highlights what is still missing." % loaded_now
 	else:
-		manifest_message.text = "Nessun campione richiesto nello zaino: esplora i biomi indicati nel manifesto."
+		manifest_message.text = "No required samples in the backpack: explore the biomes listed in the manifest."
 	_refresh_return_manifest()
 
 
@@ -482,13 +483,13 @@ func _try_launch_return() -> void:
 	if return_launch_in_progress or return_launch_finished:
 		return
 	if not _has_full_return_manifest():
-		manifest_message.text = "LANCIO BLOCCATO · manca almeno un campione nel manifesto."
+		manifest_message.text = "LAUNCH BLOCKED · at least one manifest sample is missing."
 		return
 	if not sabatier_qualified:
-		manifest_message.text = "LANCIO BLOCCATO · il Sabatier deve produrre metano con corrente e H₂ collegati."
+		manifest_message.text = "LAUNCH BLOCKED · the Sabatier must produce methane with power and H₂ connected."
 		return
 	if methane_kg < METHANE_CAPACITY_KG - 0.001:
-		manifest_message.text = "LANCIO BLOCCATO · carburante %.1f / %.0f kg." % [methane_kg, METHANE_CAPACITY_KG]
+		manifest_message.text = "LAUNCH BLOCKED · fuel %.1f / %.0f kg." % [methane_kg, METHANE_CAPACITY_KG]
 		return
 	AchievementManager.record("return_launch")
 	_close_return_manifest()
@@ -523,7 +524,7 @@ func _update_world_manifest_prompt() -> void:
 	world_manifest_prompt.visible = nearby and manifest_root != null and not manifest_root.visible and not return_launch_finished
 	if world_manifest_prompt.visible:
 		var readiness := get_return_readiness()
-		world_manifest_prompt.text = "E  ·  MANIFESTO RAZZO\n%d/%d CAMPIONI" % [int(readiness["geology_loaded"]) + int(bool(readiness["life_loaded"])), int(readiness["geology_total"]) + 1]
+		world_manifest_prompt.text = "E  ·  ROCKET MANIFEST\n%d/%d SAMPLES" % [int(readiness["geology_loaded"]) + int(bool(readiness["life_loaded"])), int(readiness["geology_total"]) + 1]
 
 
 func _create_return_manifest_ui() -> void:
@@ -564,7 +565,7 @@ func _create_return_manifest_ui() -> void:
 	content.add_theme_constant_override("separation", 8)
 	margins.add_child(content)
 	var title := Label.new()
-	title.text = "// MANIFESTO DI RITORNO TERRA //"
+	title.text = "// EARTH RETURN MANIFEST //"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 21)
 	title.add_theme_color_override("font_color", Color("ffe380"))
@@ -575,26 +576,31 @@ func _create_return_manifest_ui() -> void:
 	manifest_status.add_theme_color_override("font_color", Color("c9e9ee"))
 	content.add_child(manifest_status)
 	var note := Label.new()
-	note.text = "Carica una sola unità per campione. I campioni caricati restano sigillati nel razzo."
+	note.text = "Load one unit of each sample. Loaded samples remain sealed in the rocket."
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 11)
 	note.add_theme_color_override("font_color", Color("a9c2cb"))
 	content.add_child(note)
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 350)
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll.add_theme_stylebox_override("panel", _return_panel_style(Color("315f70"), Color("07121a")))
-	content.add_child(scroll)
+	manifest_scroll = ScrollContainer.new()
+	manifest_scroll.custom_minimum_size = Vector2(0, 350)
+	manifest_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	manifest_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	manifest_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	manifest_scroll.add_theme_stylebox_override("panel", _return_panel_style(Color("315f70"), Color("07121a")))
+	content.add_child(manifest_scroll)
 	manifest_list = RichTextLabel.new()
 	manifest_list.bbcode_enabled = true
 	manifest_list.fit_content = false
 	manifest_list.scroll_active = false
-	manifest_list.custom_minimum_size = Vector2(840, 350)
+	# The ScrollContainer needs a child taller than its viewport before it can
+	# expose a scrollbar. The height is calculated again whenever the manifest
+	# text changes below.
+	manifest_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	manifest_list.custom_minimum_size = Vector2(840, 0)
 	manifest_list.add_theme_font_override("normal_font", UI_FONT)
 	manifest_list.add_theme_font_size_override("normal_font_size", 12)
 	manifest_list.add_theme_color_override("default_color", Color("c9d8dc"))
-	scroll.add_child(manifest_list)
+	manifest_scroll.add_child(manifest_list)
 	manifest_message = Label.new()
 	manifest_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	manifest_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -605,13 +611,13 @@ func _create_return_manifest_ui() -> void:
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
 	actions.add_theme_constant_override("separation", 12)
 	content.add_child(actions)
-	manifest_load_button = _return_button("CARICA CAMPIONI DISPONIBILI", Color("2f6571"))
+	manifest_load_button = _return_button("LOAD AVAILABLE SAMPLES", Color("2f6571"))
 	manifest_load_button.pressed.connect(_load_available_return_samples)
 	actions.add_child(manifest_load_button)
-	manifest_launch_button = _return_button("AVVIA RAZZO", Color("6f4730"))
+	manifest_launch_button = _return_button("LAUNCH ROCKET", Color("6f4730"))
 	manifest_launch_button.pressed.connect(_try_launch_return)
 	actions.add_child(manifest_launch_button)
-	var close_button := _return_button("ESC · CHIUDI", Color("334550"))
+	var close_button := _return_button("ESC · CLOSE", Color("334550"))
 	close_button.pressed.connect(_close_return_manifest)
 	actions.add_child(close_button)
 
@@ -621,33 +627,36 @@ func _refresh_return_manifest() -> void:
 		return
 	var readiness := get_return_readiness()
 	var lines := PackedStringArray()
-	lines.append("[color=#8ee9f3][b]CAMPIONI GEOLOGICI  %d / %d[/b][/color]" % [int(readiness["geology_loaded"]), int(readiness["geology_total"])])
+	lines.append("[color=#8ee9f3][b]GEOLOGICAL SAMPLES  %d / %d[/b][/color]" % [int(readiness["geology_loaded"]), int(readiness["geology_total"])])
 	for definition in get_return_manifest_catalog():
 		var item_id := str(definition.get("item_id", ""))
 		var loaded := bool(loaded_return_samples.get(item_id, false))
-		var mark := "[color=#74e5a2]✓ CARICATO[/color]" if loaded else "[color=#ffb86b]○ MANCANTE[/color]"
-		lines.append("%s  [b]%s[/b]  —  %s  —  rarità: %s" % [mark, str(definition.get("name", "Campione")), str(definition.get("biome", "Bioma sconosciuto")), _rarity_label(str(definition.get("rarity", "common")))])
+		var mark := "[color=#74e5a2]✓ LOADED[/color]" if loaded else "[color=#ffb86b]○ MISSING[/color]"
+		lines.append("%s  [b]%s[/b]  —  %s  —  rarity: %s" % [mark, str(definition.get("name", "Sample")), str(definition.get("biome", "Unknown biome")), _rarity_label(str(definition.get("rarity", "common")))])
 	var life_loaded := bool(readiness["life_loaded"])
 	lines.append("")
-	lines.append("[color=#80ffcf][b]CAMPIONE BIOLOGICO[/b][/color]")
-	lines.append("%s  Campione di vita aliena — laboratorio del ghiaccio profondo" % [("[color=#74e5a2]✓ CARICATO[/color]" if life_loaded else "[color=#ffb86b]○ MANCANTE[/color]")])
+	lines.append("[color=#80ffcf][b]BIOLOGICAL SAMPLE[/b][/color]")
+	lines.append("%s  Alien life sample — deep-ice laboratory" % [("[color=#74e5a2]✓ LOADED[/color]" if life_loaded else "[color=#ffb86b]○ MISSING[/color]")])
 	lines.append("")
-	lines.append("[color=#ffe380][b]PROPULSIONE[/b][/color]")
-	lines.append("%s  Sabatier: posa, corrente e H₂ verificati" % [("[color=#74e5a2]✓ PRONTO[/color]" if sabatier_qualified else "[color=#ffb86b]○ DA COLLEGARE E AVVIARE[/color]")])
-	lines.append("%s  Metano: %.1f / %.0f kg" % [("[color=#74e5a2]✓ PIENO[/color]" if methane_kg >= METHANE_CAPACITY_KG - 0.001 else "[color=#ffb86b]○ IN CARICA[/color]"), methane_kg, METHANE_CAPACITY_KG])
+	lines.append("[color=#ffe380][b]PROPULSION[/b][/color]")
+	lines.append("%s  Sabatier: placement, power, and H₂ verified" % [("[color=#74e5a2]✓ READY[/color]" if sabatier_qualified else "[color=#ffb86b]○ CONNECT AND START[/color]")])
+	lines.append("%s  Methane: %.1f / %.0f kg" % [("[color=#74e5a2]✓ FULL[/color]" if methane_kg >= METHANE_CAPACITY_KG - 0.001 else "[color=#ffb86b]○ FILLING[/color]"), methane_kg, METHANE_CAPACITY_KG])
 	manifest_list.text = "\n".join(lines)
-	manifest_status.text = "MANIFESTO  %d / %d   ·   PROPULSIONE %s   ·   CARBURANTE %.0f / %.0f kg" % [int(readiness["geology_loaded"]) + int(life_loaded), int(readiness["geology_total"]) + 1, "PRONTA" if sabatier_qualified else "DA VERIFICARE", methane_kg, METHANE_CAPACITY_KG]
+	# RichTextLabel itself does not grow when fit_content is disabled, so make
+	# the content explicitly taller than the 350 px viewport for long lists.
+	manifest_list.custom_minimum_size = Vector2(840, maxf(350.0, 28.0 + float(lines.size()) * 20.0))
+	manifest_status.text = "MANIFEST  %d / %d   ·   PROPULSION %s   ·   FUEL %.0f / %.0f kg" % [int(readiness["geology_loaded"]) + int(life_loaded), int(readiness["geology_total"]) + 1, "READY" if sabatier_qualified else "PENDING VERIFICATION", methane_kg, METHANE_CAPACITY_KG]
 	manifest_launch_button.disabled = not bool(readiness["ready"])
 	manifest_load_button.disabled = _has_full_return_manifest()
 	if manifest_message.text.is_empty():
-		manifest_message.text = "Completa il manifesto, produci metano con il Sabatier, poi avvia il razzo."
+		manifest_message.text = "Complete the manifest, produce methane with the Sabatier, then launch the rocket."
 
 
 func _rarity_label(rarity: String) -> String:
 	match rarity:
-		"rare": return "RARA"
-		"ultra_rare": return "ULTRA-RARA"
-		_: return "COMUNE"
+		"rare": return "RARE"
+		"ultra_rare": return "ULTRA-RARE"
+		_: return "COMMON"
 
 
 func _return_button(text: String, color: Color) -> Button:
@@ -703,7 +712,7 @@ func _create_return_launch_overlay() -> void:
 	return_launch_caption.offset_bottom = 26.0
 	return_launch_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return_launch_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	return_launch_caption.text = "DECOLLO CONFERMATO // CAMPIONI IN ROTTA PER LA TERRA"
+	return_launch_caption.text = "LAUNCH CONFIRMED // SAMPLES EN ROUTE TO EARTH"
 	return_launch_caption.add_theme_font_override("font", UI_FONT)
 	return_launch_caption.add_theme_font_size_override("font_size", 16)
 	return_launch_caption.add_theme_color_override("font_color", Color("fff0a2"))
@@ -730,7 +739,7 @@ func _update_return_launch(delta: float) -> void:
 		return_launch_caption.anchor_bottom = 0.5
 		return_launch_caption.offset_top = -46.0
 		return_launch_caption.offset_bottom = 46.0
-		return_launch_caption.text = "MISSIONE COMPLETATA\nI CAMPIONI DI MARTE SONO IN VIAGGIO VERSO LA TERRA"
+		return_launch_caption.text = "MISSION COMPLETE\nMARS SAMPLES ARE TRAVELING TO EARTH"
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -746,8 +755,8 @@ func contains_world_point(world_point: Vector2) -> bool:
 
 
 func get_thermal_shelter_bonus_c() -> float:
-	# Il modulo di atterraggio non e' ancora un habitat completo, ma offre
-	# pareti e schermature sufficienti a ridurre in parte la perdita di calore.
+	# The landing module is not a complete habitat yet, but its walls and
+	# shielding partly reduce heat loss.
 	return 18.0
 
 

@@ -1,11 +1,10 @@
 extends Node
 
-## Autorità unica sulle interfacce che sospendono il mondo.
+## Single authority for interfaces that pause world interaction.
 ##
-## Le GUI modali non devono affidarsi a controlli locali sparsi: oltre a
-## permettere due finestre contemporaneamente, quei controlli lasciavano attivi
-## movimento, E, zoom e tasti dei macchinari. Ogni pannello interattivo apre qui
-## la propria sessione e la chiude esplicitamente.
+## Modal GUIs must not rely on scattered local checks: those checks could allow
+## two windows at once and leave movement, E, zoom, and machine keys active.
+## Every interactive panel opens and explicitly closes its session here.
 
 signal modal_changed(active_modal_id: StringName)
 
@@ -48,8 +47,8 @@ func has_open_modal() -> bool:
 
 
 func blocks_world_actions() -> bool:
-	## Anche la minimappa blocca azioni, costruzioni e interazioni: è l'unica
-	## finestra che lascia il giocatore libero di camminare.
+	## The minimap also blocks actions, building, and interactions; it is the
+	## only window that still lets the player walk.
 	return has_open_modal()
 
 

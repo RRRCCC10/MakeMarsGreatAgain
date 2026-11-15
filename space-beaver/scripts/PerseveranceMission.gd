@@ -1,10 +1,9 @@
 extends Node
 
-## Evento scientifico raro: Perseverance si guasta lontano dalla base e richiede
-## una catena completa di documentazione prima della riparazione. Non è un
-## semplice incidente casuale: foto, telemetria e sequenza di manutenzione
-## raccontano tutti lo stesso recupero, senza costringere ad aspettare un
-## secondo rover per completare gli obiettivi.
+## Rare scientific event: Perseverance fails far from base and requires a full
+## documentation chain before repair. It is not a simple random incident:
+## photography, telemetry, and the maintenance sequence all describe the same
+## recovery without forcing players to wait for a second rover.
 
 signal state_changed(new_state: int)
 signal rover_broken(world_position: Vector2)
@@ -23,13 +22,13 @@ const REPEAT_BREAK_MAX_GAME_HOURS := 10.0 * 24.0
 const MAX_BREAK_DISTANCE_TILES := 500.0
 const MIN_BREAK_DISTANCE_TILES := 140.0
 const INTERACTION_DISTANCE := 88.0
-## Il segnalatore serve a ritrovare il rover, non a coprire l'azione quando
-## l'obiettivo è già davanti al giocatore.
+## The guidance marker helps find the rover but must not cover the action when
+## the objective is already in front of the player.
 const GUIDANCE_HIDE_DISTANCE_TILES := 15.0
 const GUIDANCE_HIDE_DISTANCE := GUIDANCE_HIDE_DISTANCE_TILES * TILE_SIZE
-## Dopo la riparazione Perseverance non deve restare per sempre nel mondo.
-## Aspettiamo però che esca davvero dall'inquadratura, con un margine ampio,
-## così non scompare mentre il giocatore gli è ancora vicino.
+## After repair, Perseverance must not remain in the world forever. Wait until
+## it genuinely leaves the frame with a generous margin so it does not vanish
+## while the player is still near it.
 const REPAIRED_DESPAWN_VIEW_MARGIN_TILES := 12.0
 const REPAIRED_DESPAWN_FALLBACK_DISTANCE_TILES := 64.0
 const STUDY_SECONDS := 2.8
@@ -97,20 +96,20 @@ func _unhandled_input(event: InputEvent) -> void:
 func get_state_label() -> String:
 	match state:
 		State.WAITING:
-			return "NESSUN SEGNALE PERSEVERANCE"
+			return "NO PERSEVERANCE SIGNAL"
 		State.AWAIT_PHOTO:
-			return "FOTO E TRASMISSIONE RICHIESTE"
+			return "PHOTO AND TRANSMISSION REQUIRED"
 		State.AWAIT_STUDY:
-			return "STUDIO DANNI RICHIESTO"
+			return "DAMAGE STUDY REQUIRED"
 		State.REPORT_READY:
-			return "RAPPORTO DA FIRMARE"
+			return "REPORT REQUIRES SIGNATURE"
 		State.REPORT_SIGNED:
-			return "RAPPORTO DA SPEDIRE"
+			return "REPORT READY TO SEND"
 		State.REPAIRING:
-			return "RIPARAZIONE IN CORSO"
+			return "REPAIR IN PROGRESS"
 		State.REPAIRED:
-			return "PERSEVERANCE OPERATIVO"
-	return "SCONOSCIUTO"
+			return "PERSEVERANCE OPERATIONAL"
+	return "UNKNOWN"
 
 
 func get_next_break_in_game_hours() -> float:
@@ -195,7 +194,7 @@ func _spawn_broken_rover(forced_position: Vector2 = Vector2.INF) -> void:
 	rover.add_child(rover_prompt)
 	var registry := get_node_or_null("/root/BuildableRegistry")
 	if registry != null:
-		registry.call("register_buildable", rover, "ROVER PERSEVERANCE", "mission_structure", _deny_rover_removal)
+		registry.call("register_buildable", rover, "PERSEVERANCE ROVER", "mission_structure", _deny_rover_removal)
 	_set_state(State.AWAIT_PHOTO)
 	rover_broken.emit(position)
 
@@ -243,7 +242,7 @@ func _create_damage_report() -> void:
 	_set_state(State.REPORT_READY)
 	if _report_panel != null:
 		_report_panel.visible = true
-		_report_label.text = "PERSEVERANCE (NASA, 2021)\n\n• Periodo operativo: 18 febbraio-novembre 2026;\n• Causa della cessazione delle operazioni: il progressivo deterioramento delle ruote e dei motori di trazione, dovuto alla lunga esposizione al terreno marziano e all'usura dei componenti meccanici, compromette la capacità di movimento del rover, rendendolo definitivamente impossibilitato a proseguire le operazioni.\n• Condizione finale: rimarrebbe immobilizzato nel cratere Jezero, su Marte. Prima del guasto aveva percorso oltre 45,22 km (dato dell'11 ottobre 2026), superando il record di Opportunity.\n\nF · FIRMA RAPPORTO"
+		_report_label.text = "PERSEVERANCE (NASA, 2021)\n\n• Operational period: 18 February–November 2026;\n• Cause of end of operations: progressive deterioration of the wheels and traction motors, caused by prolonged exposure to Martian terrain and wear of mechanical components, compromises rover mobility and makes continued operations impossible.\n• Final condition: it would remain immobilized in Jezero Crater on Mars. Before failure it had travelled more than 45.22 km (as of 11 October 2026), surpassing Opportunity's record.\n\nF · SIGN REPORT"
 
 
 func _sign_report() -> void:
@@ -251,7 +250,7 @@ func _sign_report() -> void:
 		return
 	_set_state(State.REPORT_SIGNED)
 	if _report_label != null:
-		_report_label.text = "RAPPORTO DANNI // FIRMATO\nPronto per il relay Terra.\n\nR · SPEDISCI RAPPORTO ALLA TERRA"
+		_report_label.text = "DAMAGE REPORT // SIGNED\nReady for the Earth relay.\n\nR · SEND REPORT TO EARTH"
 
 
 func _send_report_to_earth() -> void:
@@ -347,17 +346,17 @@ func _update_rover_prompt() -> void:
 		return
 	match state:
 		State.AWAIT_PHOTO:
-			rover_prompt.text = "PERSEVERANCE DANNEGGIATO\nEQUIPA CAMERA · P FOTO, O INVIA"
+			rover_prompt.text = "PERSEVERANCE DAMAGED\nEQUIP CAMERA · P PHOTO, O SEND"
 		State.AWAIT_STUDY:
-			rover_prompt.text = "ANALISI DANNI · TIENI E  %d%%" % roundi(_study_elapsed / STUDY_SECONDS * 100.0)
+			rover_prompt.text = "DAMAGE STUDY · HOLD E  %d%%" % roundi(_study_elapsed / STUDY_SECONDS * 100.0)
 		State.REPORT_READY:
-			rover_prompt.text = "RAPPORTO PRONTO · F FIRMA"
+			rover_prompt.text = "REPORT READY · F SIGN"
 		State.REPORT_SIGNED:
-			rover_prompt.text = "RAPPORTO FIRMATO · R INVIA ALLA TERRA"
+			rover_prompt.text = "REPORT SIGNED · R SEND TO EARTH"
 		State.REPAIRING:
-			rover_prompt.text = "RIPARAZIONE · %s" % _repair_sequence_label()
+			rover_prompt.text = "REPAIR · %s" % _repair_sequence_label()
 		State.REPAIRED:
-			rover_prompt.text = "PERSEVERANCE RIPARATO · TELEMETRIA STABILE"
+			rover_prompt.text = "PERSEVERANCE REPAIRED · TELEMETRY STABLE"
 
 
 func _repair_sequence_label() -> String:

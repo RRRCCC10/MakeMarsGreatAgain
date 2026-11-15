@@ -16,28 +16,28 @@ func _run() -> void:
 
 	var scene := current_scene
 	var scatter: Node = scene.get_node_or_null("RockScatter")
-	_expect(scatter != null, "La scena deve avere il distributore di risorse")
+	_expect(scatter != null, "Test assertion failed")
 	if scatter != null:
-		_expect(int(scatter.call("get_generated_count")) >= 600, "I chunk iniziali devono contenere molte piu' rocce raccoglibili")
+		_expect(int(scatter.call("get_generated_count")) >= 600, "Test assertion failed")
 	var generated_base_rocks := 0
 	for rock in get_nodes_in_group("collectible_rocks"):
 		if not bool(rock.is_authored) and str(rock.rock_variant) == "roccia_base":
 			generated_base_rocks += 1
-	_expect(generated_base_rocks > 0, "La sabbia base deve mantenere la pietra originale")
+	_expect(generated_base_rocks > 0, "Test assertion failed")
 
 	var map_ui: Node = scene.get_node_or_null("WorldMapUI")
-	_expect(map_ui != null, "La scena deve avere la carta topografica")
+	_expect(map_ui != null, "Test assertion failed")
 	if map_ui != null:
-		_expect(int(map_ui.call("get_explored_block_count")) > 0, "La carta deve rivelare un raggio attorno al giocatore")
+		_expect(int(map_ui.call("get_explored_block_count")) > 0, "Test assertion failed")
 		map_ui.call("toggle_map")
-		_expect(bool(map_ui.is_open) and map_ui.map_root.visible, "Mappa deve potersi aprire senza una schermata bloccante")
-		_expect(not root.get_node("Inventory").is_open and not root.get_node("Shop").is_open and not root.get_node("BuildableRegistry").is_modal_open, "La carta non deve bloccare il movimento")
+		_expect(bool(map_ui.is_open) and map_ui.map_root.visible, "Test assertion failed")
+		_expect(not root.get_node("Inventory").is_open and not root.get_node("Shop").is_open and not root.get_node("BuildableRegistry").is_modal_open, "Test assertion failed")
 		map_ui.call("toggle_map")
 		var map_key := InputEventKey.new()
 		map_key.pressed = true
 		map_key.keycode = KEY_M
 		map_ui._unhandled_input(map_key)
-		_expect(bool(map_ui.is_open) and map_ui.map_root.visible, "Il tasto M deve aprire la carta")
+		_expect(bool(map_ui.is_open) and map_ui.map_root.visible, "Test assertion failed")
 
 	var player: Node = scene.get_node("player")
 	var camera: Camera2D = player.get_node("Camera2D")
@@ -46,8 +46,8 @@ func _run() -> void:
 	zoom_in.pressed = true
 	zoom_in.button_index = MOUSE_BUTTON_WHEEL_UP
 	player._unhandled_input(zoom_in)
-	_expect(camera.zoom.x == original_zoom, "Con la mappa aperta la rotella non deve cambiare la visuale del giocatore")
-	_expect(float(map_ui.map_zoom) > 1.0, "Con la mappa aperta la rotella deve cambiare lo zoom della carta")
+	_expect(camera.zoom.x == original_zoom, "Test assertion failed")
+	_expect(float(map_ui.map_zoom) > 1.0, "Test assertion failed")
 	var center_before_pan: Vector2 = map_ui.call("get_map_view_center_cell")
 	var middle_down := InputEventMouseButton.new()
 	middle_down.button_index = MOUSE_BUTTON_MIDDLE
@@ -64,14 +64,14 @@ func _run() -> void:
 	middle_up.position = drag.position
 	map_ui._unhandled_input(middle_up)
 	var center_after_pan: Vector2 = map_ui.call("get_map_view_center_cell")
-	_expect(bool(map_ui.map_was_panned) and not bool(map_ui.is_panning), "Il trascinamento con tasto centrale deve terminare correttamente")
-	_expect(center_after_pan.x < center_before_pan.x, "Con la mappa ingrandita il trascinamento deve spostare la visuale")
+	_expect(bool(map_ui.map_was_panned) and not bool(map_ui.is_panning), "Test assertion failed")
+	_expect(center_after_pan.x < center_before_pan.x, "Test assertion failed")
 	map_ui.call("toggle_map")
 	var zoom_out := InputEventMouseButton.new()
 	zoom_out.pressed = true
 	zoom_out.button_index = MOUSE_BUTTON_WHEEL_DOWN
 	player._unhandled_input(zoom_out)
-	_expect(camera.zoom.x < original_zoom, "Con la mappa chiusa la rotella deve rimpicciolire la visuale")
+	_expect(camera.zoom.x < original_zoom, "Test assertion failed")
 
 	if failures.is_empty():
 		print("EXPLORATION_NAVIGATION_SMOKE_OK")

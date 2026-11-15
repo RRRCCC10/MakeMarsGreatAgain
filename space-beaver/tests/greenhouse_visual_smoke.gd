@@ -1,7 +1,5 @@
 extends SceneTree
 
-## Scena visiva isolata: non carica salvataggi né sistemi della partita.
-## Serve a controllare pavimento, vetro, aiuole, colture e camera d'aria.
 
 const GREENHOUSE_SCRIPT := preload("res://scripts/Greenhouse.gd")
 
@@ -35,7 +33,6 @@ func _show() -> void:
 	world.add_child(player)
 	await process_frame
 	greenhouse.call("_plant_crop")
-	# Mostra uno stadio ben riconoscibile della pianta senza simulare il tempo.
 	greenhouse.set("_growth_seconds", Greenhouse.FIRST_CYCLE_SECONDS * 0.70)
 	greenhouse.call("_refresh_crop_visuals")
 	var overlay := CanvasLayer.new()

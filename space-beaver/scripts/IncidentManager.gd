@@ -1,16 +1,16 @@
 extends Node
 
-## Incidenti rari delle infrastrutture. Il manager possiede sia lo stato del
-## guasto, sia la riparazione: gli oggetti restano responsabili di spegnere il
-## loro comportamento quando ricevono set_incident_faulted().
+## Rare infrastructure incidents. The manager owns both fault state and repair;
+## objects remain responsible for disabling their own behavior when they receive
+## set_incident_faulted().
 
 signal incident_started(target: Node2D, target_id: String, display_name: String)
 signal incident_repaired(target: Node2D, target_id: String, display_name: String)
 
 const MIN_OPERATIONAL_SECONDS := 120.0
 const INCIDENT_CHECK_SECONDS := 30.0
-# Vita media di 20 ore reali per ogni singolo oggetto: una base grande vede
-# comunque un incidente solo all'incirca ogni ora, non una pioggia di guasti.
+# Average lifetime of 20 real hours per individual object: even a large base
+# sees roughly one incident per hour rather than a shower of failures.
 const INCIDENT_RATE_PER_SECOND := 1.0 / 72_000.0
 const REPAIR_DISTANCE := 94.0
 const REPAIR_MODAL := &"incident_repair"
@@ -125,7 +125,7 @@ func begin_nearby_repair(player: Node2D) -> bool:
 	for _index in _rng.randi_range(3, 7):
 		_repair_sequence.append(REPAIR_KEYS[_rng.randi_range(0, REPAIR_KEYS.size() - 1)])
 	_repair_progress = 0
-	_repair_feedback = "Ricalibra i controlli nell'ordine mostrato."
+	_repair_feedback = "Recalibrate the controls in the displayed order."
 	_show_repair_panel()
 	return true
 
@@ -140,13 +140,13 @@ func handle_repair_key(keycode: int) -> bool:
 		return true
 	if _repair_progress < _repair_sequence.size() and keycode == _repair_sequence[_repair_progress]:
 		_repair_progress += 1
-		_repair_feedback = "Segnale corretto."
+		_repair_feedback = "Correct signal."
 		if _repair_progress >= _repair_sequence.size():
 			_finish_repair(true)
 			return true
 	else:
 		_repair_progress = 0
-		_repair_feedback = "Sequenza errata: riparti dall'inizio."
+		_repair_feedback = "Incorrect sequence: restart from the beginning."
 	_show_repair_panel()
 	return true
 
@@ -219,8 +219,8 @@ func _trigger_incident(key: String, data: Dictionary, force: bool) -> bool:
 	_active_target_key = key
 	_targets[key] = data
 	_create_indicator(data)
-	_show_notification("⚠ INCIDENTE: %s\nGUASTO RILEVATO · avvicinati e premi E per riparare" % str(data.get("display_name", "MACCHINARIO")))
-	incident_started.emit(target, target_id, str(data.get("display_name", "MACCHINARIO")))
+	_show_notification("⚠ INCIDENT: %s\nFAULT DETECTED · approach and press E to repair" % str(data.get("display_name", "MACHINE")))
+	incident_started.emit(target, target_id, str(data.get("display_name", "MACHINE")))
 	return true
 
 
@@ -243,10 +243,10 @@ func _finish_repair(success: bool) -> void:
 	if ui_state != null:
 		ui_state.call("close_modal", REPAIR_MODAL)
 	if success:
-		_show_notification("RIPARAZIONE COMPLETATA\n%s è di nuovo operativo." % str(repaired_data.get("display_name", "MACCHINARIO")))
+		_show_notification("REPAIR COMPLETE\n%s is operational again." % str(repaired_data.get("display_name", "MACHINE")))
 		var target := repaired_data.get("node") as Node2D
 		if target != null and is_instance_valid(target):
-			incident_repaired.emit(target, str(repaired_data.get("target_id", "")), str(repaired_data.get("display_name", "MACCHINARIO")))
+			incident_repaired.emit(target, str(repaired_data.get("target_id", "")), str(repaired_data.get("display_name", "MACHINE")))
 
 
 func _is_faulted(target: Node2D, target_id: String) -> bool:
@@ -280,7 +280,7 @@ func _create_indicator(data: Dictionary) -> void:
 	marker.add_child(ring)
 	var label := Label.new()
 	label.name = "FaultLabel"
-	label.text = "GUASTO"
+	label.text = "FAULT"
 	label.position = Vector2(-38.0, -37.0)
 	label.size = Vector2(76.0, 18.0)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -399,8 +399,8 @@ func _show_repair_panel() -> void:
 	for index in _repair_sequence.size():
 		var label := str(REPAIR_KEY_LABELS.get(_repair_sequence[index], "?"))
 		parts.append("[%s]" % label if index == _repair_progress else label)
-	var target_label := "MACCHINARIO"
+	var target_label := "MACHINE"
 	if _targets.has(_repair_target_key):
 		target_label = str((_targets[_repair_target_key] as Dictionary).get("display_name", target_label))
-	_repair_label.text = "RIPARAZIONE · %s\n\n%s\n\n%d/%d  ·  %s\nEsc annulla" % [target_label, "  →  ".join(parts), _repair_progress, _repair_sequence.size(), _repair_feedback]
+	_repair_label.text = "REPAIR · %s\n\n%s\n\n%d/%d  ·  %s\nEsc cancels" % [target_label, "  →  ".join(parts), _repair_progress, _repair_sequence.size(), _repair_feedback]
 	_repair_panel.visible = true

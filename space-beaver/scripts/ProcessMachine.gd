@@ -72,8 +72,8 @@ static func sabatier_target_cell() -> Vector2i:
 	var landing := _find_landing_sequence()
 	if landing == null:
 		return Vector2i(100000, 100000)
-	# La macchina 48x48 si trova sul lato sinistro del modulo di lancio,
-	# con un margine visibile di 8px e senza sovrapporsi alla sua impronta.
+	# The 48×48 machine sits on the landing module's left side with an 8 px
+	# visible margin and without overlapping its footprint.
 	var target_center := landing.global_position + Vector2(-64.0, 0.0)
 	return Vector2i(floori((target_center.x - 24.0) / CELL_SIZE), floori((target_center.y - 24.0) / CELL_SIZE))
 
@@ -138,8 +138,8 @@ func _process(delta: float) -> void:
 
 
 func _process_electrolysis(hours: float) -> void:
-	# I gas sono un flusso, non una scorta: ogni tick sostituisce l'output
-	# precedente. Se manca una linea d'uscita non si spreca/immagazzina acqua.
+	# Gases are a flow, not storage: every tick replaces previous output. Missing
+	# output lines never waste or store water.
 	hydrogen_flow_kg = 0.0
 	oxygen_flow_kg = 0.0
 	var hydrogen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.HYDROGEN)
@@ -152,8 +152,8 @@ func _process_electrolysis(hours: float) -> void:
 	water_consumed_liters += water
 	var hydrogen: float = water * HYDROGEN_KG_PER_HOUR / WATER_L_PER_HOUR
 	var oxygen: float = water * OXYGEN_KG_PER_HOUR / WATER_L_PER_HOUR
-	# Le quantità restano disponibili solo per l'intervallo corrente e solo
-	# sulle uscite collegate; quelle scollegate scaricano all'esterno.
+	# Quantities remain available only for the current interval and connected
+	# outputs; disconnected ones vent outside.
 	hydrogen_flow_kg = hydrogen if hydrogen_connected else 0.0
 	oxygen_flow_kg = oxygen if oxygen_connected else 0.0
 
@@ -181,8 +181,8 @@ func _process_sabatier(hours: float) -> void:
 	var loaded := rocket.load_methane_kg(methane)
 	methane_produced_kg += loaded
 	if loaded > 0.0 and rocket.has_method("register_sabatier_operation"):
-		# Il razzo registra solo una produzione reale: attesta insieme posa,
-		# alimentazione e collegamento H₂, non il semplice acquisto della macchina.
+		# Rocket registration follows real production: it proves placement, power,
+		# and H₂ connection rather than a mere machine purchase.
 		rocket.call("register_sabatier_operation", self)
 
 
@@ -221,7 +221,7 @@ func get_power_demand_kw() -> float:
 
 
 func get_water_input_cell() -> Vector2i:
-	# Ingresso sul fianco sinistro della tile inferiore sinistra.
+	# Input on the left side of the lower-left tile.
 	return _rotated_port_cell(origin_cell + Vector2i.LEFT + Vector2i.DOWN)
 
 
@@ -230,12 +230,12 @@ func get_hydrogen_input_cell() -> Vector2i:
 
 
 func get_hydrogen_output_cell() -> Vector2i:
-	# H₂ esce dal fianco sinistro della tile superiore sinistra.
+	# H₂ exits the left side of the upper-left tile.
 	return _rotated_port_cell(origin_cell + Vector2i.LEFT)
 
 
 func get_oxygen_output_cell() -> Vector2i:
-	# O₂ esce dal fianco destro della tile superiore destra.
+	# O₂ exits the right side of the upper-right tile.
 	return _rotated_port_cell(origin_cell + Vector2i(2, 0))
 
 
@@ -258,34 +258,34 @@ func get_occupied_power_cells() -> Array[Vector2i]:
 
 
 func get_display_name() -> String:
-	return "ELETTROLIZZATORE" if device_id == "electrolyzer" else "REATTORE SABATIER"
+	return "ELECTROLYZER" if device_id == "electrolyzer" else "SABATIER REACTOR"
 
 
 func get_connection_label() -> String:
 	if incident_faulted:
-		return "GUASTO — avvicinati e ripara"
+		return "FAULT — approach and repair"
 	var connected := bool(PowerGrid.connection_ok.get(self, false))
 	if not network_enabled:
-		return "DISATTIVATO"
-	return "ALIMENTATO" if connected and powered else ("COLLEGATO - IN ATTESA DI POTENZA" if connected else "RETE ELETTRICA NON COLLEGATA")
+		return "DISABLED"
+	return "POWERED" if connected and powered else ("CONNECTED - AWAITING POWER" if connected else "POWER GRID NOT CONNECTED")
 
 
 func get_interaction_summary() -> String:
 	if device_id == "electrolyzer":
 		var hydrogen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.HYDROGEN)
 		var oxygen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.OXYGEN)
-		return "H₂ %s · O₂ %s · flusso continuo (senza serbatoi)" % ["TUBO" if hydrogen_connected else "SCOLLEGATO", "TUBO" if oxygen_connected else "SCOLLEGATO"]
-	return "Metano nel razzo: %.1f / %.0f kg" % [_find_landing_sequence().methane_kg if _find_landing_sequence() != null else 0.0, _find_landing_sequence().get_methane_capacity_kg() if _find_landing_sequence() != null else 0.0]
+		return "H₂ %s · O₂ %s · continuous flow (no tanks)" % ["PIPE" if hydrogen_connected else "DISCONNECTED", "PIPE" if oxygen_connected else "DISCONNECTED"]
+	return "Rocket methane: %.1f / %.0f kg" % [_find_landing_sequence().methane_kg if _find_landing_sequence() != null else 0.0, _find_landing_sequence().get_methane_capacity_kg() if _find_landing_sequence() != null else 0.0]
 
 
 func get_stock_items() -> Array[Dictionary]:
-	# Le risorse di processo non sono oggetti da raccogliere a mano: idrogeno
-	# e ossigeno sono disponibili sulle rispettive tubazioni, il metano va al razzo.
+	# Process resources are not hand-collected items: hydrogen and oxygen are
+	# available on their pipes while methane goes to the rocket.
 	return []
 
 
 func get_inventory_output_label() -> String:
-	return "OUTPUT  ·  H₂/O₂ tramite tubi" if device_id == "electrolyzer" else "OUTPUT  ·  CH₄ caricato direttamente nel razzo"
+	return "OUTPUT  ·  H₂/O₂ through pipes" if device_id == "electrolyzer" else "OUTPUT  ·  CH₄ loaded directly into rocket"
 
 
 func consume_fluid_resource_for_category(category: int, amount: float) -> float:
@@ -308,28 +308,28 @@ func get_machine_specs() -> Dictionary:
 		var hydrogen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.HYDROGEN)
 		var oxygen_connected := PipeManager.is_source_connected(self, PipeSegment.Category.OXYGEN)
 		var has_output := hydrogen_connected or oxygen_connected
-		var status := "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("IN PRODUZIONE" if powered and water_connected and has_output else get_connection_label())
+		var status := "FAULT — REPAIR REQUIRED" if incident_faulted else ("PRODUCING" if powered and water_connected and has_output else get_connection_label())
 		if powered and not water_connected:
-			status = "IN ATTESA DI ACQUA"
+			status = "AWAITING WATER"
 		elif powered and water_connected and not has_output:
-			status = "IN ATTESA DI TUBI USCITA"
+			status = "AWAITING OUTPUT PIPES"
 		return {
-			"title": "ELETTROLIZZATORE DELL'ACQUA",
-			"category": "PRODUZIONE DI PROPELLENTI",
+			"title": "WATER ELECTROLYZER",
+			"category": "PROPELLANT PRODUCTION",
 			"status": status,
 			"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and water_connected and has_output else Color("ffb45d")),
-			"principle": "L'elettrolisi usa energia per scindere l'acqua in H₂ e O₂ e li fornisce in continuo sulle rispettive linee, senza serbatoi interni.",
-			"specs": ["Consumo elettrico: %.0f kW" % ELECTROLYZER_DEMAND_KW, "Ingresso acqua: basso-sinistra (%s)" % ("collegato" if water_connected else "non collegato"), "Consumo nominale: %.0f L/h acqua" % WATER_L_PER_HOUR, "Produzione nominale: H₂ %.1f kg/h · O₂ %.1f kg/h" % [HYDROGEN_KG_PER_HOUR, OXYGEN_KG_PER_HOUR], "Funzionamento: flusso diretto, senza serbatoi", "Uscite indipendenti: H₂ %s · O₂ %s" % ["collegato" if hydrogen_connected else "scollegato", "collegato" if oxygen_connected else "scollegato"]],
+			"principle": "Electrolysis uses energy to split water into H₂ and O₂ and continuously supplies their respective lines without internal tanks.",
+			"specs": ["Electrical demand: %.0f kW" % ELECTROLYZER_DEMAND_KW, "Water input: lower-left (%s)" % ("connected" if water_connected else "not connected"), "Rated use: %.0f L/h water" % WATER_L_PER_HOUR, "Rated output: H₂ %.1f kg/h · O₂ %.1f kg/h" % [HYDROGEN_KG_PER_HOUR, OXYGEN_KG_PER_HOUR], "Operation: direct flow, no tanks", "Independent outputs: H₂ %s · O₂ %s" % ["connected" if hydrogen_connected else "disconnected", "connected" if oxygen_connected else "disconnected"]],
 		}
 	var rocket := _find_landing_sequence()
 	var h2_connected := _is_input_connected(get_hydrogen_input_cell(), Vector2i.RIGHT, PipeSegment.Category.HYDROGEN)
 	return {
-		"title": "REATTORE SABATIER",
-		"category": "PRODUZIONE DI PROPELLENTI",
-		"status": "GUASTO — RIPARAZIONE RICHIESTA" if incident_faulted else ("CARICAMENTO RAZZO" if powered and h2_connected and rocket != null else get_connection_label()),
+		"title": "SABATIER REACTOR",
+		"category": "PROPELLANT PRODUCTION",
+		"status": "FAULT — REPAIR REQUIRED" if incident_faulted else ("ROCKET FUELING" if powered and h2_connected and rocket != null else get_connection_label()),
 		"status_color": Color("ff6258") if incident_faulted else (Color("72eda0") if powered and h2_connected else Color("ffb45d")),
-		"principle": "La reazione di Sabatier combina CO₂ atmosferica e idrogeno per sintetizzare metano e acqua: CO₂ + 4 H₂ → CH₄ + 2 H₂O. Nel modello di gioco il metano viene trasferito direttamente al razzo.",
-		"specs": ["Consumo elettrico: %.0f kW" % SABATIER_DEMAND_KW, "Ingresso H₂: lato sinistro (%s)" % ("collegato" if h2_connected else "non collegato"), "CO₂: fornita dall'atmosfera marziana (modello di gioco)", "Produzione nominale: %.1f kg/h CH₄" % SABATIER_METHANE_KG_PER_HOUR, "Uscita CH₄: caricamento diretto del razzo", "Carburante razzo: %.1f / %.0f kg" % [rocket.methane_kg, rocket.get_methane_capacity_kg()] if rocket != null else "Razzo non disponibile", "Posizione vincolata: immediatamente a sinistra del razzo"],
+		"principle": "The Sabatier reaction combines atmospheric CO₂ and hydrogen to synthesize methane and water: CO₂ + 4 H₂ → CH₄ + 2 H₂O. In this game model methane transfers directly to the rocket.",
+		"specs": ["Electrical demand: %.0f kW" % SABATIER_DEMAND_KW, "H₂ input: left side (%s)" % ("connected" if h2_connected else "not connected"), "CO₂: supplied by Martian atmosphere (game model)", "Rated output: %.1f kg/h CH₄" % SABATIER_METHANE_KG_PER_HOUR, "CH₄ output: direct rocket fueling", "Rocket fuel: %.1f / %.0f kg" % [rocket.methane_kg, rocket.get_methane_capacity_kg()] if rocket != null else "Rocket unavailable", "Required position: immediately left of the rocket"],
 	}
 
 

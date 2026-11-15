@@ -25,24 +25,24 @@ func _run() -> void:
 		device.set_network_enabled(true)
 	power_grid.rebuild_network()
 
-	_expect(power_grid.batteries.is_empty(), "Il test della rete diretta non deve contenere batterie")
-	_expect(bool(power_grid.connection_ok.get(transformer, false)), "Il trasformatore deve riconoscere il macchinario collegato direttamente")
-	_expect(bool(power_grid.connection_ok.get(drill, false)), "Il macchinario deve collegarsi all'uscita del trasformatore senza batteria")
-	_expect(transformer.get_connection_label() == "COLLEGATO ALLA RETE", "Il menu del trasformatore deve mostrare la rete diretta collegata")
+	_expect(power_grid.batteries.is_empty(), "Test assertion failed")
+	_expect(bool(power_grid.connection_ok.get(transformer, false)), "Test assertion failed")
+	_expect(bool(power_grid.connection_ok.get(drill, false)), "Test assertion failed")
+	_expect(transformer.get_connection_label() == "CONNECTED TO GRID", "Test assertion failed")
 
 	clock.running = true
 	clock.time_scale = 1.0
 	clock.set_game_hour(12.0)
 	power_grid._update_energy(1.0)
-	_expect(is_equal_approx(power_grid.production_kw, 100.0), "Il pannello deve fornire 100 kW alla rete diretta a mezzogiorno")
-	_expect(is_equal_approx(power_grid.demand_kw, 60.0), "La trivella deve richiedere 60 kW")
-	_expect(power_grid.network_powered and drill.powered, "Il macchinario deve funzionare direttamente dal trasformatore durante il giorno")
-	_expect(power_grid.network_status == "RETE DIRETTA", "La UI deve distinguere l'alimentazione diretta senza accumulo")
+	_expect(is_equal_approx(power_grid.production_kw, 100.0), "Test assertion failed")
+	_expect(is_equal_approx(power_grid.demand_kw, 60.0), "Test assertion failed")
+	_expect(power_grid.network_powered and drill.powered, "Test assertion failed")
+	_expect(power_grid.network_status == "DIRECT GRID", "Test assertion failed")
 
 	clock.set_game_hour(0.0)
 	power_grid._update_energy(1.0)
-	_expect(not power_grid.network_powered and not drill.powered, "Senza batteria la rete diretta deve spegnersi di notte")
-	_expect(power_grid.network_status == "BLACKOUT", "Di notte la rete diretta deve segnalare il blackout")
+	_expect(not power_grid.network_powered and not drill.powered, "Test assertion failed")
+	_expect(power_grid.network_status == "BLACKOUT", "Test assertion failed")
 
 	clock.running = false
 	if failures.is_empty():

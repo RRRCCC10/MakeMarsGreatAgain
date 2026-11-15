@@ -30,7 +30,7 @@ func _run() -> void:
 	var panel = grid.place_device(current_scene, "solar_panel", Vector2i(-700, -700))
 	var transformer = grid.place_device(current_scene, "transformer", Vector2i(-694, -700))
 	var battery = grid.place_device(current_scene, "battery", Vector2i(550, -700))
-	_expect(panel != null and transformer != null and battery != null, "La rete di prova a lunga distanza deve essere piazzabile")
+	_expect(panel != null and transformer != null and battery != null, "Test assertion failed")
 	if panel == null or transformer == null or battery == null:
 		_finish()
 		return
@@ -40,26 +40,23 @@ func _run() -> void:
 	for device in [panel, transformer, battery]:
 		device.set_network_enabled(true)
 	grid.rebuild_network()
-	_expect(bool(grid.connection_ok.get(battery, false)), "Una batteria molto lontana deve collegarsi al trasformatore")
-	_expect(bool(grid.connection_ok.get(consumer, false)), "Un macchinario oltre una batteria lontana deve ricevere il percorso elettrico")
+	_expect(bool(grid.connection_ok.get(battery, false)), "Test assertion failed")
+	_expect(bool(grid.connection_ok.get(consumer, false)), "Test assertion failed")
 	clock.running = true
 	clock.set_game_hour(12.0)
 	grid._update_energy(0.1)
-	_expect(consumer.powered, "La rete lunga deve alimentare il macchinario alla sua estremità")
+	_expect(consumer.powered, "Test assertion failed")
 
-	# L'astronauta non deve mai chiudere il primo passo del cavo. È il caso
-	# reale della batteria vicina al trasformatore mentre il giocatore gli passa
-	# sopra o si ferma accanto al connettore.
 	grid.reset_for_new_mission()
 	var close_transformer = grid.place_device(current_scene, "transformer", Vector2i(40, 40))
 	var close_battery = grid.place_device(current_scene, "battery", Vector2i(36, 40))
-	_expect(close_transformer != null and close_battery != null, "Trasformatore e batteria vicini devono essere piazzabili")
+	_expect(close_transformer != null and close_battery != null, "Test assertion failed")
 	if close_transformer != null and close_battery != null:
 		close_transformer.set_network_enabled(true)
 		close_battery.set_network_enabled(true)
 		player.global_position = grid.cell_to_world(close_transformer.get_power_output_cell())
 		grid.rebuild_network()
-		_expect(bool(grid.connection_ok.get(close_battery, false)), "Una batteria vicina deve collegarsi anche con l'astronauta sul connettore")
+		_expect(bool(grid.connection_ok.get(close_battery, false)), "Test assertion failed")
 	clock.running = false
 	_finish()
 
