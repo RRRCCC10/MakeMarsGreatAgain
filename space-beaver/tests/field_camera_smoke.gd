@@ -18,10 +18,13 @@ func _run() -> void:
 	var inventory := root.get_node_or_null("Inventory")
 	var achievements := root.get_node_or_null("AchievementManager")
 	var camera := root.get_node_or_null("FieldCamera")
-	_expect(inventory != null and achievements != null and camera != null, "Test assertion failed")
-	if inventory == null or achievements == null or camera == null:
+	var inventory_ui := current_scene.get_node_or_null("InventoryUI")
+	_expect(inventory != null and achievements != null and camera != null and inventory_ui != null, "Test assertion failed")
+	if inventory == null or achievements == null or camera == null or inventory_ui == null:
 		_finish()
 		return
+	_expect(_has_visible_pixels(inventory_ui.call("_get_field_camera_icon") as Texture2D), "Test assertion failed")
+	_expect(_has_visible_pixels(camera.call("_get_camera_icon") as Texture2D), "Test assertion failed")
 	inventory.call("reset_for_new_mission")
 	achievements.call("reset_for_new_mission")
 	camera.call("reset_for_new_mission")
@@ -61,6 +64,13 @@ func _expect(condition: bool, message: String) -> void:
 
 func _fail(message: String) -> void:
 	failures.append(message)
+
+
+func _has_visible_pixels(texture: Texture2D) -> bool:
+	if texture == null:
+		return false
+	var image := texture.get_image()
+	return image != null and not image.is_empty() and image.get_used_rect().has_area()
 
 
 func _finish() -> void:

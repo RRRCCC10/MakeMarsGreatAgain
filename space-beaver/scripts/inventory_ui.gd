@@ -35,7 +35,7 @@ const TRANSFORMER_SHEET := preload("res://assets/sprites/machines/transformer-sp
 const BATTERY_SHEET := preload("res://assets/sprites/machines/battery-spritesheet.png")
 const ICE_DRILL_SHEET := preload("res://assets/sprites/machines/ice-drill-spritesheet.png")
 const ROCK_DRILL_SHEET := preload("res://assets/sprites/machines/rock_drill/rock_drill_spritesheet.png")
-const FIELD_CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
+const FIELD_CAMERA_ICON := preload("res://assets/sprites/camera/field_camera.png")
 const ELECTROLYZER_SHEET := preload("res://assets/sprites/machines/electrolyzer.png")
 const SABATIER_SHEET := preload("res://assets/sprites/machines/sabatier.png")
 const PLAYER_SHEET := preload("res://assets/sprites/player-spritesheet.png")
@@ -53,7 +53,6 @@ var hotbar_icons: Array[TextureRect] = []
 var hotbar_number_labels: Array[Label] = []
 var hotbar_name_labels: Array[Label] = []
 var hotbar_amount_labels: Array[Label] = []
-var field_camera_icon: Texture2D
 var backpack_buttons: Array[Button] = []
 var backpack_icons: Array[TextureRect] = []
 var backpack_name_labels: Array[Label] = []
@@ -523,14 +522,10 @@ func _first_frame(sheet: Texture2D, frame_size: Vector2i = Vector2i(16, 16)) -> 
 
 
 func _get_field_camera_icon() -> Texture2D:
-	if field_camera_icon != null:
-		return field_camera_icon
-	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(FIELD_CAMERA_ICON_PATH))
-	if image == null or image.is_empty():
-		push_error("Unable to load camera icon: %s" % FIELD_CAMERA_ICON_PATH)
-		return null
-	field_camera_icon = ImageTexture.create_from_image(image)
-	return field_camera_icon
+	# Keep the inventory icon on the imported resource path. Creating a texture
+	# from a file at runtime can yield a transparent GPU texture after a renderer
+	# reset, while the same asset is still available to the rest of the project.
+	return FIELD_CAMERA_ICON
 
 
 func _on_hotbar_pressed(index: int) -> void:

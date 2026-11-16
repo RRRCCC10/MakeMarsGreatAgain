@@ -15,6 +15,23 @@ const FINAL_UPGRADED_ANALYSIS_SECONDS := 40.0
 const ANALYSIS_POWER_DEMAND_KW := 240.0
 const ANCIENT_LIFE_REPORT_BONUS := 10_000_000_000
 const UPGRADE_COSTS: Array[int] = [175_000_000, 250_000_000, 350_000_000, 500_000_000, 700_000_000]
+const RESEARCH_TEXTURES := {
+	"xrd": {
+		"idle": preload("res://assets/sprites/research/xrd_idle.png"),
+		"active": preload("res://assets/sprites/research/xrd_active.png"),
+		"complete": preload("res://assets/sprites/research/xrd_complete.png"),
+	},
+	"raman": {
+		"idle": preload("res://assets/sprites/research/raman_idle.png"),
+		"active": preload("res://assets/sprites/research/raman_active.png"),
+		"complete": preload("res://assets/sprites/research/raman_complete.png"),
+	},
+	"icp_ms": {
+		"idle": preload("res://assets/sprites/research/icp_ms_idle.png"),
+		"active": preload("res://assets/sprites/research/icp_ms_active.png"),
+		"complete": preload("res://assets/sprites/research/icp_ms_complete.png"),
+	},
+}
 
 const DEFINITIONS := {
 	"xrd_diffractometer": {
@@ -47,8 +64,6 @@ const DEFINITIONS := {
 }
 
 enum State { IDLE, ANALYZING, COMPLETE }
-
-static var texture_cache: Dictionary = {}
 
 var machine_id := ""
 var is_preview := false
@@ -104,18 +119,11 @@ static func _texture_for_state(machine_id_value: String, machine_state: State) -
 		state_key = "active"
 	elif machine_state == State.COMPLETE:
 		state_key = "complete"
-	var resource_path := "res://assets/sprites/research/%s_%s.png" % [_asset_prefix_for(machine_id_value), state_key]
-	if texture_cache.has(resource_path):
-		return texture_cache[resource_path] as Texture2D
-	# Sprites load directly from PNG files, so the game does not depend on the
-	# .godot/imported cache, which may not exist when the project first opens.
-	var image := Image.load_from_file(ProjectSettings.globalize_path(resource_path))
-	if image == null or image.is_empty():
-		push_error("Unable to load research sprite: %s" % resource_path)
-		return null
-	var texture := ImageTexture.create_from_image(image)
-	texture_cache[resource_path] = texture
-	return texture
+	# Use imported project resources rather than runtime ImageTextures. The latter
+	# may be invalidated on some renderers, leaving both the world sprite and UI
+	# thumbnails fully transparent despite the PNG file being present.
+	var machine_textures: Dictionary = RESEARCH_TEXTURES.get(_asset_prefix_for(machine_id_value), {})
+	return machine_textures.get(state_key, null) as Texture2D
 
 
 static func _asset_prefix_for(machine_id_value: String) -> String:

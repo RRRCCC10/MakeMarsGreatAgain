@@ -10,7 +10,7 @@ signal photo_transmitted(photo: Dictionary)
 const CAMERA_ITEM_ID := "field_camera"
 const UI_FONT := preload("res://assets/fonts/font-regular.ttf")
 const PHOTO_DISTANCE := 78.0
-const CAMERA_ICON_PATH := "res://assets/sprites/camera/field_camera.png"
+const CAMERA_ICON := preload("res://assets/sprites/camera/field_camera.png")
 
 const BIOME_NAMES := {
 	0: "Landing Plain",
@@ -551,11 +551,7 @@ func _box(fill: Color, border: Color, width: int, radius: int) -> StyleBoxFlat:
 
 
 func _get_camera_icon() -> Texture2D:
-	if _camera_icon != null:
-		return _camera_icon
-	var image: Image = Image.load_from_file(ProjectSettings.globalize_path(CAMERA_ICON_PATH))
-	if image == null or image.is_empty():
-		push_error("Unable to load camera sprite: %s" % CAMERA_ICON_PATH)
-		return null
-	_camera_icon = ImageTexture.create_from_image(image)
+	# Share the imported texture used by the inventory. It remains valid across
+	# renderer resets, unlike an ImageTexture created from a raw file at runtime.
+	_camera_icon = CAMERA_ICON
 	return _camera_icon

@@ -45,7 +45,7 @@ func _run() -> void:
 	if machine == null:
 		_finish()
 		return
-	_expect(machine.get_node("ResearchSprite").texture is Texture2D, "Test assertion failed")
+	_expect(_has_visible_pixels(machine.get_node("ResearchSprite").texture as Texture2D), "Test assertion failed")
 	_expect(Vector2i(machine.call("get_power_connection_cell")) == Vector2i(dome.call("get_power_connection_cell")), "Test assertion failed")
 	_expect(not RESEARCH_SCRIPT.can_place_at("raman_spectrometer", target_position), "Test assertion failed")
 	player.global_position = machine.global_position
@@ -125,7 +125,7 @@ func _run() -> void:
 	for item_id in ["xrd_diffractometer", "raman_spectrometer", "icp_ms"]:
 		var definition: Dictionary = shop.call("get_definition", item_id)
 		_expect(bool(definition.get("placeable", false)) and str(definition.get("category", "")) == "research", "Test assertion failed")
-		_expect(RESEARCH_SCRIPT.get_icon_texture(item_id) is Texture2D, "Test assertion failed")
+		_expect(_has_visible_pixels(RESEARCH_SCRIPT.get_icon_texture(item_id)), "Test assertion failed")
 	if is_instance_valid(machine):
 		machine.queue_free()
 	if is_instance_valid(dome):
@@ -143,6 +143,13 @@ func _expect(condition: bool, message: String) -> void:
 
 func _fail(message: String) -> void:
 	failures.append(message)
+
+
+func _has_visible_pixels(texture: Texture2D) -> bool:
+	if texture == null:
+		return false
+	var image := texture.get_image()
+	return image != null and not image.is_empty() and image.get_used_rect().has_area()
 
 
 func _finish() -> void:
