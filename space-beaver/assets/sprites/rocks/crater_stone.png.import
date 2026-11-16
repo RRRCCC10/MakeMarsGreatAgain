@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://mobqc00pwq34"
-path="res://.godot/imported/basalto.png-6f1cacb015fb2de7ff490c63bdd94413.ctex"
+uid="uid://phjmedowmssq"
+path="res://.godot/imported/crater_stone.png-e607422f1bc37c6fc4927729433e0513.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/basalto.png"
-dest_files=["res://.godot/imported/basalto.png-6f1cacb015fb2de7ff490c63bdd94413.ctex"]
+source_file="res://assets/sprites/rocks/crater_stone.png"
+dest_files=["res://.godot/imported/crater_stone.png-e607422f1bc37c6fc4927729433e0513.ctex"]
 
 [params]
 

@@ -51,12 +51,12 @@ func _run() -> void:
 	_expect(rover.global_position.x > position_before_drive.x + 8.0, "Test assertion failed")
 	var rover_frame := rover.sprite.texture as AtlasTexture
 	_expect(rover_frame != null and rover_frame.atlas == DRIVER_RIGHT_SHEET, "Test assertion failed")
-	var inventory_before_pickup: int = int(inventory.call("count_item", "rock_roccia_rossa"))
+	var inventory_before_pickup: int = int(inventory.call("count_item", "rock_red_regolith"))
 	var pickup_event := InputEventKey.new()
 	pickup_event.keycode = KEY_E
 	pickup_event.pressed = true
 	player.call("_unhandled_input", pickup_event)
-	_expect(int(inventory.call("count_item", "rock_roccia_rossa")) == inventory_before_pickup, "Test assertion failed")
+	_expect(int(inventory.call("count_item", "rock_red_regolith")) == inventory_before_pickup, "Test assertion failed")
 	var battery_before_drive := rover.battery_energy_kwh
 	rover.call("_consume_driving_energy", 20.0)
 	_expect(rover.battery_energy_kwh < battery_before_drive, "Test assertion failed")

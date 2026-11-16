@@ -224,7 +224,7 @@ func _refresh() -> void:
 	_network_status.text = "GRID STATUS · " + status
 	_network_status.add_theme_color_override("font_color", _status_color(status))
 	var hour := float(stats.get("hour", 0.0))
-	_network_note.text = "%s · %02d:%02d · %d pannelli collegati su %d · %d batterie collegate su %d" % [
+	_network_note.text = "%s · %02d:%02d · %d panels connected of %d · %d batteries connected of %d" % [
 		str(stats.get("phase", "OPERATIONS")),
 		floori(hour),
 		floori((hour - floorf(hour)) * 60.0),

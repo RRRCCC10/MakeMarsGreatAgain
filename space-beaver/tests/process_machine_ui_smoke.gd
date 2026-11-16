@@ -11,7 +11,7 @@ func _run() -> void:
 	var power_grid: Node = root.get_node("PowerGrid")
 	var scene_result := change_scene_to_file("res://Scenes/main.tscn")
 	if scene_result != OK:
-		push_error("Impossibile caricare la scena principale: %s" % scene_result)
+		push_error("Unable to load the main scene: %s" % scene_result)
 		quit(1)
 		return
 	await process_frame

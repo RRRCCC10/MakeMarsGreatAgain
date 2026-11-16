@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cnctb44u7jnpw"
-path="res://.godot/imported/pietra_rossastra.png-eb97cf8565d30c1c25839fbba83a625b.ctex"
+uid="uid://b4l56sq88j6rx"
+path="res://.godot/imported/dark_basalt.png-c128c916079083b21f9d8f4ac52c9f06.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/pietra_rossastra.png"
-dest_files=["res://.godot/imported/pietra_rossastra.png-eb97cf8565d30c1c25839fbba83a625b.ctex"]
+source_file="res://assets/sprites/terrain/dark_basalt.png"
+dest_files=["res://.godot/imported/dark_basalt.png-c128c916079083b21f9d8f4ac52c9f06.ctex"]
 
 [params]
 

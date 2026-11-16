@@ -10,12 +10,12 @@ func _init() -> void:
 func _run() -> void:
 	var incidents := root.get_node_or_null("IncidentManager")
 	if incidents == null:
-		_fail("IncidentManager deve essere registrato come autoload")
+		_fail("IncidentManager must be registered as an autoload")
 		_finish()
 		return
 	incidents.call("set_random_incidents_enabled_for_test", false)
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("Impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame

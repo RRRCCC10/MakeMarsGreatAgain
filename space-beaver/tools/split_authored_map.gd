@@ -67,8 +67,8 @@ func _save_chunk(source_terrain: TileMapLayer, shared_tile_set: TileSet, chunk: 
 	var packed := PackedScene.new()
 	var pack_result := packed.pack(root)
 	if pack_result != OK:
-		push_error("Impossibile creare il chunk %s" % chunk)
+		push_error("Unable to create chunk %s" % chunk)
 		return
 	var save_result := ResourceSaver.save(packed, "res://Scenes/map_chunks/terrain_%d_%d.tscn" % [chunk.x, chunk.y])
 	if save_result != OK:
-		push_error("Impossibile salvare il chunk %s" % chunk)
+		push_error("Unable to save chunk %s" % chunk)

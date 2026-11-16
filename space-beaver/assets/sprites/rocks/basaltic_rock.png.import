@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://wrd0tlfucxf2"
-path="res://.godot/imported/ghiaccio_leggero.png-ce52604dc435ef3750ef76a5e471e157.ctex"
+uid="uid://c0e8vrxvpt51x"
+path="res://.godot/imported/basaltic_rock.png-61b177414e28fb0447622c64f9c0d48f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/ghiaccio_leggero.png"
-dest_files=["res://.godot/imported/ghiaccio_leggero.png-ce52604dc435ef3750ef76a5e471e157.ctex"]
+source_file="res://assets/sprites/rocks/basaltic_rock.png"
+dest_files=["res://.godot/imported/basaltic_rock.png-61b177414e28fb0447622c64f9c0d48f.ctex"]
 
 [params]
 

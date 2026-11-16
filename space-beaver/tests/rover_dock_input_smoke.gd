@@ -23,7 +23,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: impossibile caricare la scena principale")
+		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: Unable to load the main scene")
 		quit(1)
 		return
 	await process_frame
@@ -49,11 +49,11 @@ func _run() -> void:
 	get_root().get_viewport().push_input(press_e)
 	await process_frame
 	if not bool(player.call("is_driving_rover")) or rover.driver != player:
-		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: E non ha imbarcato il player sul rover attraccato")
+		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: E did not board the player onto the docked rover")
 		quit(1)
 		return
 	if stock_machine.taken:
-		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: una macchina vicina ha sottratto E al rover")
+		push_error("ROVER_DOCK_INPUT_SMOKE_FAIL: a nearby machine intercepted E before the rover")
 		quit(1)
 		return
 	print("ROVER_DOCK_INPUT_SMOKE_OK")

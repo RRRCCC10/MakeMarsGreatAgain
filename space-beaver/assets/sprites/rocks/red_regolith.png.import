@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://m14jv3qda1l1"
-path="res://.godot/imported/ghiaccio_blu.png-b8e35542fa32d601232d962d4f1f42a9.ctex"
+uid="uid://bx3gnsxvrcld4"
+path="res://.godot/imported/red_regolith.png-b50a4ba47baf1a657d155c0b62871d5b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/terrain/ghiaccio_blu.png"
-dest_files=["res://.godot/imported/ghiaccio_blu.png-b8e35542fa32d601232d962d4f1f42a9.ctex"]
+source_file="res://assets/sprites/rocks/red_regolith.png"
+dest_files=["res://.godot/imported/red_regolith.png-b50a4ba47baf1a657d155c0b62871d5b.ctex"]
 
 [params]
 

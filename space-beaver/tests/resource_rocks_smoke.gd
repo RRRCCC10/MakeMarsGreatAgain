@@ -17,19 +17,19 @@ func _run() -> void:
 	await process_frame
 
 	var expected_pairs := {
-		"Ares Plain": ["roccia_rossa", "pietra_rossastra"],
-		"Polar Core": ["ghiaccio_leggero", "ghiaccio_blu"],
-		"Impact Craters": ["roccia_grigia", "roccia_scura"],
-		"Basalt Formation": ["roccia_basaltica", "basalto"],
-		"Ice-Cap Edge": ["roccia_ghiacciata", "ghiaccio_profondo"],
+		"Ares Plain": ["red_regolith", "ferric_stone"],
+		"Polar Core": ["dusty_ice", "blue_ice"],
+		"Impact Craters": ["crater_stone", "impact_glass"],
+		"Basalt Formation": ["basaltic_rock", "black_basalt"],
+		"Ice-Cap Edge": ["cryogenic_rock", "deep_ice"],
 	}
 	var counts := {}
 	var expected_sources := {
-		"roccia_rossa": [0, 1], "pietra_rossastra": [0, 1],
-		"ghiaccio_leggero": [4], "ghiaccio_blu": [4],
-		"roccia_grigia": [2], "roccia_scura": [2],
-		"roccia_basaltica": [5], "basalto": [5],
-		"roccia_ghiacciata": [3], "ghiaccio_profondo": [3],
+		"red_regolith": [0, 1], "ferric_stone": [0, 1],
+		"dusty_ice": [4], "blue_ice": [4],
+		"crater_stone": [2], "impact_glass": [2],
+		"basaltic_rock": [5], "black_basalt": [5],
+		"cryogenic_rock": [3], "deep_ice": [3],
 	}
 	var map := current_scene.get_node("Map")
 	for rock in get_nodes_in_group("collectible_rocks"):
@@ -64,11 +64,11 @@ func _run() -> void:
 	_expect(inventory.count_item(str(collected_definition.get("item_id", ""))) == 1, "Test assertion failed")
 
 	inventory.reset_for_new_mission()
-	_expect(inventory.add_rock("basalto"), "Test assertion failed")
-	_expect(inventory.add_rock("basalto"), "Test assertion failed")
-	_expect(inventory.add_rock("roccia_basaltica"), "Test assertion failed")
-	_expect(inventory.count_item("rock_basalto") == 2, "Test assertion failed")
-	_expect(inventory.count_item("rock_roccia_basaltica") == 1, "Test assertion failed")
+	_expect(inventory.add_rock("black_basalt"), "Test assertion failed")
+	_expect(inventory.add_rock("black_basalt"), "Test assertion failed")
+	_expect(inventory.add_rock("basaltic_rock"), "Test assertion failed")
+	_expect(inventory.count_item("rock_black_basalt") == 2, "Test assertion failed")
+	_expect(inventory.count_item("rock_basaltic_rock") == 1, "Test assertion failed")
 
 	if failures.is_empty():
 		print("RESOURCE_ROCKS_SMOKE_OK")

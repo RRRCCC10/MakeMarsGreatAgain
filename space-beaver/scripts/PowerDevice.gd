@@ -159,7 +159,7 @@ func get_connection_label() -> String:
 	if incident_faulted:
 		return "FAULT — approach and repair"
 	if not network_enabled:
-		return "DISCONNESSO"
+		return "DISCONNECTED"
 	var power_grid := get_node_or_null("/root/PowerGrid")
 	if power_grid == null:
 		return "ENABLED - GRID UNAVAILABLE"

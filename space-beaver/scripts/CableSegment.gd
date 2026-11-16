@@ -34,14 +34,14 @@ func _refresh_visual() -> void:
 		4:
 			frame = Vector2i(0, 1)
 		3:
-			frame = Vector2i(1, 1) # Base: sinistra, destra, basso.
+			frame = Vector2i(1, 1) # Base: left, right, down.
 			var missing := _missing_direction(unique)
 			rotation_steps = _direction_rotation_from_up(missing)
 		2:
 			if (-unique[0]) == unique[1]:
 				frame = Vector2i(0, 0) if Vector2i.LEFT in unique else Vector2i(1, 0)
 			else:
-				frame = Vector2i(0, 2) # Base: alto + sinistra.
+				frame = Vector2i(0, 2) # Base: up + left.
 				rotation_steps = _corner_rotation(unique)
 		1:
 			frame = Vector2i(0, 0) if unique[0].x != 0 else Vector2i(1, 0)

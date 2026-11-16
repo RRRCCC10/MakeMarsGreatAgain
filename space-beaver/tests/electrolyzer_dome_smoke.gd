@@ -23,7 +23,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame

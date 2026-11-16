@@ -19,7 +19,7 @@ func _run() -> void:
 	clock.running = false
 	var scene_result := change_scene_to_file("res://Scenes/main.tscn")
 	if scene_result != OK:
-		push_error("Impossibile caricare la scena principale: %s" % scene_result)
+		push_error("Unable to load the main scene: %s" % scene_result)
 		quit(1)
 		return
 	await process_frame
@@ -37,7 +37,7 @@ func _run() -> void:
 		var image := root.get_texture().get_image()
 		var result := image.save_png("res://tests/captures/%s.png" % capture_name)
 		if result != OK:
-			push_error("Impossibile salvare la cattura %s: %s" % [capture_name, result])
+			push_error("Unable to save capture %s: %s" % [capture_name, result])
 			quit(1)
 			return
 	print("DAY_NIGHT_VISUAL_CAPTURE_OK")

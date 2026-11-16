@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bf076v2nvilx1"
-path="res://.godot/imported/roccia_ghiacciata.png-7558e598ff497b5712c69fc8aec99256.ctex"
+uid="uid://bulk2eh8ngnsh"
+path="res://.godot/imported/red_regolith.png-cb2552fea47bcf29ebae3b53d295b51c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/roccia_ghiacciata.png"
-dest_files=["res://.godot/imported/roccia_ghiacciata.png-7558e598ff497b5712c69fc8aec99256.ctex"]
+source_file="res://assets/sprites/terrain/red_regolith.png"
+dest_files=["res://.godot/imported/red_regolith.png-cb2552fea47bcf29ebae3b53d295b51c.ctex"]
 
 [params]
 

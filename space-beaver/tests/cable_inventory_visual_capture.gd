@@ -37,4 +37,4 @@ func _save_capture(path: String) -> void:
 	await process_frame
 	var result := root.get_texture().get_image().save_png(path)
 	if result != OK:
-		push_error("Impossibile salvare %s" % path)
+		push_error("Unable to save %s" % path)

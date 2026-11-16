@@ -615,5 +615,5 @@ func _show_clean_panel() -> void:
 	var target := data.get("node") as Node2D
 	var level := _sand_level(target)
 	var percent := roundi(clampf(_clean_elapsed / maxf(0.01, _clean_duration), 0.0, 1.0) * 100.0)
-	_clean_label.text = "SPOLVERATURA · %s\n\nTIENI PREMUTO E  ·  %d%%\n%s" % [str(data.get("display_name", "MACCHINARIO")), percent, _sand_label(level)]
+	_clean_label.text = "DUST REMOVAL · %s\n\nHOLD E  ·  %d%%\n%s" % [str(data.get("display_name", "MACHINE")), percent, _sand_label(level)]
 	_clean_panel.visible = true

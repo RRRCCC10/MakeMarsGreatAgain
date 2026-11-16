@@ -9,7 +9,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame
@@ -26,7 +26,7 @@ func _run() -> void:
 	achievements.call("reset_for_new_mission")
 	camera.call("reset_for_new_mission")
 	for sample_index in 8:
-		achievements.call("record_field_sample", "roccia_test_%d" % sample_index, "common")
+		achievements.call("record_field_sample", "rock_test_%d" % sample_index, "common")
 	_expect(bool(achievements.call("claim", "first_field_sample")), "Test assertion failed")
 	_expect(bool(achievements.call("claim", "field_notes")), "Test assertion failed")
 	_expect(bool(achievements.call("claim", "sample_satchel")), "Test assertion failed")

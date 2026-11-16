@@ -61,7 +61,7 @@ func _run() -> void:
 	temperature.core_temperature_c = 28.0
 	_expect(bool(temperature.call("is_lethal")), "Test assertion failed")
 	var death_data: Dictionary = game_state.call("_get_death_data", "cold")
-	_expect(str(death_data.get("title", "")).contains("IPOTERMIA"), "Test assertion failed")
+	_expect(str(death_data.get("title", "")).contains("HYPOTHERMIA"), "Test assertion failed")
 	_finish()
 
 

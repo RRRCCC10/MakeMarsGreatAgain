@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c0e8vrxvpt51x"
-path="res://.godot/imported/roccia_basaltica.png-f12e9e5a87d3f732aa9e691f66d20a40.ctex"
+uid="uid://mobqc00pwq34"
+path="res://.godot/imported/black_basalt.png-db957a0690645c614ea5ee41a510ee16.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/roccia_basaltica.png"
-dest_files=["res://.godot/imported/roccia_basaltica.png-f12e9e5a87d3f732aa9e691f66d20a40.ctex"]
+source_file="res://assets/sprites/rocks/black_basalt.png"
+dest_files=["res://.godot/imported/black_basalt.png-db957a0690645c614ea5ee41a510ee16.ctex"]
 
 [params]
 

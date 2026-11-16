@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4l56sq88j6rx"
-path="res://.godot/imported/basalto_scuro.png-f8d3ec0a705f1c3ec1d9f9d65931674f.ctex"
+uid="uid://m14jv3qda1l1"
+path="res://.godot/imported/blue_ice.png-0964e3a0ee2870c564cf3714fa0ba1da.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/terrain/basalto_scuro.png"
-dest_files=["res://.godot/imported/basalto_scuro.png-f8d3ec0a705f1c3ec1d9f9d65931674f.ctex"]
+source_file="res://assets/sprites/terrain/blue_ice.png"
+dest_files=["res://.godot/imported/blue_ice.png-0964e3a0ee2870c564cf3714fa0ba1da.ctex"]
 
 [params]
 

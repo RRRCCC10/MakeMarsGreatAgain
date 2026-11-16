@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bulk2eh8ngnsh"
-path="res://.godot/imported/regolite_rossa.png-3c139ff3c66ac13a7aebca47d757a936.ctex"
+uid="uid://dp0df510v8srh"
+path="res://.godot/imported/impact_glass.png-ffe6ef8f23ea95b92dbd954159c37105.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/terrain/regolite_rossa.png"
-dest_files=["res://.godot/imported/regolite_rossa.png-3c139ff3c66ac13a7aebca47d757a936.ctex"]
+source_file="res://assets/sprites/rocks/impact_glass.png"
+dest_files=["res://.godot/imported/impact_glass.png-ffe6ef8f23ea95b92dbd954159c37105.ctex"]
 
 [params]
 

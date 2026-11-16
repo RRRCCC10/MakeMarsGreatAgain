@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://phjmedowmssq"
-path="res://.godot/imported/roccia_grigia.png-6f012e92393c5319fdf81f9d12e23bf2.ctex"
+uid="uid://c20kagvhisiht"
+path="res://.godot/imported/blue_ice.png-75a83c37df390dc7860986047d484058.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/roccia_grigia.png"
-dest_files=["res://.godot/imported/roccia_grigia.png-6f012e92393c5319fdf81f9d12e23bf2.ctex"]
+source_file="res://assets/sprites/rocks/blue_ice.png"
+dest_files=["res://.godot/imported/blue_ice.png-75a83c37df390dc7860986047d484058.ctex"]
 
 [params]
 

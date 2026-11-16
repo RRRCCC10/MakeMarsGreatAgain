@@ -678,4 +678,4 @@ func _update_interaction_label() -> void:
 	elif panel_state == PanelState.OPEN:
 		interaction_label.text = "F · CLOSE PANELS\nCHARGING %d%%" % roundi(get_battery_percent())
 	else:
-		interaction_label.text = "PANNELLI IN MOVIMENTO\nBATTERIA %d%%" % roundi(get_battery_percent())
+		interaction_label.text = "PANELS MOVING\nBATTERY %d%%" % roundi(get_battery_percent())

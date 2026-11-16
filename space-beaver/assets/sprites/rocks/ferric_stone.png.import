@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dp0df510v8srh"
-path="res://.godot/imported/roccia_scura.png-5dda6b21f374ae118caf4dea295642b8.ctex"
+uid="uid://cnctb44u7jnpw"
+path="res://.godot/imported/ferric_stone.png-d4f8d40f78f3c5992b33db3b559a8146.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/roccia_scura.png"
-dest_files=["res://.godot/imported/roccia_scura.png-5dda6b21f374ae118caf4dea295642b8.ctex"]
+source_file="res://assets/sprites/rocks/ferric_stone.png"
+dest_files=["res://.godot/imported/ferric_stone.png-d4f8d40f78f3c5992b33db3b559a8146.ctex"]
 
 [params]
 

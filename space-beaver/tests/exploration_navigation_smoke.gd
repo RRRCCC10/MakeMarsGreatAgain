@@ -21,7 +21,7 @@ func _run() -> void:
 		_expect(int(scatter.call("get_generated_count")) >= 600, "Test assertion failed")
 	var generated_base_rocks := 0
 	for rock in get_nodes_in_group("collectible_rocks"):
-		if not bool(rock.is_authored) and str(rock.rock_variant) == "roccia_base":
+		if not bool(rock.is_authored) and str(rock.rock_variant) == "baseline_stone":
 			generated_base_rocks += 1
 	_expect(generated_base_rocks > 0, "Test assertion failed")
 

@@ -9,7 +9,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		push_error("Impossibile caricare la scena principale")
+		push_error("Unable to load the main scene")
 		quit(1)
 		return
 	await process_frame

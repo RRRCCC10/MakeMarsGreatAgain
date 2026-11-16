@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bx3gnsxvrcld4"
-path="res://.godot/imported/roccia_rossa.png-a872ba165a0789b511ec8e710afd25cd.ctex"
+uid="uid://bf076v2nvilx1"
+path="res://.godot/imported/cryogenic_rock.png-9a125fe7dbe29213d4edd8897c148fab.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/roccia_rossa.png"
-dest_files=["res://.godot/imported/roccia_rossa.png-a872ba165a0789b511ec8e710afd25cd.ctex"]
+source_file="res://assets/sprites/rocks/cryogenic_rock.png"
+dest_files=["res://.godot/imported/cryogenic_rock.png-9a125fe7dbe29213d4edd8897c148fab.ctex"]
 
 [params]
 

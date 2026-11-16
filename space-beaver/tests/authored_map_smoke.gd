@@ -23,11 +23,11 @@ func _run() -> void:
 		_expect(int(map.call("get_loaded_chunk_count")) <= 9, "Test assertion failed")
 		_expect(int(map.call("get_loaded_cell_count")) < 2000 * 2000, "Test assertion failed")
 		var samples := {
-			Vector2i.ZERO: [0, "Il punto di atterraggio deve usare il terreno arancione originale"],
-			Vector2i(0, -500): [3, "Il bordo meridionale del polo deve usare ghiaccio polveroso"],
-			Vector2i(850, -500): [0, "Il polo deve avere un bordo semicircolare, non una fascia orizzontale"],
-			Vector2i(-430, -260): [2, "Il fondo del cratere deve essere pietroso"],
-			Vector2i(-300, -260): [5, "Il cratere deve avere un anello basaltico"],
+			Vector2i.ZERO: [0, "The landing site must use the original orange terrain"],
+			Vector2i(0, -500): [3, "The southern polar edge must use dusty ice"],
+			Vector2i(850, -500): [0, "The polar region must have a semicircular edge, not a horizontal strip"],
+			Vector2i(-430, -260): [2, "The crater floor must be rocky"],
+			Vector2i(-300, -260): [5, "The crater must have a basaltic ring"],
 			Vector2i(-220, -260): [1, "Crater terrain assertion failed"],
 		}
 		for cell in samples:

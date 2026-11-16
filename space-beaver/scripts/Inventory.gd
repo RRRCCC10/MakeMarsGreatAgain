@@ -39,10 +39,10 @@ func reset_for_new_mission() -> void:
 	changed.emit()
 
 
-func add_rock(rock_variant: String = "roccia_rossa") -> bool:
+func add_rock(rock_variant: String = "red_regolith") -> bool:
 	var definition: Dictionary = RockResource.definition_for(rock_variant)
 	return add_item(
-		str(definition.get("item_id", "rock_roccia_rossa")),
+		str(definition.get("item_id", "rock_red_regolith")),
 		str(definition.get("name", "Rock")),
 		1,
 		false,

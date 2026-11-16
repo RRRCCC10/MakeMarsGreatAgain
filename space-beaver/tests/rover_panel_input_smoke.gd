@@ -11,7 +11,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		return
 	await process_frame
 	await process_frame
@@ -49,10 +49,10 @@ func _run() -> void:
 	_send_physical_key(KEY_F)
 	await process_frame
 	if not dome.is_sequence_active():
-		_fail("F non ha raggiunto la sequenza della camera d'aria con rover lontano")
+		_fail("F did not reach the airlock sequence while the rover was distant")
 		return
 	if rover.panel_state != Rover.PanelState.CLOSED:
-		_fail("F della camera d'aria ha alterato i pannelli del rover remoto")
+		_fail("Airlock F input altered the distant rover's panels")
 		return
 	print("ROVER_PANEL_INPUT_SMOKE_OK")
 	quit(0)

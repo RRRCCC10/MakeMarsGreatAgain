@@ -191,7 +191,7 @@ func _build_photo_context() -> Dictionary:
 		elif structure.is_in_group("perseverance_rover"):
 			subject = "Damaged Perseverance Rover"
 			tags.append("perseverance")
-	if Inventory.count_item("rock_ghiaccio_profondo_primordiale") > 0:
+	if Inventory.count_item("rock_primordial_deep_ice") > 0:
 		tags.append("primordial_ice")
 		if subject == BIOME_NAMES.get(source_id, "Martian Horizon"):
 			subject = "Deep-Ice Container"

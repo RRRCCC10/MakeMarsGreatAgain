@@ -40,7 +40,7 @@ func _show() -> void:
 	root.add_child(overlay)
 	var label := Label.new()
 	label.position = Vector2(16, 14)
-	label.text = "TEST VISIVO SERRA · pavimento, vetro, aiuole, patate, porta e corridoio"
+	label.text = "GREENHOUSE VISUAL TEST · floor, glass, beds, potatoes, door, and corridor"
 	label.add_theme_font_size_override("font_size", 18)
 	label.add_theme_color_override("font_color", Color("f4f0d6"))
 	overlay.add_child(label)

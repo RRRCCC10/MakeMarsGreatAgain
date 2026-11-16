@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c20kagvhisiht"
-path="res://.godot/imported/ghiaccio_blu.png-2895181b1ddddfc4194755e1a5d97280.ctex"
+uid="uid://q0ygq4dhja0y"
+path="res://.godot/imported/dusty_ice.png-3afbd214b636683abba79f761f82bd31.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/rocks/ghiaccio_blu.png"
-dest_files=["res://.godot/imported/ghiaccio_blu.png-2895181b1ddddfc4194755e1a5d97280.ctex"]
+source_file="res://assets/sprites/terrain/dusty_ice.png"
+dest_files=["res://.godot/imported/dusty_ice.png-3afbd214b636683abba79f761f82bd31.ctex"]
 
 [params]
 

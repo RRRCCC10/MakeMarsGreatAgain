@@ -13,7 +13,7 @@ func _run() -> void:
 	var clock: Node = root.get_node("WorldClock")
 	var scene_result := change_scene_to_file("res://Scenes/main.tscn")
 	if scene_result != OK:
-		push_error("Impossibile caricare la scena principale: %s" % scene_result)
+		push_error("Unable to load the main scene: %s" % scene_result)
 		quit(1)
 		return
 	await process_frame
@@ -52,7 +52,7 @@ func _run() -> void:
 	_expect(drill.water_extracted_liters >= 79.9, "Test assertion failed")
 	_expect(drill.water_transported_liters >= 79.9, "Test assertion failed")
 	var specs: Dictionary = drill.get_machine_specs()
-	_expect(str(specs.get("title", "")).contains("TRIVELLA"), "Test assertion failed")
+	_expect(str(specs.get("title", "")).contains("ICE EXTRACTION DRILL"), "Test assertion failed")
 	var registry: Node = root.get_node("BuildableRegistry")
 	var builder: Node = main_scene.get_node("player/Node")
 	var player: Node2D = main_scene.get_node("player")
@@ -76,7 +76,7 @@ func _run() -> void:
 	var inventory_ui: Node = main_scene.get_node_or_null("InventoryUI")
 	if inventory_ui != null:
 		inventory_ui.call("_process", 0.0)
-		_expect(str(inventory_ui.pickup_label.text).begins_with("E · RIEMPI BORRACCIA"), "Test assertion failed")
+		_expect(str(inventory_ui.pickup_label.text).begins_with("E · REFILL WATER BOTTLE"), "Test assertion failed")
 	else:
 		_expect(false, "Test assertion failed")
 	var water_before_refill := float(drill.water_storage_liters)
@@ -89,14 +89,14 @@ func _run() -> void:
 	bottle["liters"] = 0.3
 	drill.set_network_enabled(false)
 	var reserve_before_unpowered_refill := float(drill.water_storage_liters)
-	_expect(str(drill.get_bottle_refill_prompt()).begins_with("E · RIEMPI BORRACCIA"), "Test assertion failed")
+	_expect(str(drill.get_bottle_refill_prompt()).begins_with("E · REFILL WATER BOTTLE"), "Test assertion failed")
 	_expect(drill.try_refill_selected_bottle(player), "Test assertion failed")
 	_expect(is_equal_approx(float(bottle.get("liters", 0.0)), 2.0) and float(drill.water_storage_liters) < reserve_before_unpowered_refill, "Test assertion failed")
 	var drill_entry: Dictionary = registry.find_at(drill.global_position)
 	builder.call("_show_machine_info", drill_entry)
 	_expect(registry.is_modal_open, "Test assertion failed")
 	_expect(builder.machine_info_root.visible, "Test assertion failed")
-	_expect(builder.machine_title.text.contains("TRIVELLA"), "Test assertion failed")
+	_expect(builder.machine_title.text.contains("ICE EXTRACTION DRILL"), "Test assertion failed")
 	builder.call("_close_machine_info")
 	clock.running = false
 	_finish()
@@ -114,4 +114,6 @@ func _finish() -> void:
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
-		failures.append(message)
+		var stack := get_stack()
+		var line := int(stack[1].get("line", -1)) if stack.size() > 1 else -1
+		failures.append("%s at line %d" % [message, line])

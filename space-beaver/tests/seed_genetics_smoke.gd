@@ -11,7 +11,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame
@@ -27,7 +27,7 @@ func _run() -> void:
 	claimed["first_harvest"] = true
 	effects["genetic_seed_access"] = true
 	_expect(bool(shop.call("are_seed_genetics_unlocked")), "Test assertion failed")
-	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi di patate", 1, false, {"yield_level": 0, "speed_level": 0})), "Test assertion failed")
+	_expect(bool(inventory.call("add_item", "potato_seeds", "Potato Seeds", 1, false, {"yield_level": 0, "speed_level": 0})), "Test assertion failed")
 	var greenhouse := GREENHOUSE_SCRIPT.new() as Greenhouse
 	greenhouse.setup_greenhouse(1, false)
 	current_scene.add_child(greenhouse)
@@ -41,8 +41,8 @@ func _run() -> void:
 	_expect(bool(shop.call("purchase_seed_upgrade", "speed")), "Test assertion failed")
 	_expect(int(greenhouse.call("get_crop_seed_configuration").get("yield_level", -1)) == 0 and int(greenhouse.call("get_crop_seed_configuration").get("speed_level", -1)) == 0, "Test assertion failed")
 	var stronger_configuration: Dictionary = shop.call("get_current_seed_configuration")
-	_expect(bool(inventory.call("add_item", "potato_seeds", "Semi GM", 1, false, stronger_configuration)), "Test assertion failed")
-	_expect(greenhouse.get_prompt_for_player(player).contains("SOSTITUISCI LOTTO"), "Test assertion failed")
+	_expect(bool(inventory.call("add_item", "potato_seeds", "GM Seeds", 1, false, stronger_configuration)), "Test assertion failed")
+	_expect(greenhouse.get_prompt_for_player(player).contains("REPLACE LOT"), "Test assertion failed")
 	_expect(greenhouse.handle_airlock_key(player, KEY_E), "Test assertion failed")
 	var planted_configuration: Dictionary = greenhouse.call("get_crop_seed_configuration")
 	_expect(int(planted_configuration.get("yield_level", 0)) == 1 and int(planted_configuration.get("speed_level", 0)) == 1, "Test assertion failed")

@@ -89,18 +89,18 @@ func _variant_for(source_id: int, cell: Vector2i) -> String:
 	var rare := _hash(cell, 47) % 5 == 0
 	match source_id:
 		0:
-			return "roccia_base"
+			return "baseline_stone"
 		1:
-			return "pietra_rossastra" if rare else "roccia_rossa"
+			return "ferric_stone" if rare else "red_regolith"
 		2:
-			return "roccia_scura" if rare else "roccia_grigia"
+			return "impact_glass" if rare else "crater_stone"
 		3:
-			return "ghiaccio_profondo" if rare else "roccia_ghiacciata"
+			return "deep_ice" if rare else "cryogenic_rock"
 		4:
-			return "ghiaccio_blu" if rare else "ghiaccio_leggero"
+			return "blue_ice" if rare else "dusty_ice"
 		5:
-			return "basalto" if rare else "roccia_basaltica"
-	return "roccia_base"
+			return "black_basalt" if rare else "basaltic_rock"
+	return "baseline_stone"
 
 
 func _world_to_chunk(world_position: Vector2) -> Vector2i:

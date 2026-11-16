@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://q0ygq4dhja0y"
-path="res://.godot/imported/ghiaccio_polveroso.png-ae1c5f58656ff5eb98fb8c59cd989cf0.ctex"
+uid="uid://wrd0tlfucxf2"
+path="res://.godot/imported/dusty_ice.png-bfc3cfaa54765e5f49024c4a7077446f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/terrain/ghiaccio_polveroso.png"
-dest_files=["res://.godot/imported/ghiaccio_polveroso.png-ae1c5f58656ff5eb98fb8c59cd989cf0.ctex"]
+source_file="res://assets/sprites/rocks/dusty_ice.png"
+dest_files=["res://.godot/imported/dusty_ice.png-bfc3cfaa54765e5f49024c4a7077446f.ctex"]
 
 [params]
 

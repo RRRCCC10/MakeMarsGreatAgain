@@ -10,7 +10,7 @@ func _init() -> void:
 func _run() -> void:
 	var scene_result := change_scene_to_file("res://Scenes/main.tscn")
 	if scene_result != OK:
-		push_error("Impossibile caricare la scena principale")
+		push_error("Unable to load the main scene")
 		quit(1)
 		return
 	await process_frame
@@ -80,8 +80,8 @@ func _run() -> void:
 	var water_data: Dictionary = game_state.call("_get_death_data", "water")
 	var food_data: Dictionary = game_state.call("_get_death_data", "food")
 	_expect(str(oxygen_data.get("title", "")).contains("OXYGEN"), "Test assertion failed")
-	_expect(str(water_data.get("title", "")).contains("DISIDRATAZIONE"), "Test assertion failed")
-	_expect(str(food_data.get("title", "")).contains("ALIMENTARI"), "Test assertion failed")
+	_expect(str(water_data.get("title", "")).contains("DEHYDRATION"), "Test assertion failed")
+	_expect(str(food_data.get("title", "")).contains("FOOD RESERVES"), "Test assertion failed")
 	_finish()
 
 

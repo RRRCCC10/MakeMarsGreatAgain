@@ -17,7 +17,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("Impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame
@@ -70,7 +70,7 @@ func _place_network(grid: Node, origin: Vector2i) -> Dictionary:
 		_fail("Unable to place a distant test grid")
 		return {}
 	var consumer := TestConsumer.new()
-	consumer.name = "Carico di prova"
+	consumer.name = "Test Load"
 	current_scene.add_child(consumer)
 	grid.register_consumer(consumer, origin + Vector2i(16, -1), 50.0, Vector2i.LEFT)
 	return {"panel": panel, "transformer": transformer, "battery": battery, "consumer": consumer}

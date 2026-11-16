@@ -9,7 +9,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		push_error("Impossibile caricare la scena principale")
+		push_error("Unable to load the main scene")
 		quit(1)
 		return
 	await process_frame
@@ -55,7 +55,7 @@ func _run() -> void:
 	radiation.call("reset_for_new_mission")
 	radiation.call("_process", 200.0)
 	_expect(float(radiation.cumulative_dose_msv) < 1.0, "Test assertion failed")
-	_expect(str(radiation.call("get_condition_label")) == "NOMINALE", "Test assertion failed")
+	_expect(str(radiation.call("get_condition_label")) == "NOMINAL", "Test assertion failed")
 
 	suits.call("equip", "suit_standard")
 	radiation.call("reset_for_new_mission")
@@ -82,7 +82,7 @@ func _run() -> void:
 	radiation.acute_dose_msv = 4000.0
 	_expect(bool(radiation.call("is_lethal")), "Test assertion failed")
 	var death_data: Dictionary = game_state.call("_get_death_data", "radiation")
-	_expect(str(death_data.get("title", "")).contains("RADIOLOGICO"), "Test assertion failed")
+	_expect(str(death_data.get("title", "")).contains("RADIATION DAMAGE"), "Test assertion failed")
 	_finish()
 
 

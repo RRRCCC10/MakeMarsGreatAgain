@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bls81rhhqk8mj"
-path="res://.godot/imported/pietra_rossastra.png-645ff8e88ea2bd35497c6598cef1671e.ctex"
+path="res://.godot/imported/ferric_stone.png-2fcfbec532d51c9e277281ea539aa9ff.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/sprites/terrain/pietra_rossastra.png"
-dest_files=["res://.godot/imported/pietra_rossastra.png-645ff8e88ea2bd35497c6598cef1671e.ctex"]
+source_file="res://assets/sprites/terrain/ferric_stone.png"
+dest_files=["res://.godot/imported/ferric_stone.png-2fcfbec532d51c9e277281ea539aa9ff.ctex"]
 
 [params]
 

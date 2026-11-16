@@ -12,7 +12,7 @@ func _init() -> void:
 
 func _run() -> void:
 	if change_scene_to_file("res://Scenes/main.tscn") != OK:
-		_fail("impossibile caricare la scena principale")
+		_fail("Unable to load the main scene")
 		_finish()
 		return
 	await process_frame
@@ -62,10 +62,10 @@ func _run() -> void:
 	_expect(float(machine.call("get_analysis_seconds")) < analysis_before_upgrade, "Test assertion failed")
 	_expect(not bool(machine.call("try_upgrade", player)), "Test assertion failed")
 	inventory.reset_for_new_mission()
-	_expect(inventory.add_rock("roccia_basaltica"), "Test assertion failed")
-	_expect(inventory.add_rock("roccia_scura"), "Test assertion failed")
+	_expect(inventory.add_rock("basaltic_rock"), "Test assertion failed")
+	_expect(inventory.add_rock("impact_glass"), "Test assertion failed")
 	_expect(bool(machine.call("try_interact", player)), "Test assertion failed")
-	_expect(int(machine.get("state")) == 0 and inventory.count_item("rock_roccia_basaltica") == 1 and inventory.count_item("rock_roccia_scura") == 1, "Test assertion failed")
+	_expect(int(machine.get("state")) == 0 and inventory.count_item("rock_basaltic_rock") == 1 and inventory.count_item("rock_impact_glass") == 1, "Test assertion failed")
 	var sample_picker := machine.get("_sample_picker_root") as Control
 	_expect(sample_picker != null and sample_picker.visible, "Test assertion failed")
 	var rock_thumbnails: Array[Node] = sample_picker.find_children("*", "TextureRect", true, false) if sample_picker != null else []
@@ -76,8 +76,8 @@ func _run() -> void:
 	machine.call("_on_sample_picker_gui_input", escape_event)
 	_expect(sample_picker != null and not sample_picker.visible, "Test assertion failed")
 	_expect(bool(machine.call("try_interact", player)) and sample_picker != null and sample_picker.visible, "Test assertion failed")
-	machine.call("_select_sample", "rock_roccia_basaltica")
-	_expect(int(machine.get("state")) == 1 and inventory.count_item("rock_roccia_basaltica") == 0 and inventory.count_item("rock_roccia_scura") == 1, "Test assertion failed")
+	machine.call("_select_sample", "rock_basaltic_rock")
+	_expect(int(machine.get("state")) == 1 and inventory.count_item("rock_basaltic_rock") == 0 and inventory.count_item("rock_impact_glass") == 1, "Test assertion failed")
 	_expect(is_equal_approx(float(machine.call("get_power_demand_kw")), 240.0), "Test assertion failed")
 	machine.call("set_powered", false)
 	machine.set("study_elapsed", 5.0)
@@ -94,7 +94,7 @@ func _run() -> void:
 	_expect(bool(machine.call("try_interact", player)), "Test assertion failed")
 	_expect(int(machine.get("state")) == 0 and int(economy.get("balance")) == balance_before + int(machine.call("get_reward")), "Test assertion failed")
 	inventory.reset_for_new_mission()
-	_expect(inventory.add_rock("ghiaccio_profondo_primordiale"), "Test assertion failed")
+	_expect(inventory.add_rock("primordial_deep_ice"), "Test assertion failed")
 	_expect(bool(machine.call("try_interact", player)), "Test assertion failed")
 	_expect(bool(machine.get("sample_is_primordial_ice")) and is_equal_approx(float(machine.call("get_biosignature_chance")), 0.20), "Test assertion failed")
 	machine.set("ancient_life_detected", true)
@@ -109,7 +109,7 @@ func _run() -> void:
 	var achievements := root.get_node("AchievementManager")
 	_expect(int(achievements.call("get_progress", "deep_ice_study")) == 1 and int(achievements.call("get_progress", "ancient_life")) == 1 and int(achievements.call("get_progress", "life_relay")) == 1, "Test assertion failed")
 	_expect(is_equal_approx(float(RESEARCH_SCRIPT.get_definition("raman_spectrometer").get("biosignature_chance", 0.0)), 0.35) and is_equal_approx(float(RESEARCH_SCRIPT.get_definition("icp_ms").get("biosignature_chance", 0.0)), 0.55), "Test assertion failed")
-	_expect(inventory.add_rock("roccia_scura"), "Test assertion failed")
+	_expect(inventory.add_rock("impact_glass"), "Test assertion failed")
 	_expect(bool(machine.call("try_interact", player)) and int(machine.get("state")) == 1, "Test assertion failed")
 	var removed_machine_id := machine.get_instance_id()
 	_expect(bool(machine.call("pickup")), "Test assertion failed")
